@@ -1,0 +1,94 @@
+# This file contains the fastlane.tools configuration
+# You can find the documentation at https://docs.fastlane.tools
+#
+# For a list of all available actions, check out
+#
+#     https://docs.fastlane.tools/actions
+#
+# For a list of all available plugins, check out
+#
+#     https://docs.fastlane.tools/plugins/available-plugins
+#
+
+# Uncomment the line if you want fastlane to automatically update itself
+# update_fastlane
+
+default_platform(:android)
+
+ENV["FASTLANE_SKIP_UPDATE_CHECK"] = "true"
+ENV["FASTLANE_HIDE_CHANGELOG"] = "true"
+
+platform :android do
+  desc "Fetch latest version"
+  lane :fetch_version do
+    act_fetch_version
+  end
+
+  desc "Publish release with auto-bump and remote/local options"
+  lane :publish do |options|
+    act_publish_release(
+      version: options[:version],
+      remote: options[:remote],
+      skip_bump: options[:skip_bump]
+    )
+  end
+
+  desc "Publish snapshot for testing with branch name and timestamp"
+  lane :publish_snapshot do |options|
+    act_publish_snapshot(
+      remote: options[:remote]
+    )
+  end
+
+  desc "Build app"
+  lane :build do |options|
+    act_build_app(
+      env: options[:env],
+      build_type: options[:build_type],
+      artifact: options[:artifact],
+      clean: options[:clean]
+    )
+  end
+
+  desc "Build and upload to Firebase App Distribution"
+  lane :build_upload_firebase do |options|
+    act_build_app(
+      env: options[:env],
+      build_type: options[:build_type],
+      artifact: "apk",
+      clean: options[:clean]
+    )
+
+    act_upload_firebase(
+      app_id: options[:app_id],
+      apk_path: lane_context[SharedValues::GRADLE_APK_OUTPUT_PATH],
+      testers: options[:testers],
+      release_notes: options[:release_notes]
+    )
+  end
+
+  desc "Build and upload to Google Play Store"
+  lane :build_upload_play_store do |options|
+    act_build_app(
+      env: "prod",
+      build_type: "release",
+      artifact: "aab",
+      clean: true
+    )
+
+    act_upload_internal_track(
+      aab_path: lane_context[SharedValues::GRADLE_AAB_OUTPUT_PATH]
+    )
+  end
+
+  desc "Bump app version"
+  lane :bump_version do |options|
+    act_bump_version(
+      name: options[:name],
+      code: options[:code],
+      auto_increment: options[:auto_increment]
+    )
+  end
+
+
+end
