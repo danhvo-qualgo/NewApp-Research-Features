@@ -1,0 +1,24 @@
+plugins {
+    alias(libs.plugins.uney.android.module)
+    alias(libs.plugins.kotlin.android)
+}
+
+androidModule {
+    hilt = true
+    compose = true
+    serialization = true
+}
+
+android {
+    namespace = "com.safeNest.features.core.home.impl"
+}
+
+dependencies {
+    implementation(project(":modules:home:api"))
+    implementation(libs.core.router)
+}
+
+uneyPublishing {
+    groupId = "com.safeNest.features.core.home"
+    artifactId = "impl"
+}

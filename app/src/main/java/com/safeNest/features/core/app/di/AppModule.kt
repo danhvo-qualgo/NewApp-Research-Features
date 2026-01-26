@@ -14,6 +14,6 @@ class AppModule {
     @Provides
     @AppEntryPoint
     fun provideEntryPoint(): Uri {
-        return "internal://featureModule".toUri()
+        return "internal://home".toUri()
     }
 }
