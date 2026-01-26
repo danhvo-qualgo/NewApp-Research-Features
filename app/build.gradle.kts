@@ -3,7 +3,7 @@ plugins {
 }
 
 applicationModule {
-    buildName = "App"
+    buildName = "CoreFeatureApp"
 }
 
 android {
