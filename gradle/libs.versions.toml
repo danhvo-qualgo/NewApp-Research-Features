@@ -15,7 +15,7 @@ composeBom = "2026.01.00"
 composeNavigation = "2.9.6"
 coreFeatures = "0.0.0.0-rc"
 coreKtx = "1.17.0"
-coreVersion = "0.0.0.15-main-22-01-2026-12-25-40-SNAPSHOT"
+coreVersion = "0.0.0.24-feature-Implement-remote-config-base-class-30-01-2026-10-58-28-SNAPSHOT"
 coroutines = "1.10.2"
 coroutinesTest = "1.10.2"
 credentials = "1.5.0"
@@ -51,7 +51,7 @@ roomCompiler = "2.8.4"
 sentry = "5.12.2"
 splashscreen = "1.2.0"
 turbine = "1.2.1"
-uneyPlugin = "0.0.0.22-rc"
+uneyPlugin = "0.0.0.25-rc"
 workManager = "2.11.0"
 
 [libraries]
@@ -59,6 +59,7 @@ accompanist-permissions = { module = "com.google.accompanist:accompanist-permiss
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activityCompose" }
 androidx-appcompat = { module = "androidx.appcompat:appcompat", version.ref = "appcompat" }
 androidx-browser = { module = "androidx.browser:browser", version.ref = "browser" }
+androidx-compose-material-icons-core = { module = "androidx.compose.material:material-icons-core" }
 androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "coreKtx" }
 androidx-datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "datastorePreferences" }
 androidx-espresso-core = { module = "androidx.test.espresso:espresso-core", version.ref = "espressoCore" }
@@ -85,9 +86,11 @@ compose-ui-test-junit4 = { module = "androidx.compose.ui:ui-test-junit4" }
 compose-ui-test-manifest = { module = "androidx.compose.ui:ui-test-manifest" }
 compose-ui-tooling = { module = "androidx.compose.ui:ui-tooling" }
 compose-ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview" }
+core-analytics-api = { module = "com.uney.core:analytics-api", version.ref = "coreVersion" }
+core-analytics-impl = { module = "com.uney.core:analytics-impl", version.ref = "coreVersion" }
+core-base-app = { module = "com.uney.core:base-app", version.ref = "coreVersion" }
 core-build-config-api = { module = "com.uney.core:build-config-api", version.ref = "coreVersion" }
 core-build-config-ksp = { module = "com.uney.core:build-config-ksp", version.ref = "coreVersion" }
-core-common = { module = "com.uney.core:common", version.ref = "coreVersion" }
 core-features-home-api = { module = "com.uney.features:home-api", version.ref = "coreFeatures" }
 core-features-home-impl = { module = "com.uney.features:home-impl", version.ref = "coreFeatures" }
 core-hilt = { module = "com.uney.core:hilt", version.ref = "coreVersion" }
@@ -95,7 +98,8 @@ core-logger = { module = "com.uney.core:logger", version.ref = "coreVersion" }
 core-remote-config = { module = "com.uney.core:remote-config", version.ref = "coreVersion" }
 core-resources = { module = "com.uney.core:resources", version.ref = "coreVersion" }
 core-router = { module = "com.uney.core:router", version.ref = "coreVersion" }
-core-splash = { module = "com.uney.core:splash", version.ref = "coreVersion" }
+core-utils-android = { module = "com.uney.core:core-utils-android", version.ref = "coreVersion" }
+core-utils-kotlin = { module = "com.uney.core:core-utils-kotlin", version.ref = "coreVersion" }
 credentials = { module = "androidx.credentials:credentials", version.ref = "credentials" }
 credentials-play-services-auth = { module = "androidx.credentials:credentials-play-services-auth", version.ref = "credentials" }
 firebase-analytics = { module = "com.google.firebase:firebase-analytics" }
@@ -157,3 +161,17 @@ uney-module-registry = { id = "com.uney.plugin.module-registry", version.ref = "
 uney-project-catalog = { id = "com.uney.plugin.project-catalog", version.ref = "uneyPlugin" }
 uney-publishing = { id = "com.uney.plugin.publish", version.ref = "uneyPlugin" }
 uney-translation = { id = "com.uney.plugin.translation", version.ref = "uneyPlugin" }
+
+[bundles]
+android-dependencies = ["androidx-core-ktx", "androidx-lifecycle-runtime-ktx", "androidx-lifecycle-process", "androidx-appcompat", "kotlinx-coroutines-android", "kotlinx-serialization-json", "javax-inject"]
+android-lint-check = ["uney-lint-check"]
+android-test-dependencies = ["androidx-junit", "androidx-espresso-core", "kotlinx-coroutines-test"]
+compose-dependencies = ["androidx-activity-compose", "compose-ui", "compose-ui-graphics", "compose-ui-tooling-preview", "compose-material3", "compose-navigation"]
+compose-dependencies-debug = ["compose-ui-tooling"]
+cores-common-dependencies = ["core-base-app", "core-router", "core-logger", "core-hilt", "core-resources", "core-remote-config", "core-analytics-impl", "core-build-config-api", "core-utils-android", "core-utils-kotlin"]
+cores-common-ksp = ["core-build-config-ksp"]
+firebase-dependencies = ["firebase-analytics", "firebase-crashlytics"]
+hilt-dependencies = ["hilt", "hilt-workmanager", "hilt-navigation", "workmanager"]
+hilt-ksp = ["hilt-androidx-compiler", "hilt-compiler", "kotlin-metadata"]
+java-dependencies = ["kotlinx-coroutines-core", "kotlinx-serialization-json", "javax-inject"]
+test-dependencies = ["junit", "kotlin-test", "kotlinx-coroutines-test"]
