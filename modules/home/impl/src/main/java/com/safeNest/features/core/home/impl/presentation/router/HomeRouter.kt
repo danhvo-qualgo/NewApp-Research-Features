@@ -1,9 +1,6 @@
 package com.safeNest.features.core.home.impl.presentation.router
 
 import android.content.Context
-import android.content.Intent
-import android.net.Uri
-import com.uney.core.router.Router
 import com.safeNest.features.core.home.impl.presentation.HomeActivity
 import com.uney.core.router.InternalRouter
 import dagger.hilt.android.qualifiers.ApplicationContext

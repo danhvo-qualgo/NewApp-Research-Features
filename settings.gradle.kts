@@ -100,7 +100,13 @@ dependencyResolutionManagement {
 rootProject.name = "safeNest"
 
 include(":app")
+include(":modules:baseApp")
 include(":modules:home:api")
 include(":modules:home:impl")
 include(":modules:home:extension")
-include(":modules:baseApp")
+include(":modules:authChallenge:api")
+include(":modules:authChallenge:impl")
+include(":modules:authChallenge:extension")
+include(":modules:signIn:api")
+include(":modules:signIn:impl")
+include(":modules:signIn:extension")
