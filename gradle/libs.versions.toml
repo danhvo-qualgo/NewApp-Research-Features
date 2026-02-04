@@ -15,7 +15,7 @@ composeBom = "2026.01.00"
 composeNavigation = "2.9.6"
 coreFeatures = "0.0.0.0-rc"
 coreKtx = "1.17.0"
-coreVersion = "0.0.0.24-feature-Implement-remote-config-base-class-30-01-2026-10-58-28-SNAPSHOT"
+coreVersion = "0.0.0.25-main-03-02-2026-16-22-34-SNAPSHOT"
 coroutines = "1.10.2"
 coroutinesTest = "1.10.2"
 credentials = "1.5.0"
@@ -88,16 +88,19 @@ compose-ui-tooling = { module = "androidx.compose.ui:ui-tooling" }
 compose-ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview" }
 core-analytics-api = { module = "com.uney.core:analytics-api", version.ref = "coreVersion" }
 core-analytics-impl = { module = "com.uney.core:analytics-impl", version.ref = "coreVersion" }
-core-base-app = { module = "com.uney.core:base-app", version.ref = "coreVersion" }
+core-base-app = { module = "com.uney.core:base-app", version.ref = "coreFeatures" }
 core-build-config-api = { module = "com.uney.core:build-config-api", version.ref = "coreVersion" }
 core-build-config-ksp = { module = "com.uney.core:build-config-ksp", version.ref = "coreVersion" }
 core-features-home-api = { module = "com.uney.features:home-api", version.ref = "coreFeatures" }
 core-features-home-impl = { module = "com.uney.features:home-impl", version.ref = "coreFeatures" }
 core-hilt = { module = "com.uney.core:hilt", version.ref = "coreVersion" }
 core-logger = { module = "com.uney.core:logger", version.ref = "coreVersion" }
-core-remote-config = { module = "com.uney.core:remote-config", version.ref = "coreVersion" }
+core-remote-config-api = { module = "com.safeNest.core:remote-config-api", version.ref = "coreVersion" }
+core-remote-config-impl = { module = "com.safeNest.core:remote-config-impl", version.ref = "coreVersion" }
 core-resources = { module = "com.uney.core:resources", version.ref = "coreVersion" }
 core-router = { module = "com.uney.core:router", version.ref = "coreVersion" }
+core-storage-api = { module = "com.uney.core:storage-api", version.ref = "coreVersion" }
+core-storage-impl = { module = "com.uney.core:storage-impl", version.ref = "coreVersion" }
 core-utils-android = { module = "com.uney.core:core-utils-android", version.ref = "coreVersion" }
 core-utils-kotlin = { module = "com.uney.core:core-utils-kotlin", version.ref = "coreVersion" }
 credentials = { module = "androidx.credentials:credentials", version.ref = "credentials" }
@@ -168,7 +171,7 @@ android-lint-check = ["uney-lint-check"]
 android-test-dependencies = ["androidx-junit", "androidx-espresso-core", "kotlinx-coroutines-test"]
 compose-dependencies = ["androidx-activity-compose", "compose-ui", "compose-ui-graphics", "compose-ui-tooling-preview", "compose-material3", "compose-navigation"]
 compose-dependencies-debug = ["compose-ui-tooling"]
-cores-common-dependencies = ["core-base-app", "core-router", "core-logger", "core-hilt", "core-resources", "core-remote-config", "core-analytics-impl", "core-build-config-api", "core-utils-android", "core-utils-kotlin"]
+cores-common-dependencies = ["core-base-app", "core-router", "core-logger", "core-hilt", "core-resources", "core-remote-config-api", "core-remote-config-impl", "core-analytics-impl", "core-build-config-api", "core-utils-android", "core-utils-kotlin"]
 cores-common-ksp = ["core-build-config-ksp"]
 firebase-dependencies = ["firebase-analytics", "firebase-crashlytics"]
 hilt-dependencies = ["hilt", "hilt-workmanager", "hilt-navigation", "workmanager"]
