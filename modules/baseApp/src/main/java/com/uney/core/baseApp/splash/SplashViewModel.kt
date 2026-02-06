@@ -3,7 +3,7 @@ package com.uney.core.baseApp.splash
 import androidx.lifecycle.viewModelScope
 import com.uney.core.baseApp.base.viewmodel.BaseViewModel
 import com.uney.core.baseApp.base.viewmodel.DefaultBaseUiHost
-import com.uney.core.coreutils.android.splashWorker.SplashWorkerManager
+import com.uney.core.utils.android.worker.AppWorkerManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -12,7 +12,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 internal class SplashViewModel @Inject constructor(
-    private val splashScreenManager: SplashWorkerManager,
+    private val workerManager: AppWorkerManager,
     defaultBaseUiHost: DefaultBaseUiHost,
 ) : BaseViewModel(defaultBaseUiHost) {
     private val _uiState = MutableStateFlow(UiState.Initial as UiState)
@@ -21,7 +21,7 @@ internal class SplashViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             showLoading(true)
-            if (splashScreenManager.run()) {
+            if (workerManager.run()) {
                 _uiState.value = UiState.Success
             } else {
                 _uiState.value = UiState.Error

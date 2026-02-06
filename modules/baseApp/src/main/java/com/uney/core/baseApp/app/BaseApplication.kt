@@ -8,9 +8,9 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ProcessLifecycleOwner
 import androidx.work.Configuration
 import com.safeNest.core.remoteConfig.api.RemoteConfig
-import com.uney.core.coreutils.android.callback.AppCallbackManager
-import com.uney.core.logger.LoggerProvider
-import com.uney.core.logger.LvLogger
+import com.uney.core.logger.AppLogger
+import com.uney.core.logger.AppLoggerProvider
+import com.uney.core.utils.android.callback.AppCallbackManager
 import javax.inject.Inject
 
 open class BaseApplication : Application(), Configuration.Provider {
@@ -38,7 +38,7 @@ open class BaseApplication : Application(), Configuration.Provider {
     }
 
     private fun initializeLibraries() {
-        LvLogger.install(object : LoggerProvider {
+        AppLogger.install(object : AppLoggerProvider {
             override fun d(message: String) {
                 Log.d("TAG", message)
             }

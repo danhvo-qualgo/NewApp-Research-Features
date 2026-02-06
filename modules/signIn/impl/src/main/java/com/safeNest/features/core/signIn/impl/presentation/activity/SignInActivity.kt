@@ -9,8 +9,8 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.CompositionLocalProvider
 import com.safeNest.features.core.signIn.impl.presentation.screen.SignInScreen
-import com.uney.core.router.LocalRouterManager
 import com.uney.core.router.RouterManager
+import com.uney.core.router.compose.LocalRouterManager
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 

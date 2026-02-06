@@ -2,7 +2,7 @@ package com.safeNest.features.core.authChallenge.impl.domain.useCase
 
 import com.safeNest.features.core.authChallenge.impl.domain.model.AuthChallenge
 import com.safeNest.features.core.authChallenge.impl.domain.repository.AuthChallengeRepository
-import com.uney.core.coreutils.kotlin.model.DomainResult
+import com.uney.core.utils.kotlin.result.DomainResult
 import javax.inject.Inject
 
 internal class ProcessAuthChallengeUseCase @Inject constructor(

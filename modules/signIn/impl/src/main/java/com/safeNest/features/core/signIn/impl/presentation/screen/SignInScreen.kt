@@ -26,7 +26,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.safeNest.features.core.authChallenge.api.presentation.router.AuthChallengeDeeplink
 import com.safeNest.features.core.signIn.impl.LoadingIndicator
 import com.safeNest.features.core.signIn.impl.ObserveAsEvents
-import com.uney.core.router.LocalRouterManager
+import com.uney.core.router.compose.LocalRouterManager
 
 @Composable
 internal fun SignInScreen(

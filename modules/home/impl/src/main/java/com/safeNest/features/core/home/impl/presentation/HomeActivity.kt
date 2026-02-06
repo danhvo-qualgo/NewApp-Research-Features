@@ -20,7 +20,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.safeNest.features.core.signIn.api.presentation.router.SignInDeeplink
-import com.uney.core.router.LocalRouterManager
+import com.uney.core.router.compose.LocalRouterManager
 import com.uney.core.router.RouterManager
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject

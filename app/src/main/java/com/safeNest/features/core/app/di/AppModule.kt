@@ -2,7 +2,7 @@ package com.safeNest.features.core.app.di
 
 import android.net.Uri
 import androidx.core.net.toUri
-import com.uney.core.coreutils.android.qualifier.AppEntryPoint
+import com.uney.core.utils.android.qualifier.AppEntryPoint
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn

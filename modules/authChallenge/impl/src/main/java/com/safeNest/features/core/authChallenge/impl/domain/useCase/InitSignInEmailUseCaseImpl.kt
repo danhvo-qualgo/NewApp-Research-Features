@@ -7,8 +7,8 @@ import com.safeNest.features.core.authChallenge.impl.domain.model.AuthChallengeN
 import com.safeNest.features.core.authChallenge.impl.domain.model.ClientMetadataKey
 import com.safeNest.features.core.authChallenge.impl.domain.model.ClientMetadataValue
 import com.safeNest.features.core.authChallenge.impl.domain.repository.AuthChallengeRepository
-import com.uney.core.coreutils.kotlin.model.DomainResult
-import com.uney.core.coreutils.kotlin.model.mapSuccess
+import com.uney.core.utils.kotlin.result.DomainResult
+import com.uney.core.utils.kotlin.result.mapSuccess
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put

@@ -14,6 +14,6 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         tools:replace="android:dataExtractionRules,android:fullBackupContent"
         android:supportsRtl="true"
-        android:theme="@style/Theme.BaseApp" />
+        android:theme="@style/Theme.App" />
 
 </manifest>
