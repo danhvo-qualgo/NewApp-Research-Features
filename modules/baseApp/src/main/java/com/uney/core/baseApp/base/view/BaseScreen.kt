@@ -24,7 +24,3 @@ fun BaseScreen(
         content()
     }
 }
-/*
-    buy - sell
-    short_sell -> short_buy
- */

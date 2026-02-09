@@ -110,3 +110,6 @@ include(":modules:authChallenge:extension")
 include(":modules:signIn:api")
 include(":modules:signIn:impl")
 include(":modules:signIn:extension")
+
+include(":modules:safeBrowsing:api")
+include(":modules:safeBrowsing:impl")

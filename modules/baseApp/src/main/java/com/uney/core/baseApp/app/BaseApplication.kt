@@ -8,6 +8,7 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ProcessLifecycleOwner
 import androidx.work.Configuration
 import com.safeNest.core.remoteConfig.api.RemoteConfig
+import com.safeNest.core.remoteConfig.api.RemoteConfigManager
 import com.uney.core.coreutils.android.callback.AppCallbackManager
 import com.uney.core.logger.LoggerProvider
 import com.uney.core.logger.LvLogger
@@ -52,7 +53,7 @@ open class BaseApplication : Application(), Configuration.Provider {
             }
         })
 
-//        RemoteConfigManager.update(remoteConfig.get())
+        RemoteConfigManager.update(remoteConfig.get())
     }
 
     private fun registerProcessLifecycleOwner() {
