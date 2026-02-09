@@ -97,7 +97,7 @@ dependencyResolutionManagement {
 
 
 
-rootProject.name = "safeNest"
+rootProject.name = "SafeNest-Core-Features"
 
 include(":app")
 include(":modules:baseApp")
