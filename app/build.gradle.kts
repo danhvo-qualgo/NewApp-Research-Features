@@ -16,6 +16,7 @@ android {
 
 
 dependencies {
+    implementation(project(":modules:baseApp"))
     implementation(project(":modules:home:impl"))
     implementation(project(":modules:authChallenge:impl"))
     implementation(project(":modules:signIn:impl"))

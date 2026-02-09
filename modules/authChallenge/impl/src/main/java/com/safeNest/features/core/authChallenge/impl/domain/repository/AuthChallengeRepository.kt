@@ -1,7 +1,7 @@
 package com.safeNest.features.core.authChallenge.impl.domain.repository
 
 import com.safeNest.features.core.authChallenge.impl.domain.model.AuthChallenge
-import com.uney.core.coreutils.kotlin.model.DomainResult
+import com.uney.core.utils.kotlin.result.DomainResult
 
 interface AuthChallengeRepository {
 

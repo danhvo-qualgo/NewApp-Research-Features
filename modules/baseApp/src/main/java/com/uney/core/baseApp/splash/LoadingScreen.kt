@@ -19,7 +19,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.uney.core.baseApp.base.view.BaseScreen
 import com.uney.core.resources.R
-import com.uney.core.router.LocalRouterManager
+import com.uney.core.router.compose.LocalRouterManager
 
 @Composable
 internal fun LoadingScreen(
@@ -42,7 +42,7 @@ internal fun LoadingScreen(
             Spacer(Modifier.weight(1f))
 
             Image(
-                painter = painterResource(R.drawable.ic_logo_loading),
+                painter = painterResource(R.drawable.ic_splash_loading),
                 contentDescription = null,
             )
 

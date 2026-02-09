@@ -9,8 +9,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.uney.core.baseApp.base.activity.BaseActivity
-import com.uney.core.coreutils.android.qualifier.AppEntryPoint
-import com.uney.core.router.LocalRouterManager
+import com.uney.core.router.compose.LocalRouterManager
+import com.uney.core.utils.android.qualifier.AppEntryPoint
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 

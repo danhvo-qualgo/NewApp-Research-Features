@@ -1,6 +1,6 @@
 package com.safeNest.features.core.authChallenge.api.domain.useCase
 
-import com.uney.core.coreutils.kotlin.model.DomainResult
+import com.uney.core.utils.kotlin.result.DomainResult
 import kotlinx.serialization.json.JsonObject
 
 interface InitSignInSsoUseCase {

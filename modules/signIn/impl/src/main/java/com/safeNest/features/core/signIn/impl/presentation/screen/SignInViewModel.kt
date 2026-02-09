@@ -4,7 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.safeNest.features.core.authChallenge.api.domain.useCase.InitSignInEmailUseCase
 import com.safeNest.features.core.authChallenge.api.domain.useCase.InitSignInSsoUseCase
-import com.uney.core.coreutils.kotlin.model.DomainResult
+import com.uney.core.utils.kotlin.result.DomainResult
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow

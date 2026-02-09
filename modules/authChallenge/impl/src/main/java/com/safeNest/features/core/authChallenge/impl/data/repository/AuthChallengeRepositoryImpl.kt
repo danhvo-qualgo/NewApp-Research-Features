@@ -1,12 +1,12 @@
 package com.safeNest.features.core.authChallenge.impl.data.repository
 
-import com.safeNest.features.core.authChallenge.impl.domain.model.AuthChallenge
 import com.safeNest.features.core.authChallenge.impl.ApiResult
 import com.safeNest.features.core.authChallenge.impl.data.source.AuthChallengeRequest
 import com.safeNest.features.core.authChallenge.impl.data.source.AuthChallengeResponse
 import com.safeNest.features.core.authChallenge.impl.data.source.MockRemoteSource
+import com.safeNest.features.core.authChallenge.impl.domain.model.AuthChallenge
 import com.safeNest.features.core.authChallenge.impl.domain.repository.AuthChallengeRepository
-import com.uney.core.coreutils.kotlin.model.DomainResult
+import com.uney.core.utils.kotlin.result.DomainResult
 import jakarta.inject.Inject
 
 class AuthChallengeRepositoryImpl @Inject constructor() : AuthChallengeRepository {
