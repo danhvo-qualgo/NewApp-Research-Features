@@ -21,6 +21,8 @@ dependencies {
     implementation(libs.core.logger)
     implementation(libs.core.remote.config.api)
     implementation(libs.core.remote.config.impl)
+    api(libs.hilt.workmanager)
+    api(libs.workmanager)
 }
 
 uneyPublishing {

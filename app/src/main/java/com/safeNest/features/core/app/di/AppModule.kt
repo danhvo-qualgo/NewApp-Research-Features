@@ -11,6 +11,7 @@ import dagger.hilt.components.SingletonComponent
 @Module
 @InstallIn(SingletonComponent::class)
 class AppModule {
+
     @Provides
     @AppEntryPoint
     fun provideEntryPoint(): Uri {

@@ -1,4 +1,4 @@
-package com.uney.core.baseApp.base.viewmodel
+package com.uney.core.baseApp.base.viewModel
 
 import androidx.lifecycle.ViewModel
 import com.uney.core.baseApp.base.model.ApiError
@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 
 open class BaseViewModel(private val delegate: BaseUiHost) : ViewModel() {
+
     val baseUiState: StateFlow<BaseUiState> = delegate.baseUiState
 
     val baseUiEvent: SharedFlow<BaseUiEvent> = delegate.baseUiEvent

@@ -17,8 +17,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import com.uney.core.baseApp.R
 import com.uney.core.baseApp.base.view.BaseScreen
-import com.uney.core.resources.R
 import com.uney.core.router.compose.LocalRouterManager
 
 @Composable
@@ -53,8 +53,7 @@ internal fun LoadingScreen(
                             activity,
                             "Something went wrong.",
                             Toast.LENGTH_SHORT
-                        )
-                            .show()
+                        ).show()
                     }
                 }
 
@@ -67,16 +66,13 @@ internal fun LoadingScreen(
                                 activity,
                                 "Feature not available. Please provide correct entry point through @AppEntryPoint in hilt module.",
                                 Toast.LENGTH_SHORT
-                            )
-                                .show()
+                            ).show()
                         }
                     }
                 }
 
-                else -> {}
+                else -> Unit
             }
-
-
 
             Spacer(Modifier.weight(1f))
         }

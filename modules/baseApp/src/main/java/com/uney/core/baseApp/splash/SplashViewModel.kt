@@ -1,8 +1,8 @@
 package com.uney.core.baseApp.splash
 
 import androidx.lifecycle.viewModelScope
-import com.uney.core.baseApp.base.viewmodel.BaseViewModel
-import com.uney.core.baseApp.base.viewmodel.DefaultBaseUiHost
+import com.uney.core.baseApp.base.viewModel.BaseViewModel
+import com.uney.core.baseApp.base.viewModel.DefaultBaseUiHost
 import com.uney.core.utils.android.worker.AppWorkerManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow

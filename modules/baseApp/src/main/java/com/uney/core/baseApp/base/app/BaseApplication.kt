@@ -1,4 +1,4 @@
-package com.uney.core.baseApp.app
+package com.uney.core.baseApp.base.app
 
 import android.app.Application
 import android.util.Log
@@ -8,13 +8,13 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ProcessLifecycleOwner
 import androidx.work.Configuration
 import com.safeNest.core.remoteConfig.api.RemoteConfig
-import com.safeNest.core.remoteConfig.api.RemoteConfigManager
 import com.uney.core.logger.AppLogger
 import com.uney.core.logger.AppLoggerProvider
 import com.uney.core.utils.android.callback.AppCallbackManager
 import javax.inject.Inject
 
 open class BaseApplication : Application(), Configuration.Provider {
+
     @Inject
     internal lateinit var workerFactory: dagger.Lazy<HiltWorkerFactory>
 
@@ -23,7 +23,6 @@ open class BaseApplication : Application(), Configuration.Provider {
 
     @Inject
     internal lateinit var appCallbackManager: AppCallbackManager
-
 
     override val workManagerConfiguration: Configuration
         get() = Configuration.Builder().setWorkerFactory(workerFactory.get()).build()
@@ -53,7 +52,7 @@ open class BaseApplication : Application(), Configuration.Provider {
             }
         })
 
-        RemoteConfigManager.update(remoteConfig.get())
+//        RemoteConfigManager.update(remoteConfig.get())
     }
 
     private fun registerProcessLifecycleOwner() {

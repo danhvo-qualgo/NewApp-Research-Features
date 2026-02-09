@@ -16,6 +16,7 @@ import javax.inject.Inject
 
 @AndroidEntryPoint
 internal class SplashActivity : BaseActivity() {
+
     @Inject
     @AppEntryPoint
     lateinit var entryPoint: Uri

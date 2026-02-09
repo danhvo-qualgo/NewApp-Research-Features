@@ -10,6 +10,7 @@ import com.uney.core.router.compose.LocalRouterManager
 import javax.inject.Inject
 
 open class BaseActivity : ComponentActivity() {
+
     @Inject
     lateinit var routerManager: RouterManager
 
