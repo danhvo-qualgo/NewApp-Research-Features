@@ -13,9 +13,9 @@ cameraCore = "1.5.2"
 coil = "3.3.0"
 composeBom = "2026.01.00"
 composeNavigation = "2.9.6"
-coreFeatures = "0.0.0.9-main-10-02-2026-09-29-34-SNAPSHOT"
+coreFeatures = "0.0.0.11-main-10-02-2026-13-16-54-SNAPSHOT"
 coreKtx = "1.17.0"
-coreVersion = "0.0.0.30-main-09-02-2026-15-09-34-SNAPSHOT"
+coreVersion = "0.0.0.31-main-10-02-2026-11-35-06-SNAPSHOT"
 coroutines = "1.10.2"
 coroutinesTest = "1.10.2"
 credentials = "1.5.0"
@@ -49,6 +49,7 @@ playServicesAdsIdentifier = "18.2.0"
 playServicesAuth = "21.5.0"
 room = "2.8.4"
 roomCompiler = "2.8.4"
+safeBrowsing = "0.0.0.2"
 sentry = "5.12.2"
 splashscreen = "1.2.0"
 turbine = "1.2.1"
@@ -89,19 +90,19 @@ compose-ui-tooling = { module = "androidx.compose.ui:ui-tooling" }
 compose-ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview" }
 core-analytics-api = { module = "com.uney.core:analytics-api", version.ref = "coreVersion" }
 core-analytics-impl = { module = "com.uney.core:analytics-impl", version.ref = "coreVersion" }
-core-base-app = { module = "com.uney.core:base-app", version.ref = "coreFeatures" }
 core-build-config-api = { module = "com.uney.core:build-config-api", version.ref = "coreVersion" }
 core-build-config-ksp = { module = "com.uney.core:build-config-ksp", version.ref = "coreVersion" }
 core-dependencies = { module = "com.uney.core:dependencies", version.ref = "coreVersion" }
-core-features-authChallenge-api = { module = "com.safeNest.features.core:authChallenge-api", version.ref = "coreFeatures" }
-core-features-authChallenge-impl = { module = "com.safeNest.features.core:authChallenge-impl", version.ref = "coreFeatures" }
-core-features-home-api = { module = "com.safeNest.features.core:home-api", version.ref = "coreFeatures" }
-core-features-home-impl = { module = "com.safeNest.features.core:home-impl", version.ref = "coreFeatures" }
-core-features-signIn-api = { module = "com.safeNest.features.core:signIn-api", version.ref = "coreFeatures" }
-core-features-signIn-impl = { module = "com.safeNest.features.core:signIn-impl", version.ref = "coreFeatures" }
+core-features-authChallenge-api = { module = "net.qualgo.safeNest.core:auth-challenge-api", version.ref = "coreFeatures" }
+core-features-authChallenge-impl = { module = "net.qualgo.safeNest.core:auth-challenge-impl", version.ref = "coreFeatures" }
+core-features-baseapp = { module = "net.qualgo.safeNest.core:base-app", version.ref = "coreFeatures" }
+core-features-home-api = { module = "net.qualgo.safeNest.core:home-api", version.ref = "coreFeatures" }
+core-features-home-impl = { module = "net.qualgo.safeNest.core:home-impl", version.ref = "coreFeatures" }
+core-features-signIn-api = { module = "net.qualgo.safeNest.core:sign-in-api", version.ref = "coreFeatures" }
+core-features-signIn-impl = { module = "net.qualgo.safeNest.core:sign-in-impl", version.ref = "coreFeatures" }
 core-logger = { module = "com.uney.core:logger", version.ref = "coreVersion" }
-core-remote-config-api = { module = "com.safeNest.core:remote-config-api", version.ref = "coreVersion" }
-core-remote-config-impl = { module = "com.safeNest.core:remote-config-impl", version.ref = "coreVersion" }
+core-remote-config-api = { module = "com.uney.core:remote-config-api", version.ref = "coreVersion" }
+core-remote-config-impl = { module = "com.uney.core:remote-config-impl", version.ref = "coreVersion" }
 core-resources = { module = "com.uney.core:resources", version.ref = "coreVersion" }
 core-router = { module = "com.uney.core:router", version.ref = "coreVersion" }
 core-storage-api = { module = "com.uney.core:storage-api", version.ref = "coreVersion" }
@@ -144,6 +145,8 @@ play-services-ads-identifier = { module = "com.google.android.gms:play-services-
 room = { module = "androidx.room:room-runtime", version.ref = "room" }
 room-compiler = { module = "androidx.room:room-compiler", version.ref = "roomCompiler" }
 room-ktx = { module = "androidx.room:room-ktx", version.ref = "room" }
+safebrowsing-home-api = { module = "net.qualgo.safeNest.safeBrowsing:home-api", version.ref = "safeBrowsing" }
+safebrowsing-home-impl = { module = "net.qualgo.safeNest.safeBrowsing:home-impl", version.ref = "safeBrowsing" }
 splashscreen = { module = "androidx.core:core-splashscreen", version.ref = "splashscreen" }
 turbine = { module = "app.cash.turbine:turbine", version.ref = "turbine" }
 uney-lint-check = { module = "com.uney.utilities:lint-check", version.ref = "uneyPlugin" }

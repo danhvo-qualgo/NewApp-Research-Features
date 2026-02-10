@@ -3,7 +3,7 @@ plugins {
 }
 
 applicationModule {
-    buildName = "CoreFeatureApp"
+    buildName = "SafeNest-Core-Features"
 }
 
 android {

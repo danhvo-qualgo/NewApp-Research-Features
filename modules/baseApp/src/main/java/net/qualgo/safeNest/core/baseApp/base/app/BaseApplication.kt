@@ -7,9 +7,9 @@ import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ProcessLifecycleOwner
 import androidx.work.Configuration
-import com.safeNest.core.remoteConfig.api.RemoteConfig
 import com.uney.core.logger.AppLogger
 import com.uney.core.logger.AppLoggerProvider
+import com.uney.core.remoteConfig.api.RemoteConfig
 import com.uney.core.utils.android.callback.AppCallbackManager
 import javax.inject.Inject
 
