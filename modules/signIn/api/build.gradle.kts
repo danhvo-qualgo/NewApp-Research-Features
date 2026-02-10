@@ -6,12 +6,12 @@ androidModule {
 }
 
 android {
-    namespace = "com.safeNest.features.core.signIn.api"
+    namespace = "net.qualgo.safeNest.core.signIn.api"
 }
 
 uneyPublishing {
-    groupId = "com.safeNest.features.core"
-    artifactId = "signIn-api"
+    groupId = "net.qualgo.safeNest.core"
+    artifactId = "sign-in-api"
 }
 
 dependencies {

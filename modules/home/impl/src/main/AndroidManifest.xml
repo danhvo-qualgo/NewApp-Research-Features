@@ -3,7 +3,7 @@
 
     <application>
         <activity
-            android:name=".presentation.HomeActivity"
+            android:name="net.qualgo.safeNest.core.home.impl.presentation.HomeActivity"
             android:exported="false" />
     </application>
 

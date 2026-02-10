@@ -6,12 +6,12 @@ androidModule {
 }
 
 android {
-    namespace = "com.safeNest.features.core.authChallenge.api"
+    namespace = "net.qualgo.safeNest.core.authChallenge.api"
 }
 
 uneyPublishing {
-    groupId = "com.safeNest.features.core"
-    artifactId = "authChallenge-api"
+    groupId = "net.qualgo.safeNest.core"
+    artifactId = "auth-challenge-api"
 }
 
 dependencies {

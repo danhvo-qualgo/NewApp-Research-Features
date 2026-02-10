@@ -10,7 +10,7 @@ androidModule {
 }
 
 android {
-    namespace = "com.safeNest.features.core.home.impl"
+    namespace = "net.qualgo.safeNest.core.home.impl"
 }
 
 dependencies {
@@ -20,6 +20,6 @@ dependencies {
 }
 
 uneyPublishing {
-    groupId = "com.safeNest.features.core"
+    groupId = "net.qualgo.safeNest.core"
     artifactId = "home-impl"
 }

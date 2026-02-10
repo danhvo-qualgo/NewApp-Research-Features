@@ -9,7 +9,7 @@ androidModule {
 }
 
 android {
-    namespace = "com.uney.core.baseApp"
+    namespace = "net.qualgo.safeNest.core.baseApp"
 }
 
 dependencies {
@@ -26,6 +26,6 @@ dependencies {
 }
 
 uneyPublishing {
-    groupId = "com.uney.core"
+    groupId = "net.qualgo.safeNest.core"
     artifactId = "base-app"
 }

@@ -10,5 +10,6 @@
 local.properties
 /config/environment/*.properties
 /config/signing/release*
+/config/signing/internal*
 .kotlin
 fastlane/report.xml
