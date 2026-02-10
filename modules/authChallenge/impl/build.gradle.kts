@@ -26,6 +26,6 @@ dependencies {
 }
 
 uneyPublishing {
-    groupId = "com.safeNest.features.core.authChallenge"
-    artifactId = "impl"
+    groupId = "com.safeNest.features.core"
+    artifactId = "authChallenge-api"
 }

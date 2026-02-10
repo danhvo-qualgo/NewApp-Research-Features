@@ -20,6 +20,6 @@ dependencies {
 }
 
 uneyPublishing {
-    groupId = "com.safeNest.features.core.home"
-    artifactId = "impl"
+    groupId = "com.safeNest.features.core"
+    artifactId = "home-impl"
 }

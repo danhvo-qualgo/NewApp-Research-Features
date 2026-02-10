@@ -10,6 +10,11 @@ android {
 }
 
 uneyPublishing {
-    groupId = "com.safeNest.features.core.home"
-    artifactId = "api"
+    groupId = "com.safeNest.features.core"
+    artifactId = "home-api"
+}
+
+dependencies {
+    implementation(libs.core.utils.kotlin)
+    implementation(libs.core.router)
 }

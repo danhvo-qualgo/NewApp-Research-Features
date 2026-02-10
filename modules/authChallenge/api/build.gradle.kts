@@ -10,8 +10,8 @@ android {
 }
 
 uneyPublishing {
-    groupId = "com.safeNest.features.core.authChallenge"
-    artifactId = "api"
+    groupId = "com.safeNest.features.core"
+    artifactId = "authChallenge-api"
 }
 
 dependencies {

@@ -13,7 +13,7 @@ cameraCore = "1.5.2"
 coil = "3.3.0"
 composeBom = "2026.01.00"
 composeNavigation = "2.9.6"
-coreFeatures = "0.0.0.6-main-09-02-2026-11-21-15-SNAPSHOT"
+coreFeatures = "0.0.0.9-main-10-02-2026-09-29-34-SNAPSHOT"
 coreKtx = "1.17.0"
 coreVersion = "0.0.0.30-main-09-02-2026-15-09-34-SNAPSHOT"
 coroutines = "1.10.2"
@@ -52,7 +52,7 @@ roomCompiler = "2.8.4"
 sentry = "5.12.2"
 splashscreen = "1.2.0"
 turbine = "1.2.1"
-uneyPlugin = "0.0.0.26-rc"
+uneyPlugin = "0.0.0.30-rc"
 workManager = "2.11.0"
 
 [libraries]
@@ -93,8 +93,12 @@ core-base-app = { module = "com.uney.core:base-app", version.ref = "coreFeatures
 core-build-config-api = { module = "com.uney.core:build-config-api", version.ref = "coreVersion" }
 core-build-config-ksp = { module = "com.uney.core:build-config-ksp", version.ref = "coreVersion" }
 core-dependencies = { module = "com.uney.core:dependencies", version.ref = "coreVersion" }
-core-features-home-api = { module = "com.uney.features:home-api", version.ref = "coreFeatures" }
-core-features-home-impl = { module = "com.uney.features:home-impl", version.ref = "coreFeatures" }
+core-features-authChallenge-api = { module = "com.safeNest.features.core:authChallenge-api", version.ref = "coreFeatures" }
+core-features-authChallenge-impl = { module = "com.safeNest.features.core:authChallenge-impl", version.ref = "coreFeatures" }
+core-features-home-api = { module = "com.safeNest.features.core:home-api", version.ref = "coreFeatures" }
+core-features-home-impl = { module = "com.safeNest.features.core:home-impl", version.ref = "coreFeatures" }
+core-features-signIn-api = { module = "com.safeNest.features.core:signIn-api", version.ref = "coreFeatures" }
+core-features-signIn-impl = { module = "com.safeNest.features.core:signIn-impl", version.ref = "coreFeatures" }
 core-logger = { module = "com.uney.core:logger", version.ref = "coreVersion" }
 core-remote-config-api = { module = "com.safeNest.core:remote-config-api", version.ref = "coreVersion" }
 core-remote-config-impl = { module = "com.safeNest.core:remote-config-impl", version.ref = "coreVersion" }

@@ -10,8 +10,8 @@ android {
 }
 
 uneyPublishing {
-    groupId = "com.safeNest.features.core.signIn"
-    artifactId = "api"
+    groupId = "com.safeNest.features.core"
+    artifactId = "signIn-api"
 }
 
 dependencies {

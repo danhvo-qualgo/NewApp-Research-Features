@@ -21,6 +21,6 @@ dependencies {
 }
 
 uneyPublishing {
-    groupId = "com.safeNest.features.core.signIn"
-    artifactId = "impl"
+    groupId = "com.safeNest.features.core"
+    artifactId = "signIn-impl"
 }
