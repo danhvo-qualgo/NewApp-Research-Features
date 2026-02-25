@@ -1,5 +1,6 @@
 plugins {
     alias(libs.plugins.uney.application.module)
+    alias(libs.plugins.google.services)
 }
 
 applicationModule {

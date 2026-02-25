@@ -42,6 +42,10 @@ module Fastlane
       def self.authors
         ["Boss"]
       end
+
+      def self.is_supported?(platform)
+        true
+      end
     end
   end
 end

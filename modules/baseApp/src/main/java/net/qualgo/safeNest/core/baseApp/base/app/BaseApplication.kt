@@ -10,6 +10,7 @@ import androidx.work.Configuration
 import com.uney.core.logger.AppLogger
 import com.uney.core.logger.AppLoggerProvider
 import com.uney.core.remoteConfig.api.RemoteConfig
+import com.uney.core.remoteConfig.api.RemoteConfigManager
 import com.uney.core.utils.android.callback.AppCallbackManager
 import javax.inject.Inject
 
@@ -52,7 +53,7 @@ open class BaseApplication : Application(), Configuration.Provider {
             }
         })
 
-//        RemoteConfigManager.update(remoteConfig.get())
+        RemoteConfigManager.update(remoteConfig.get())
     }
 
     private fun registerProcessLifecycleOwner() {

@@ -62,6 +62,10 @@ module Fastlane
       def self.description
         "Build app with sensible defaults"
       end
+
+      def self.is_supported?(platform)
+        true
+      end
     end
   end
 end

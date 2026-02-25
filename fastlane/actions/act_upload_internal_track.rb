@@ -25,6 +25,10 @@ module Fastlane
       def self.authors
         ["Slave"]
       end
+
+      def self.is_supported?(platform)
+          true
+      end
     end
   end
 end

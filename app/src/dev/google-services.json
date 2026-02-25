@@ -1,0 +1,76 @@
+{
+  "project_info": {
+    "project_number": "123456789012",
+    "project_id": "internal-fake-project-id",
+    "storage_bucket": "internal-fake-project-id.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:123456789012:android:devrelease1234",
+        "android_client_info": {
+          "package_name": "com.safeNest.features.core.app.dev"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [{ "current_key": "AIzaSyFAKE_DEV_RELEASE_KEY" }],
+      "services": { "appinvite_service": { "other_platform_oauth_client": [] } }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:123456789012:android:devdebug1234",
+        "android_client_info": {
+          "package_name": "com.safeNest.features.core.app.dev.debug"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [{ "current_key": "AIzaSyFAKE_DEV_DEBUG_KEY" }],
+      "services": { "appinvite_service": { "other_platform_oauth_client": [] } }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:123456789012:android:qarelease1234",
+        "android_client_info": {
+          "package_name": "com.safeNest.features.core.app.qa"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [{ "current_key": "AIzaSyFAKE_QA_RELEASE_KEY" }],
+      "services": { "appinvite_service": { "other_platform_oauth_client": [] } }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:123456789012:android:qadebug1234",
+        "android_client_info": {
+          "package_name": "com.safeNest.features.core.app.qa.debug"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [{ "current_key": "AIzaSyFAKE_QA_DEBUG_KEY" }],
+      "services": { "appinvite_service": { "other_platform_oauth_client": [] } }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:123456789012:android:stagingrelease1234",
+        "android_client_info": {
+          "package_name": "com.safeNest.features.core.app.staging"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [{ "current_key": "AIzaSyFAKE_STAGING_RELEASE_KEY" }],
+      "services": { "appinvite_service": { "other_platform_oauth_client": [] } }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:123456789012:android:stagingdebug1234",
+        "android_client_info": {
+          "package_name": "com.safeNest.features.core.app.debug"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [{ "current_key": "AIzaSyFAKE_STAGING_DEBUG_KEY" }],
+      "services": { "appinvite_service": { "other_platform_oauth_client": [] } }
+    }
+  ],
+  "configuration_version": "1"
+}

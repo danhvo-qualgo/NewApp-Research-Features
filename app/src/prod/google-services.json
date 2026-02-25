@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "999999999999",
+    "project_id": "production-fake-project-id",
+    "storage_bucket": "production-fake-project-id.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:999999999999:android:prod123456abcdef",
+        "android_client_info": {
+          "package_name": "com.safeNest.features.core.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyFAKE_PROD_KEY_123456"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
