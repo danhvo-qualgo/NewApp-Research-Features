@@ -19,11 +19,10 @@ pluginManagement {
             }
         }
 
-        maven(settings.extra["JFROG_URL"].toString()) {
+        maven(System.getenv("CORE_REPOSITORY")) {
             credentials {
-                val props by lazy { loadProps() }
-                username = System.getenv("JFROG_USERNAME") ?: props.getProperty("jfrog.username")
-                password = System.getenv("JFROG_PASSWORD") ?: props.getProperty("jfrog.password")
+                username = System.getenv("CORE_USERNAME")
+                password = System.getenv("CORE_PASSWORD")
             }
         }
 
