@@ -23,7 +23,7 @@ module Fastlane
       end
 
       def self.authors
-        ["Slave"]
+        ["Core Team"]
       end
 
       def self.is_supported?(platform)

@@ -100,7 +100,7 @@ module Fastlane
       end
 
       def self.authors
-        ["Boss"]
+        ["Core Team"]
       end
 
       def self.is_supported?(platform)

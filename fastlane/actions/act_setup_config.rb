@@ -164,7 +164,7 @@ module Fastlane
       end
 
       def self.authors
-        ["NewApp Template"]
+        ["Core Team"]
       end
 
       def self.is_supported?(platform)

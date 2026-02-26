@@ -71,14 +71,6 @@ Build and upload to Google Play Store
 
 Bump app version
 
-### android setup_config
-
-```sh
-[bundle exec] fastlane android setup_config
-```
-
-Setup development configuration files
-
 ----
 
 This README.md is auto-generated and will be re-generated every time [_fastlane_](https://fastlane.tools) is run.
