@@ -53,7 +53,7 @@ safeBrowsing = "0.0.0.2"
 sentry = "5.12.2"
 splashscreen = "1.2.0"
 turbine = "1.2.1"
-uneyPlugin = "0.0.0.33-rc"
+uneyPlugin = "0.0.0.34-rc"
 workManager = "2.11.0"
 
 [libraries]

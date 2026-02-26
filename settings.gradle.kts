@@ -10,19 +10,17 @@ pluginManagement {
         mavenCentral()
         gradlePluginPortal()
 
-        fun loadProps(): java.util.Properties {
-            return java.util.Properties().apply {
-                val file = File("local.properties")
-                if (file.exists()) {
-                    file.inputStream().use { load(it) }
-                }
+        maven(System.getenv("CORE_REPOSITORY_URL")) {
+            credentials {
+                username = System.getenv("CORE_REPOSITORY_USERNAME")
+                password = System.getenv("CORE_REPOSITORY_PASSWORD")
             }
         }
 
-        maven(System.getenv("CORE_REPOSITORY")) {
+        maven(System.getenv("PUBLISH_REPOSITORY_URL")) {
             credentials {
-                username = System.getenv("CORE_USERNAME")
-                password = System.getenv("CORE_PASSWORD")
+                username = System.getenv("PUBLISH_REPOSITORY_USERNAME")
+                password = System.getenv("PUBLISH_REPOSITORY_PASSWORD")
             }
         }
 
@@ -35,20 +33,17 @@ buildscript {
         mavenCentral()
         google()
 
-        fun loadProps(): java.util.Properties {
-            return java.util.Properties().apply {
-                val file = File("local.properties")
-                if (file.exists()) {
-                    file.inputStream().use { load(it) }
-                }
+        maven(System.getenv("CORE_REPOSITORY_URL")) {
+            credentials {
+                username = System.getenv("CORE_REPOSITORY_USERNAME")
+                password = System.getenv("CORE_REPOSITORY_PASSWORD")
             }
         }
 
-        maven(settings.extra["JFROG_URL"].toString()) {
+        maven(System.getenv("PUBLISH_REPOSITORY_URL")) {
             credentials {
-                val props by lazy { loadProps() }
-                username = System.getenv("JFROG_USERNAME") ?: props.getProperty("jfrog.username")
-                password = System.getenv("JFROG_PASSWORD") ?: props.getProperty("jfrog.password")
+                username = System.getenv("PUBLISH_REPOSITORY_USERNAME")
+                password = System.getenv("PUBLISH_REPOSITORY_PASSWORD")
             }
         }
 
@@ -67,20 +62,17 @@ dependencyResolutionManagement {
         mavenCentral()
         maven(url = "https://jitpack.io")
 
-        fun loadProps(): java.util.Properties {
-            return java.util.Properties().apply {
-                val file = File("local.properties")
-                if (file.exists()) {
-                    file.inputStream().use { load(it) }
-                }
+        maven(System.getenv("CORE_REPOSITORY_URL")) {
+            credentials {
+                username = System.getenv("CORE_USERNAME")
+                password = System.getenv("CORE_PASSWORD")
             }
         }
 
-        maven(settings.extra["JFROG_URL"].toString()) {
+        maven(System.getenv("PUBLISH_REPOSITORY_URL")) {
             credentials {
-                val props by lazy { loadProps() }
-                username = System.getenv("JFROG_USERNAME") ?: props.getProperty("jfrog.username")
-                password = System.getenv("JFROG_PASSWORD") ?: props.getProperty("jfrog.password")
+                username = System.getenv("PUBLISH_REPOSITORY_USERNAME")
+                password = System.getenv("PUBLISH_REPOSITORY_PASSWORD")
             }
         }
 
