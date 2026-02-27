@@ -19,6 +19,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.example.api.presentation.router.UrlGuardDeeplink
 import net.qualgo.safeNest.core.signIn.api.presentation.router.SignInDeeplink
 import com.uney.core.router.compose.LocalRouterManager
 import com.uney.core.router.RouterManager
@@ -67,6 +68,13 @@ class HomeActivity : ComponentActivity() {
                         routerManager.navigate(this@HomeActivity, SignInDeeplink.entryPoint())
                     }
                 ) { Text("Sign In") }
+
+
+                Button(
+                    onClick = {
+                        routerManager.navigate(this@HomeActivity, UrlGuardDeeplink.entryPoint())
+                    }
+                ) { Text("Url Guard") }
             }
         }
     }

@@ -17,6 +17,7 @@ dependencies {
     implementation(project(":modules:home:api"))
     implementation(libs.core.router)
     implementation(project(":modules:signIn:api"))
+    implementation(project(":modules:urlguard:api"))
 }
 
 uneyPublishing {

@@ -1,0 +1,4 @@
+<resources>
+    <string name="title_activity_url_guard">UrlGuardActivity</string>
+    <string name="accessibility_service_description">UrlGuard monitors browser address bars to block known malicious websites and keep you safe.</string>
+</resources>

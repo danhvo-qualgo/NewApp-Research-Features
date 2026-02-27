@@ -21,4 +21,5 @@ dependencies {
     implementation(project(":modules:home:impl"))
     implementation(project(":modules:authChallenge:impl"))
     implementation(project(":modules:signIn:impl"))
+    implementation(project(":modules:urlguard:impl"))
 }
