@@ -1,8 +1,10 @@
 package com.example.impl.urlguard
 
+import android.Manifest
 import android.accessibilityservice.AccessibilityService
 import android.annotation.SuppressLint
 import android.app.Activity
+import android.content.pm.PackageManager
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -15,7 +17,10 @@ import android.graphics.Color
 import android.graphics.PixelFormat
 import android.graphics.Typeface
 import android.hardware.display.DisplayManager
+import android.hardware.display.VirtualDisplay
 import android.media.ImageReader
+import android.media.MediaRecorder
+import android.media.projection.MediaProjection
 import android.media.projection.MediaProjectionManager
 import android.net.Uri
 import android.os.Build
@@ -39,8 +44,6 @@ import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
 import androidx.core.content.res.ResourcesCompat
 import com.example.impl.urlguard.networking.ScamApiClient
-import com.safenest.urlguard.DefaultThreatEngine
-import com.safenest.urlguard.ThreatEngine
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -49,6 +52,7 @@ import kotlinx.coroutines.withContext
 import net.qualgo.safeNest.urlguard.impl.R
 import java.io.File
 import java.io.FileOutputStream
+import java.lang.ref.WeakReference
 
 /**
  * Listens to browser windows, extracts the URL from the address bar via the accessibility tree,
@@ -104,6 +108,16 @@ class UrlGuardAccessibilityService : AccessibilityService() {
     private var windowManager: WindowManager? = null
     private var floatingContainer: View? = null
     private var floatingLabel: TextView? = null
+    private var recordBtn: Button? = null
+
+    // -------------------------------------------------------------------------
+    // Screen-recording state
+    // -------------------------------------------------------------------------
+    private var isRecording = false
+    private var mediaRecorder: MediaRecorder? = null
+    private var recordingProjection: MediaProjection? = null
+    private var recordingVirtualDisplay: VirtualDisplay? = null
+    private var recordingFile: File? = null
 
     // -------------------------------------------------------------------------
     // Lifecycle
@@ -111,6 +125,7 @@ class UrlGuardAccessibilityService : AccessibilityService() {
 
     override fun onServiceConnected() {
         Log.i(TAG, "UrlGuard accessibility service connected")
+        weakInstance = WeakReference(this)
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
         createNotificationChannel()
         startForeground(1, buildNotification())
@@ -121,6 +136,8 @@ class UrlGuardAccessibilityService : AccessibilityService() {
     override fun onDestroy() {
         super.onDestroy()
         Log.i(TAG, "UrlGuard accessibility service disconnect")
+        weakInstance = null
+        if (isRecording) stopScreenRecording()
         hideFloatingButton()
     }
 
@@ -173,6 +190,7 @@ class UrlGuardAccessibilityService : AccessibilityService() {
             }
             floatingContainer = null
             floatingLabel = null
+            recordBtn = null
         }
     }
 
@@ -218,10 +236,23 @@ class UrlGuardAccessibilityService : AccessibilityService() {
         screenshotBtn.setOnClickListener { takeScreenshot() }
         container.addView(screenshotBtn)
 
+        // ── record button ─────────────────────────────────────────────────────
+        val recBtn = Button(this).apply {
+            text = "🔴 Record"
+            textSize = 11f
+            setTextColor(Color.WHITE)
+            setBackgroundColor(Color.TRANSPARENT)
+            val hpad = dpToPx(12)
+            setPadding(hpad, dpToPx(2), hpad, dpToPx(6))
+        }
+        recBtn.setOnClickListener { toggleRecording() }
+        recordBtn = recBtn
+        container.addView(recBtn)
+
         floatingContainer = container
 
         // ── window params ─────────────────────────────────────────────────────
-        val overlayType = WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY
+        val overlayType = WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
 
         val params = WindowManager.LayoutParams(
             WindowManager.LayoutParams.WRAP_CONTENT,
@@ -286,7 +317,7 @@ class UrlGuardAccessibilityService : AccessibilityService() {
         if (event == null) return
         val pkg = event.packageName?.toString() ?: return
         if (pkg == packageName) return  // ignore our own overlay events
-
+        Log.d("xxx", "Event : $event")
         when (event.eventType) {
             AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED -> {
                 if (BROWSER_PACKAGES.contains(pkg)) {
@@ -621,6 +652,7 @@ class UrlGuardAccessibilityService : AccessibilityService() {
         val projection = try {
             projMgr.getMediaProjection(mediaProjectionResultCode, mediaProjectionData!!)
         } catch (e: Exception) {
+            e.printStackTrace()
             Log.e(TAG, "getMediaProjection failed: ${e.message}")
             updateFloatingText("📷 Permission expired\nReopen app")
             return
@@ -693,6 +725,7 @@ class UrlGuardAccessibilityService : AccessibilityService() {
             Log.i(TAG, "Screenshot saved: $filename")
             mainHandler.post { updateFloatingText("📷 Saved to gallery!") }
         } catch (e: Exception) {
+            e.printStackTrace()
             Log.e(TAG, "saveToGallery failed: ${e.message}", e)
             mainHandler.post { updateFloatingText("📷 Save failed") }
         }
@@ -726,12 +759,10 @@ class UrlGuardAccessibilityService : AccessibilityService() {
     }
 
     private fun setUrlBarText(urlBar: AccessibilityNodeInfo, text: String) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            val args = Bundle().apply {
-                putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, text)
-            }
-            urlBar.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, args)
+        val args = Bundle().apply {
+            putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, text)
         }
+        urlBar.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, args)
     }
 
     private fun findAndClickGoButton(root: AccessibilityNodeInfo) {
@@ -766,6 +797,10 @@ class UrlGuardAccessibilityService : AccessibilityService() {
 
     companion object {
         private const val TAG = "UrlGuardA11y"
+
+        // ── Live service reference (used by ScreenCapturePermissionActivity) ──
+        @Volatile private var weakInstance: WeakReference<UrlGuardAccessibilityService>? = null
+        fun getInstance(): UrlGuardAccessibilityService? = weakInstance?.get()
 
         // ── URL cache settings ────────────────────────────────────────────────
         private const val URL_CACHE_TTL_MS   = 5 * 60 * 1000L  // 5 minutes

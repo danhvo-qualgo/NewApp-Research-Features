@@ -1,4 +1,4 @@
-package com.safenest.urlguard
+package com.example.impl.urlguard
 
 import android.util.Log
 import java.net.URL

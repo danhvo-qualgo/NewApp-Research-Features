@@ -7,6 +7,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color
 import android.media.projection.MediaProjectionManager
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
@@ -71,6 +72,15 @@ class UrlGuardActivity : ComponentActivity() {
 fun MainScreen() {
     val context = LocalContext.current
 
+    // ── "Display over other apps" permission ──────────────────────────────────
+    var isOverlayGranted by remember {
+        mutableStateOf(Settings.canDrawOverlays(context))
+    }
+    // StartActivityForResult: re-check the flag when the user comes back from Settings
+    val overlayPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { isOverlayGranted = Settings.canDrawOverlays(context) }
+
     // ── Notification permission (Android 13+) ─────────────────────────────────
     var notificationPermissionGranted by remember {
         mutableStateOf(
@@ -86,6 +96,18 @@ fun MainScreen() {
     ) { granted -> notificationPermissionGranted = granted }
 
 
+
+    // ── Audio permission (for screen recording with microphone) ───────────────
+    var isAudioGranted by remember {
+        mutableStateOf(
+            ContextCompat.checkSelfPermission(
+                context, Manifest.permission.RECORD_AUDIO
+            ) == PackageManager.PERMISSION_GRANTED
+        )
+    }
+    val audioPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted -> isAudioGranted = granted }
 
     // ── Storage permission (Android 9 and below only) ─────────────────────────
     var isStorageGranted by remember {
@@ -104,6 +126,9 @@ fun MainScreen() {
     LaunchedEffect(Unit) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !notificationPermissionGranted) {
             notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
+        if (!isAudioGranted) {
+            audioPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
         }
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q && !isStorageGranted) {
             storagePermissionLauncher.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE)
@@ -155,6 +180,28 @@ fun MainScreen() {
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
+            // ── Display over other apps ────────────────────────────────────────
+            if (!isOverlayGranted) {
+                Spacer(modifier = Modifier.height(16.dp))
+                Button(
+                    onClick = {
+                        overlayPermissionLauncher.launch(
+                            Intent(
+                                Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                                Uri.parse("package:${context.packageName}")
+                            )
+                        )
+                    }
+                ) { Text("Allow Display over Other Apps") }
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "Required to show the floating protection overlay on top of other apps.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center
+                )
+            }
+
             // ── Notification permission ────────────────────────────────────────
             if (!notificationPermissionGranted && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 Spacer(modifier = Modifier.height(16.dp))
@@ -166,6 +213,23 @@ fun MainScreen() {
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = "Notifications are used to alert you when a threat is blocked.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center
+                )
+            }
+
+            // ── Audio permission (microphone for screen recording) ─────────────
+            if (!isAudioGranted) {
+                Spacer(modifier = Modifier.height(16.dp))
+                Button(
+                    onClick = {
+                        audioPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                    }
+                ) { Text("Allow Microphone") }
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "Required to record audio while capturing the screen.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center
