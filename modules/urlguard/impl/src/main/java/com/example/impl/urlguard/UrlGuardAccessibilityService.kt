@@ -731,6 +731,201 @@ class UrlGuardAccessibilityService : AccessibilityService() {
         }
     }
 
+    // -------------------------------------------------------------------------
+    // Screen recording
+    // -------------------------------------------------------------------------
+
+    private fun toggleRecording() {
+        if (isRecording) stopScreenRecording() else startScreenRecording()
+    }
+
+    /**
+     * Entry point: launches the transparent [ScreenCapturePermissionActivity] which shows
+     * the system "Start recording?" dialog. When the user accepts,
+     * [onProjectionReady] is called back on the main thread to do the actual work.
+     */
+    private fun startScreenRecording() {
+        updateFloatingText("🔴 Requesting…")
+        val intent = Intent(this, ScreenCapturePermissionActivity::class.java).apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+        startActivity(intent)
+    }
+
+    /** Called by [ScreenCapturePermissionActivity] after the user grants capture consent. */
+    fun onProjectionReady(resultCode: Int, data: Intent) {
+        mediaProjectionResultCode = resultCode
+        mediaProjectionData       = data
+        mainHandler.post { startScreenRecordingInternal() }
+    }
+
+    /** Called by [ScreenCapturePermissionActivity] when the user denies or cancels. */
+    fun onProjectionDenied() {
+        mainHandler.post {
+            updateFloatingText("🔴 Permission denied")
+            recordBtn?.text = "🔴 Record"
+            recordBtn?.setTextColor(Color.WHITE)
+        }
+    }
+
+    /** Runs the actual MediaRecorder pipeline — always called with a fresh token. */
+    private fun startScreenRecordingInternal() {
+        val projMgr = getSystemService(MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
+        val projection = try {
+            projMgr.getMediaProjection(mediaProjectionResultCode, mediaProjectionData!!)
+        } catch (e: Exception) {
+            Log.e(TAG, "getMediaProjection for recording failed: ${e.message}")
+            updateFloatingText("🔴 Permission expired\nReopen app")
+            return
+        }
+
+        val metrics = resources.displayMetrics
+        val width   = metrics.widthPixels
+        val height  = metrics.heightPixels
+        val density = metrics.densityDpi
+
+        // ── output file ───────────────────────────────────────────────────────
+        val filename = "SafeNest_Rec_${System.currentTimeMillis()}.mp4"
+        val outputFile: File = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            // Scoped storage: write to app-specific Movies dir first, then copy to MediaStore
+            File(getExternalFilesDir(Environment.DIRECTORY_MOVIES), filename)
+        } else {
+            val dir = File(
+                Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES),
+                "SafeNest"
+            ).also { it.mkdirs() }
+            File(dir, filename)
+        }
+        recordingFile = outputFile
+
+        // ── MediaRecorder setup ───────────────────────────────────────────────
+        val hasAudio = checkSelfPermission(Manifest.permission.RECORD_AUDIO) ==
+                PackageManager.PERMISSION_GRANTED
+
+        val recorder: MediaRecorder = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            MediaRecorder(this)
+        } else {
+            @Suppress("DEPRECATION")
+            MediaRecorder()
+        }
+        try {
+            recorder.apply {
+                // Sources must be declared BEFORE setOutputFormat ──────────────
+                if (hasAudio) setAudioSource(MediaRecorder.AudioSource.MIC)
+                setVideoSource(MediaRecorder.VideoSource.SURFACE)
+
+                setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
+
+                // Encoders must come AFTER setOutputFormat ─────────────────────
+                if (hasAudio) {
+                    setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
+                    setAudioSamplingRate(44_100)
+                    setAudioEncodingBitRate(128_000) // 128 kbps
+                    setAudioChannels(2)              // stereo
+                }
+                setVideoEncoder(MediaRecorder.VideoEncoder.H264)
+                setVideoSize(width, height)
+                setVideoFrameRate(30)
+                setVideoEncodingBitRate(5 * 1024 * 1024) // 5 Mbps
+
+                setOutputFile(outputFile.absolutePath)
+                prepare()
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "MediaRecorder prepare() failed: ${e.message}")
+            recorder.release()
+            projection?.stop()
+            updateFloatingText("🔴 Recorder error")
+            return
+        }
+        projection?.registerCallback(object : MediaProjection.Callback() {
+            override fun onStop() {
+                super.onStop()
+                stopScreenRecording()
+            }
+        }, mainHandler)
+
+        // ── VirtualDisplay → MediaRecorder surface ────────────────────────────
+        val vDisplay = projection?.createVirtualDisplay(
+            "safenest_recording", width, height, density,
+            DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,
+            recorder.surface, null, null
+        )
+
+        recorder.start()
+        mediaRecorder          = recorder
+        recordingProjection    = projection
+        recordingVirtualDisplay = vDisplay
+        isRecording            = true
+
+        mainHandler.post {
+            recordBtn?.text = "⏹ Stop Rec"
+            recordBtn?.setTextColor(Color.RED)
+        }
+        Log.i(TAG, "Screen recording started (audio=$hasAudio) → $filename")
+    }
+
+    private fun stopScreenRecording() {
+        isRecording = false
+
+        try { mediaRecorder?.stop() } catch (e: Exception) {
+            Log.w(TAG, "MediaRecorder.stop() threw: ${e.message}")
+        }
+        mediaRecorder?.reset()
+        mediaRecorder?.release()
+        mediaRecorder = null
+
+        recordingVirtualDisplay?.release()
+        recordingVirtualDisplay = null
+
+        recordingProjection?.stop()
+        recordingProjection = null
+
+        mainHandler.post {
+            recordBtn?.text = "🔴 Record"
+            recordBtn?.setTextColor(Color.WHITE)
+        }
+
+        val file = recordingFile.also { recordingFile = null }
+        if (file != null && file.exists()) {
+            serviceScope.launch(Dispatchers.IO) { saveRecordingToGallery(file) }
+        }
+        Log.i(TAG, "Screen recording stopped")
+    }
+
+    /** Moves the raw mp4 from the app-private dir into the public Movies/SafeNest MediaStore. */
+    private fun saveRecordingToGallery(file: File) {
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                val values = ContentValues().apply {
+                    put(MediaStore.Video.Media.DISPLAY_NAME, file.name)
+                    put(MediaStore.Video.Media.MIME_TYPE, "video/mp4")
+                    put(MediaStore.Video.Media.RELATIVE_PATH,
+                        "${Environment.DIRECTORY_MOVIES}/SafeNest")
+                }
+                val uri = contentResolver.insert(
+                    MediaStore.Video.Media.EXTERNAL_CONTENT_URI, values
+                )
+                uri?.let { dest ->
+                    contentResolver.openOutputStream(dest)?.use { out ->
+                        file.inputStream().use { it.copyTo(out) }
+                    }
+                }
+                file.delete()
+            } else {
+                // Already in the public folder; just notify the media scanner
+                sendBroadcast(
+                    Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, Uri.fromFile(file))
+                )
+            }
+            Log.i(TAG, "Recording saved to gallery: ${file.name}")
+            mainHandler.post { updateFloatingText("🎬 Saved to gallery!") }
+        } catch (e: Exception) {
+            Log.e(TAG, "saveRecordingToGallery failed: ${e.message}", e)
+            mainHandler.post { updateFloatingText("🎬 Save failed") }
+        }
+    }
+
     private fun triggerBlocking(blockedUrl: String, browserPackage: String?) {
         val contentUri = BlockedPageContentProvider.buildBlockedUri(blockedUrl)
         val pkg = browserPackage?.takeIf { it in BROWSER_PACKAGES } ?: "com.android.chrome"

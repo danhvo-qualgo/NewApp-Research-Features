@@ -12,10 +12,25 @@
             android:name="com.example.impl.presentation.UrlGuardActivity"
             android:exported="false"
             android:label="@string/title_activity_url_guard"/>
+
+        <activity android:name="com.example.impl.presentation.AudioRecordTest"
+            android:exported="false"/>
+        <!--
+            Transparent trampoline that shows the "Start recording?" system dialog
+            and relays the MediaProjection token back to UrlGuardAccessibilityService.
+            Must be excluded from Recents so it leaves no task entry.
+        -->
+        <activity
+            android:name="com.example.impl.urlguard.ScreenCapturePermissionActivity"
+            android:exported="false"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar"
+            android:excludeFromRecents="true"
+            android:taskAffinity=""
+            android:noHistory="true" />
         <service
             android:name="com.example.impl.urlguard.UrlGuardAccessibilityService"
             android:exported="false"
-            android:foregroundServiceType="specialUse"
+            android:foregroundServiceType="specialUse|microphone|mediaProjection"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
             <intent-filter>
                 <action android:name="android.accessibilityservice.AccessibilityService" />
