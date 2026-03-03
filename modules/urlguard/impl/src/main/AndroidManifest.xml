@@ -28,6 +28,12 @@
             android:authorities="com.safenest.urlguard"
             android:exported="true"
             android:grantUriPermissions="true" />
+
+        <provider
+            android:name="com.example.impl.urlguard.FormWarningPageContentProvider"
+            android:authorities="com.safenest.urlguard.warning"
+            android:exported="true"
+            android:grantUriPermissions="true" />
     </application>
 
 </manifest>
