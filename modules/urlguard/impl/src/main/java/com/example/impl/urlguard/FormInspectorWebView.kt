@@ -42,7 +42,7 @@ class FormInspectorWebView(
                     val fields = parseFields(result)
                     cancelTimeout()
 
-                    Log.d("Form inspector", result)
+                    Log.d(TAG, result)
                     onResult(hasSensitiveForm, fields)
                     cleanup()
                 }
@@ -79,7 +79,6 @@ class FormInspectorWebView(
 
         timeoutRunnable = Runnable {
             cleanup()
-            Log.d("Test", "Run timeout")
             onResult(false, emptyList())
         }.also { mainHandler.postDelayed(it, TIMEOUT_MS) }
     }

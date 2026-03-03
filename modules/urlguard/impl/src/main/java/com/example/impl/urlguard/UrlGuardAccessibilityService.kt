@@ -507,7 +507,6 @@ class UrlGuardAccessibilityService : AccessibilityService() {
         }
 
         triggerFormInspection(url)
-        Log.d("Test", "Run 2")
     }
 
     // -------------------------------------------------------------------------
@@ -753,11 +752,9 @@ class UrlGuardAccessibilityService : AccessibilityService() {
         val normalized = normalizeUrl(url)
         if (normalized in userAllowedUrls) return
         if (formScanCache[normalized] == false) return
-        Log.d("Test", url)
 
         formInspector.inspect(normalized) { hasSensitiveForm, detectedFields ->
             formScanCache[normalized] = hasSensitiveForm
-            Log.d("Test", "hasSensitiveForm: $hasSensitiveForm")
             if (hasSensitiveForm) {
                 Log.w(TAG, "Sensitive form detected at $normalized: $detectedFields")
                 userAllowedUrls += normalized
