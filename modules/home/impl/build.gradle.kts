@@ -19,6 +19,7 @@ dependencies {
     implementation(libs.core.router)
     implementation(project(":modules:signIn:api"))
     implementation(project(":modules:urlguard:api"))
+    implementation(project(":modules:permissionmanager:api"))
     implementation(project(":modules:phishingDetection:api"))
     implementation(project(":modules:notificationInterceptor:api"))
 }
