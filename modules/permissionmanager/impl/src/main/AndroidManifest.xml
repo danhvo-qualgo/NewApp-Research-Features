@@ -1,5 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!--
+        Required on Android 11+ (API 30+) to enumerate installed packages and
+        read their declared permissions via PackageManager.getInstalledPackages().
+    -->
+    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
+
     <application>
         <activity
             android:name="net.qualgo.safeNest.permissionmanager.impl.presentation.PermissionManagerActivity"

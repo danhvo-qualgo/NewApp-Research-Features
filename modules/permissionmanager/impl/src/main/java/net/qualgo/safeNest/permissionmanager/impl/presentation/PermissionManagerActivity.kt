@@ -11,6 +11,7 @@ import com.uney.core.router.RouterManager
 import com.uney.core.router.compose.LocalRouterManager
 import dagger.hilt.android.AndroidEntryPoint
 import net.qualgo.safeNest.permissionmanager.PermissionManagerTheme
+import net.qualgo.safeNest.permissionmanager.impl.presentation.screen.PermissionManagerScreen
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -28,7 +29,7 @@ class PermissionManagerActivity : ComponentActivity() {
         setContent {
             PermissionManagerTheme {
                 CompositionLocalProvider(LocalRouterManager provides routerManager) {
-                    // TODO: Add PermissionManager screen composable
+                    PermissionManagerScreen()
                 }
             }
         }

@@ -16,6 +16,9 @@ android {
 dependencies {
     implementation(project(":modules:permissionmanager:api"))
     implementation(libs.core.router)
+    implementation(libs.hilt.navigation)
+    implementation(libs.androidx.compose.material.icons.core)
+    implementation(libs.androidx.lifecycle.runtime.ktx)
 }
 
 uneyPublishing {
