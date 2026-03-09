@@ -12,6 +12,7 @@ import android.app.PendingIntent
 import android.content.ContentValues
 import android.content.Intent
 import android.content.pm.ApplicationInfo
+import android.content.pm.ServiceInfo
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.PixelFormat
@@ -19,7 +20,6 @@ import android.graphics.Typeface
 import android.hardware.display.DisplayManager
 import android.hardware.display.VirtualDisplay
 import android.media.ImageReader
-import android.media.MediaRecorder
 import android.media.projection.MediaProjection
 import android.media.projection.MediaProjectionManager
 import android.net.Uri
@@ -53,6 +53,7 @@ import net.qualgo.safeNest.urlguard.impl.R
 import java.io.File
 import java.io.FileOutputStream
 import java.lang.ref.WeakReference
+import androidx.core.graphics.createBitmap
 
 /**
  * Listens to browser windows, extracts the URL from the address bar via the accessibility tree,
@@ -111,13 +112,20 @@ class UrlGuardAccessibilityService : AccessibilityService() {
     private var recordBtn: Button? = null
 
     // -------------------------------------------------------------------------
-    // Screen-recording state
+    // Frame-interception state
     // -------------------------------------------------------------------------
-    private var isRecording = false
-    private var mediaRecorder: MediaRecorder? = null
-    private var recordingProjection: MediaProjection? = null
-    private var recordingVirtualDisplay: VirtualDisplay? = null
-    private var recordingFile: File? = null
+    private var isCapturing = false
+    private var capturingProjection: MediaProjection? = null
+    private var capturingVirtualDisplay: VirtualDisplay? = null
+    private var capturingImageReader: ImageReader? = null
+    private var frameCount = 0L
+    private var lastFrameTimeMs = 0L
+
+    /** Minimum gap between processed frames. Increase to reduce CPU/memory pressure. */
+    private val frameIntervalMs = 1_000L  // 1 frame per second
+
+    /** WebSocket streamer — created when capture starts, torn down when it stops. */
+    private var frameStreamClient: FrameStreamClient? = null
 
     // -------------------------------------------------------------------------
     // Lifecycle
@@ -128,7 +136,12 @@ class UrlGuardAccessibilityService : AccessibilityService() {
         weakInstance = WeakReference(this)
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
         createNotificationChannel()
-        startForeground(1, buildNotification())
+        if(Build.VERSION.SDK_INT > Build.VERSION_CODES.P) {
+            startForeground(1, buildNotification(),
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION)
+        } else {
+            startForeground(1, buildNotification())
+        }
 
         showFloatingButton("chrome")
     }
@@ -137,7 +150,7 @@ class UrlGuardAccessibilityService : AccessibilityService() {
         super.onDestroy()
         Log.i(TAG, "UrlGuard accessibility service disconnect")
         weakInstance = null
-        if (isRecording) stopScreenRecording()
+        if (isCapturing) stopFrameCapture()
         hideFloatingButton()
     }
 
@@ -236,16 +249,16 @@ class UrlGuardAccessibilityService : AccessibilityService() {
         screenshotBtn.setOnClickListener { takeScreenshot() }
         container.addView(screenshotBtn)
 
-        // ── record button ─────────────────────────────────────────────────────
+        // ── frame-capture button ──────────────────────────────────────────────
         val recBtn = Button(this).apply {
-            text = "🔴 Record"
+            text = "📹 Capture"
             textSize = 11f
             setTextColor(Color.WHITE)
             setBackgroundColor(Color.TRANSPARENT)
             val hpad = dpToPx(12)
             setPadding(hpad, dpToPx(2), hpad, dpToPx(6))
         }
-        recBtn.setOnClickListener { toggleRecording() }
+        recBtn.setOnClickListener { toggleFrameCapture() }
         recordBtn = recBtn
         container.addView(recBtn)
 
@@ -732,20 +745,20 @@ class UrlGuardAccessibilityService : AccessibilityService() {
     }
 
     // -------------------------------------------------------------------------
-    // Screen recording
+    // Frame interception
     // -------------------------------------------------------------------------
 
-    private fun toggleRecording() {
-        if (isRecording) stopScreenRecording() else startScreenRecording()
+    private fun toggleFrameCapture() {
+        if (isCapturing) stopFrameCapture() else startFrameCapture()
     }
 
     /**
      * Entry point: launches the transparent [ScreenCapturePermissionActivity] which shows
-     * the system "Start recording?" dialog. When the user accepts,
-     * [onProjectionReady] is called back on the main thread to do the actual work.
+     * the system capture-consent dialog. When the user accepts,
+     * [onProjectionReady] is called back on the main thread to start frame interception.
      */
-    private fun startScreenRecording() {
-        updateFloatingText("🔴 Requesting…")
+    private fun startFrameCapture() {
+        updateFloatingText("📹 Requesting…")
         val intent = Intent(this, ScreenCapturePermissionActivity::class.java).apply {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         }
@@ -756,26 +769,30 @@ class UrlGuardAccessibilityService : AccessibilityService() {
     fun onProjectionReady(resultCode: Int, data: Intent) {
         mediaProjectionResultCode = resultCode
         mediaProjectionData       = data
-        mainHandler.post { startScreenRecordingInternal() }
+        mainHandler.post { startFrameCaptureInternal() }
     }
 
     /** Called by [ScreenCapturePermissionActivity] when the user denies or cancels. */
     fun onProjectionDenied() {
         mainHandler.post {
-            updateFloatingText("🔴 Permission denied")
-            recordBtn?.text = "🔴 Record"
+            updateFloatingText("📹 Permission denied")
+            recordBtn?.text = "📹 Capture"
             recordBtn?.setTextColor(Color.WHITE)
         }
     }
 
-    /** Runs the actual MediaRecorder pipeline — always called with a fresh token. */
-    private fun startScreenRecordingInternal() {
+    /**
+     * Starts the frame-interception pipeline using [ImageReader] + [VirtualDisplay].
+     * Every time the display produces a new frame [onFrameCaptured] is called
+     * with a software [Bitmap] you can analyse, process, or forward as needed.
+     */
+    private fun startFrameCaptureInternal() {
         val projMgr = getSystemService(MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
         val projection = try {
             projMgr.getMediaProjection(mediaProjectionResultCode, mediaProjectionData!!)
         } catch (e: Exception) {
-            Log.e(TAG, "getMediaProjection for recording failed: ${e.message}")
-            updateFloatingText("🔴 Permission expired\nReopen app")
+            Log.e(TAG, "getMediaProjection for frame capture failed: ${e.message}")
+            updateFloatingText("📹 Permission expired\nReopen app")
             return
         }
 
@@ -784,146 +801,98 @@ class UrlGuardAccessibilityService : AccessibilityService() {
         val height  = metrics.heightPixels
         val density = metrics.densityDpi
 
-        // ── output file ───────────────────────────────────────────────────────
-        val filename = "SafeNest_Rec_${System.currentTimeMillis()}.mp4"
-        val outputFile: File = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            // Scoped storage: write to app-specific Movies dir first, then copy to MediaStore
-            File(getExternalFilesDir(Environment.DIRECTORY_MOVIES), filename)
-        } else {
-            val dir = File(
-                Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES),
-                "SafeNest"
-            ).also { it.mkdirs() }
-            File(dir, filename)
-        }
-        recordingFile = outputFile
+        // ── ImageReader: buffer size 2 so the producer is never stalled ───────
+        val imageReader = ImageReader.newInstance(width, height, PixelFormat.RGBA_8888, 2)
 
-        // ── MediaRecorder setup ───────────────────────────────────────────────
-        val hasAudio = checkSelfPermission(Manifest.permission.RECORD_AUDIO) ==
-                PackageManager.PERMISSION_GRANTED
-
-        val recorder: MediaRecorder = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            MediaRecorder(this)
-        } else {
-            @Suppress("DEPRECATION")
-            MediaRecorder()
-        }
-        try {
-            recorder.apply {
-                // Sources must be declared BEFORE setOutputFormat ──────────────
-                if (hasAudio) setAudioSource(MediaRecorder.AudioSource.MIC)
-                setVideoSource(MediaRecorder.VideoSource.SURFACE)
-
-                setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
-
-                // Encoders must come AFTER setOutputFormat ─────────────────────
-                if (hasAudio) {
-                    setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
-                    setAudioSamplingRate(44_100)
-                    setAudioEncodingBitRate(128_000) // 128 kbps
-                    setAudioChannels(2)              // stereo
-                }
-                setVideoEncoder(MediaRecorder.VideoEncoder.H264)
-                setVideoSize(width, height)
-                setVideoFrameRate(30)
-                setVideoEncodingBitRate(5 * 1024 * 1024) // 5 Mbps
-
-                setOutputFile(outputFile.absolutePath)
-                prepare()
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "MediaRecorder prepare() failed: ${e.message}")
-            recorder.release()
-            projection?.stop()
-            updateFloatingText("🔴 Recorder error")
-            return
-        }
-        projection?.registerCallback(object : MediaProjection.Callback() {
-            override fun onStop() {
-                super.onStop()
-                stopScreenRecording()
+        imageReader.setOnImageAvailableListener({ reader ->
+            val image = reader.acquireLatestImage() ?: return@setOnImageAvailableListener
+            image.use { image ->
+                val plane      = image.planes[0]
+                val rowPadding = plane.rowStride - plane.pixelStride * width
+                val raw = createBitmap(width + rowPadding / plane.pixelStride, height)
+                raw.copyPixelsFromBuffer(plane.buffer)
+                // Crop to exact screen dimensions (strip row padding)
+                val bitmap = if (rowPadding == 0) raw
+                else Bitmap.createBitmap(raw, 0, 0, width, height).also { raw.recycle() }
+                onFrameCaptured(bitmap)
             }
         }, mainHandler)
 
-        // ── VirtualDisplay → MediaRecorder surface ────────────────────────────
+        projection?.registerCallback(object : MediaProjection.Callback() {
+            override fun onStop() {
+                super.onStop()
+                stopFrameCapture()
+            }
+        }, mainHandler)
+
+        // ── VirtualDisplay → ImageReader surface ──────────────────────────────
         val vDisplay = projection?.createVirtualDisplay(
-            "safenest_recording", width, height, density,
+            "safenest_frame_capture", width, height, density,
             DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,
-            recorder.surface, null, null
+            imageReader.surface, null, null
         )
 
-        recorder.start()
-        mediaRecorder          = recorder
-        recordingProjection    = projection
-        recordingVirtualDisplay = vDisplay
-        isRecording            = true
+        capturingProjection    = projection
+        capturingVirtualDisplay = vDisplay
+        capturingImageReader   = imageReader
+        frameCount             = 0L
+        lastFrameTimeMs        = 0L
+        isCapturing            = true
+
+        // ── Start WebSocket stream to backend ─────────────────────────────────
+        frameStreamClient = FrameStreamClient(FrameStreamClient.DEFAULT_URL).also { it.start() }
 
         mainHandler.post {
-            recordBtn?.text = "⏹ Stop Rec"
+            recordBtn?.text = "⏹ Stop"
             recordBtn?.setTextColor(Color.RED)
         }
-        Log.i(TAG, "Screen recording started (audio=$hasAudio) → $filename")
+        Log.i(TAG, "Frame capture started (${width}x${height})")
     }
 
-    private fun stopScreenRecording() {
-        isRecording = false
+    private fun stopFrameCapture() {
+        isCapturing = false
 
-        try { mediaRecorder?.stop() } catch (e: Exception) {
-            Log.w(TAG, "MediaRecorder.stop() threw: ${e.message}")
-        }
-        mediaRecorder?.reset()
-        mediaRecorder?.release()
-        mediaRecorder = null
+        capturingImageReader?.setOnImageAvailableListener(null, null)
+        capturingImageReader?.close()
+        capturingImageReader = null
 
-        recordingVirtualDisplay?.release()
-        recordingVirtualDisplay = null
+        capturingVirtualDisplay?.release()
+        capturingVirtualDisplay = null
 
-        recordingProjection?.stop()
-        recordingProjection = null
+        capturingProjection?.stop()
+        capturingProjection = null
+
+        frameStreamClient?.stop()
+        frameStreamClient = null
 
         mainHandler.post {
-            recordBtn?.text = "🔴 Record"
+            recordBtn?.text = "📹 Capture"
             recordBtn?.setTextColor(Color.WHITE)
         }
-
-        val file = recordingFile.also { recordingFile = null }
-        if (file != null && file.exists()) {
-            serviceScope.launch(Dispatchers.IO) { saveRecordingToGallery(file) }
-        }
-        Log.i(TAG, "Screen recording stopped")
+        Log.i(TAG, "Frame capture stopped — total frames intercepted: $frameCount")
     }
 
-    /** Moves the raw mp4 from the app-private dir into the public Movies/SafeNest MediaStore. */
-    private fun saveRecordingToGallery(file: File) {
-        try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                val values = ContentValues().apply {
-                    put(MediaStore.Video.Media.DISPLAY_NAME, file.name)
-                    put(MediaStore.Video.Media.MIME_TYPE, "video/mp4")
-                    put(MediaStore.Video.Media.RELATIVE_PATH,
-                        "${Environment.DIRECTORY_MOVIES}/SafeNest")
-                }
-                val uri = contentResolver.insert(
-                    MediaStore.Video.Media.EXTERNAL_CONTENT_URI, values
-                )
-                uri?.let { dest ->
-                    contentResolver.openOutputStream(dest)?.use { out ->
-                        file.inputStream().use { it.copyTo(out) }
-                    }
-                }
-                file.delete()
-            } else {
-                // Already in the public folder; just notify the media scanner
-                sendBroadcast(
-                    Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, Uri.fromFile(file))
-                )
-            }
-            Log.i(TAG, "Recording saved to gallery: ${file.name}")
-            mainHandler.post { updateFloatingText("🎬 Saved to gallery!") }
-        } catch (e: Exception) {
-            Log.e(TAG, "saveRecordingToGallery failed: ${e.message}", e)
-            mainHandler.post { updateFloatingText("🎬 Save failed") }
+    /**
+     * Called on the main thread for every new frame produced by the display.
+     *
+     * The [bitmap] is a full-resolution software [Bitmap] (ARGB_8888) that you own;
+     * **you must call [Bitmap.recycle] when you are done with it.**
+     *
+     * Override or extend this method to plug in your own analysis pipeline
+     * (e.g. OCR, phishing-screenshot detection, image hashing, etc.).
+     */
+    private fun onFrameCaptured(bitmap: Bitmap) {
+        val now = System.currentTimeMillis()
+        if (now - lastFrameTimeMs < frameIntervalMs) {
+            // Too soon — drop this frame and release it immediately
+            bitmap.recycle()
+            return
         }
+        lastFrameTimeMs = now
+        frameCount++
+        Log.d(TAG, "Frame #$frameCount intercepted (${bitmap.width}x${bitmap.height})")
+        // Stream frame to backend over WebSocket (enqueueFrame recycles the bitmap)
+        frameStreamClient?.enqueueFrame(bitmap) ?: bitmap.recycle()
     }
 
     private fun triggerBlocking(blockedUrl: String, browserPackage: String?) {
