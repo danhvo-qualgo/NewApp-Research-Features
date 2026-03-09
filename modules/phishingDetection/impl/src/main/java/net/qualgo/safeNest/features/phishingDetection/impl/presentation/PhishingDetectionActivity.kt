@@ -32,6 +32,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -39,13 +40,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.uney.core.router.RouterManager
 import com.uney.core.router.compose.LocalRouterManager
 import dagger.hilt.android.AndroidEntryPoint
@@ -57,8 +59,6 @@ class PhishingDetectionActivity : ComponentActivity() {
     @Inject
     lateinit var routerManager: RouterManager
 
-    private val viewModel: PhishingDetectionViewModel by viewModels()
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge(
@@ -68,18 +68,33 @@ class PhishingDetectionActivity : ComponentActivity() {
 
         setContent {
             androidx.compose.runtime.CompositionLocalProvider(LocalRouterManager provides routerManager) {
-                PhishingDetectionScreen(viewModel)
+                PhishingDetectionScreen()
             }
         }
     }
 }
 
 @Composable
-fun PhishingDetectionScreen(viewModel: PhishingDetectionViewModel) {
+fun PhishingDetectionScreen(viewModel: PhishingDetectionViewModel = hiltViewModel()) {
     val uiState by viewModel.uiState.collectAsState()
     var urlInput by remember { mutableStateOf("") }
-    var webViewContainer by remember { mutableStateOf<FrameLayout?>(null) }
     val focusManager = LocalFocusManager.current
+    val context = LocalContext.current
+
+    var webViewContainer by remember { mutableStateOf<FrameLayout?>(null) }
+
+    LaunchedEffect(Unit) {
+        viewModel.effect.collect { effect ->
+            when (effect) {
+                is PhishingUiEffect.InspectUrl -> {
+                    val container = webViewContainer ?: return@collect
+                    WebsiteInspectorWebView(context, container).inspect(effect.url) { result ->
+                        viewModel.onWebInspectionResult(effect.url, result)
+                    }
+                }
+            }
+        }
+    }
 
     Box(
         modifier = Modifier
@@ -88,7 +103,9 @@ fun PhishingDetectionScreen(viewModel: PhishingDetectionViewModel) {
     ) {
         AndroidView(
             factory = { ctx ->
-                FrameLayout(ctx).also { webViewContainer = it }
+                FrameLayout(ctx).also {
+                    webViewContainer = it
+                }
             },
             modifier = Modifier.height(0.dp)
         )
@@ -125,9 +142,7 @@ fun PhishingDetectionScreen(viewModel: PhishingDetectionViewModel) {
                 keyboardActions = KeyboardActions(
                     onGo = {
                         focusManager.clearFocus()
-                        webViewContainer?.let {
-                            viewModel.scanUrl(urlInput, it)
-                        }
+                        viewModel.onScanRequested(urlInput)
                     }
                 ),
                 enabled = uiState !is PhishingUiState.Loading
@@ -140,9 +155,7 @@ fun PhishingDetectionScreen(viewModel: PhishingDetectionViewModel) {
             Button(
                 onClick = {
                     focusManager.clearFocus()
-                    webViewContainer?.let {
-                        viewModel.scanUrl(urlInput, it)
-                    }
+                    viewModel.onScanRequested(urlInput)
                 },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = uiState !is PhishingUiState.Loading

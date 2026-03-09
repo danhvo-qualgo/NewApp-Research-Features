@@ -1,13 +1,14 @@
 package net.qualgo.safeNest.features.phishingDetection.impl.presentation
 
-import android.app.Application
-import android.view.ViewGroup
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import net.qualgo.safeNest.features.phishingDetection.impl.presentation.models.WebsiteMetadata
@@ -22,18 +23,24 @@ sealed class PhishingUiState {
     data class Error(val message: String) : PhishingUiState()
 }
 
+sealed class PhishingUiEffect {
+    data class InspectUrl(val url: String) : PhishingUiEffect()
+}
+
 @HiltViewModel
 class PhishingDetectionViewModel @Inject constructor(
-    application: Application
-) : AndroidViewModel(application) {
+    private val modelStorage: ModelStorage
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow<PhishingUiState>(PhishingUiState.Idle)
     val uiState: StateFlow<PhishingUiState> = _uiState
 
-    private var inspector: WebsiteInspectorWebView? = null
+    private val _effect = Channel<PhishingUiEffect>(Channel.BUFFERED)
+    val effect: Flow<PhishingUiEffect> = _effect.receiveAsFlow()
+
     private val analyzer = PhishingLlmAnalyzer()
 
-    fun scanUrl(url: String, container: ViewGroup) {
+    fun onScanRequested(url: String) {
         val trimmedUrl = url.trim()
         if (trimmedUrl.isBlank()) {
             _uiState.value = PhishingUiState.Error("Please enter a URL")
@@ -45,24 +52,24 @@ class PhishingDetectionViewModel @Inject constructor(
             "https://$trimmedUrl"
         }
 
-        inspector?.cleanup()
         _uiState.value = PhishingUiState.Loading
-
-        val newInspector = WebsiteInspectorWebView(getApplication(), container)
-        inspector = newInspector
-        newInspector.inspect(normalizedUrl) { scanResult: kotlin.Result<WebsiteMetadata> ->
-            scanResult.fold(
-                onSuccess = { metadata -> startAnalysis(normalizedUrl, metadata) },
-                onFailure = { error -> _uiState.value = PhishingUiState.Error(error.message ?: "Unknown error") }
-            )
+        viewModelScope.launch {
+            _effect.send(PhishingUiEffect.InspectUrl(normalizedUrl))
         }
+    }
+
+    fun onWebInspectionResult(url: String, result: Result<WebsiteMetadata>) {
+        result.fold(
+            onSuccess = { metadata -> startAnalysis(url, metadata) },
+            onFailure = { error -> _uiState.value = PhishingUiState.Error(error.message ?: "Unknown error") }
+        )
     }
 
     private fun startAnalysis(url: String, metadata: WebsiteMetadata) {
         viewModelScope.launch {
             try {
                 val modelFolder = ModelDownloader.ensureModel(
-                    context = getApplication(),
+                    modelDir = modelStorage.modelDir,
                     onProgress = { percent ->
                         _uiState.value = PhishingUiState.Downloading(metadata, percent)
                     },
@@ -96,8 +103,6 @@ class PhishingDetectionViewModel @Inject constructor(
 
     override fun onCleared() {
         super.onCleared()
-        inspector?.cleanup()
-        inspector = null
         analyzer.release()
     }
 }

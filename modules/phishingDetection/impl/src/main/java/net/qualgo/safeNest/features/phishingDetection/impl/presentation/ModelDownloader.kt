@@ -1,6 +1,5 @@
 package net.qualgo.safeNest.features.phishingDetection.impl.presentation
 
-import android.content.Context
 import android.util.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -35,23 +34,10 @@ object ModelDownloader {
         "llm.mnn.weight",
     )
 
-    /**
-     * Ensures the model folder is fully populated.
-     *
-     * Must be called on a coroutine that can be suspended; internally
-     * switches to [Dispatchers.IO] for all blocking I/O.
-     *
-     * @param context     Application / activity context (only [Context.getFilesDir] is used).
-     * @param onProgress  Invoked with values 0–100 as each byte is downloaded.
-     *                    Always called with 100 when the function returns successfully.
-     * @return            The model folder [File] (exists and contains all 7 files).
-     * @throws RuntimeException if any file fails to download after the attempt.
-     */
     suspend fun ensureModel(
-        context: Context,
+        modelDir: File,
         onProgress: (percent: Int) -> Unit,
     ): File = withContext(Dispatchers.IO) {
-        val modelDir = File(context.filesDir, ".mnnmodels/Qwen3.5-2B-MNN")
         modelDir.mkdirs()
 
         // Determine which files still need to be fetched
