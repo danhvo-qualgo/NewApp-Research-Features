@@ -1,0 +1,3 @@
+package net.qualgo.safeNest.features.phishingDetection.api
+
+interface PhishingDetectionProvider

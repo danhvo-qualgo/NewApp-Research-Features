@@ -24,6 +24,8 @@ import net.qualgo.safeNest.core.signIn.api.presentation.router.SignInDeeplink
 import com.uney.core.router.compose.LocalRouterManager
 import com.uney.core.router.RouterManager
 import dagger.hilt.android.AndroidEntryPoint
+import net.qualgo.safeNest.features.notificationInterceptor.api.presentation.router.NotificationInterceptorDeeplink
+import net.qualgo.safeNest.features.phishingDetection.api.presentation.router.PhishingDetectionDeeplink
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -75,6 +77,18 @@ class HomeActivity : ComponentActivity() {
                         routerManager.navigate(this@HomeActivity, UrlGuardDeeplink.entryPoint())
                     }
                 ) { Text("Url Guard") }
+
+                Button(
+                    onClick = {
+                        routerManager.navigate(this@HomeActivity, PhishingDetectionDeeplink.entryPoint())
+                    }
+                ) { Text("Phishing Detection") }
+
+                Button(
+                    onClick = {
+                        routerManager.navigate(this@HomeActivity, NotificationInterceptorDeeplink.entryPoint())
+                    }
+                ) { Text("Notification Interceptor") }
             }
         }
     }

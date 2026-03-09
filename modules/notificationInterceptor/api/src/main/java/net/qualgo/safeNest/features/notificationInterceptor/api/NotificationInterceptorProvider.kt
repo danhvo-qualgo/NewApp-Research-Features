@@ -1,0 +1,3 @@
+package net.qualgo.safeNest.features.notificationInterceptor.api
+
+interface NotificationInterceptorProvider

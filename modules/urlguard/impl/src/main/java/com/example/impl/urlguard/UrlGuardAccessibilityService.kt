@@ -102,6 +102,16 @@ class UrlGuardAccessibilityService : AccessibilityService() {
         override fun removeEldestEntry(eldest: Map.Entry<String, UrlCacheEntry>) = size > URL_CACHE_MAX_SIZE
     }
 
+    private lateinit var formInspector: FormInspectorWebView
+
+    // URLs the user explicitly allowed this session — never re-warn
+    private val userAllowedUrls = mutableSetOf<String>()
+
+    // Cache of form scan results: normalizedUrl → hasSensitiveForm
+    private val formScanCache = object : LinkedHashMap<String, Boolean>(32, 0.75f, true) {
+        override fun removeEldestEntry(eldest: Map.Entry<String, Boolean>) = size > 30
+    }
+
 
     // -------------------------------------------------------------------------
     // Floating overlay state
@@ -135,6 +145,7 @@ class UrlGuardAccessibilityService : AccessibilityService() {
         Log.i(TAG, "UrlGuard accessibility service connected")
         weakInstance = WeakReference(this)
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
+        formInspector = FormInspectorWebView(this, windowManager!!)
         createNotificationChannel()
         if(Build.VERSION.SDK_INT > Build.VERSION_CODES.P) {
             startForeground(1, buildNotification(),
@@ -148,6 +159,7 @@ class UrlGuardAccessibilityService : AccessibilityService() {
 
     override fun onDestroy() {
         super.onDestroy()
+        formInspector.cleanup()
         Log.i(TAG, "UrlGuard accessibility service disconnect")
         weakInstance = null
         if (isCapturing) stopFrameCapture()
@@ -537,6 +549,8 @@ class UrlGuardAccessibilityService : AccessibilityService() {
             Log.w(TAG, "Blocking malicious URL: $url")
             triggerBlocking(blockedUrl = url, browserPackage = lastBrowserPackage)
         }
+
+        triggerFormInspection(url)
     }
 
     // -------------------------------------------------------------------------
@@ -908,6 +922,41 @@ class UrlGuardAccessibilityService : AccessibilityService() {
             startActivity(intent)
         } catch (e: Exception) {
             Log.e(TAG, "triggerBlocking: startActivity failed", e)
+        }
+    }
+
+    private fun triggerFormWarning(
+        originalUrl: String,
+        detectedFields: List<String>,
+        browserPackage: String?
+    ) {
+        val warningUri = FormWarningPageContentProvider.buildWarningUri(originalUrl, detectedFields)
+        val pkg = browserPackage?.takeIf { it in BROWSER_PACKAGES } ?: "com.android.chrome"
+        val intent = Intent(Intent.ACTION_VIEW).apply {
+            setDataAndType(warningUri, "text/html")
+            setPackage(pkg)
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        Log.d(TAG, "triggerWarning: launching browser with content:// uri=$warningUri pkg=$pkg")
+        try {
+            startActivity(intent)
+        } catch (e: Exception) {
+            Log.e(TAG, "triggerFormWarning: startActivity failed", e)
+        }
+    }
+
+    private fun triggerFormInspection(url: String) {
+        val normalized = normalizeUrl(url)
+        if (normalized in userAllowedUrls) return
+        if (formScanCache[normalized] == false) return
+
+        formInspector.inspect(normalized) { hasSensitiveForm, detectedFields ->
+            formScanCache[normalized] = hasSensitiveForm
+            if (hasSensitiveForm) {
+                Log.w(TAG, "Sensitive form detected at $normalized: $detectedFields")
+                userAllowedUrls += normalized
+                triggerFormWarning(normalized, detectedFields, lastBrowserPackage)
+            }
         }
     }
 
