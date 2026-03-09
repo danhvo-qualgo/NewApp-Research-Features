@@ -7,7 +7,6 @@ import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.activity.viewModels
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -48,6 +47,9 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 import com.uney.core.router.RouterManager
 import com.uney.core.router.compose.LocalRouterManager
 import dagger.hilt.android.AndroidEntryPoint
@@ -68,14 +70,78 @@ class PhishingDetectionActivity : ComponentActivity() {
 
         setContent {
             androidx.compose.runtime.CompositionLocalProvider(LocalRouterManager provides routerManager) {
-                PhishingDetectionScreen()
+                val navController = rememberNavController()
+                NavHost(
+                    navController = navController,
+                    startDestination = "option"
+                ) {
+                    composable("option") {
+                        PhishingDetectionOptionScreen(
+                            onUrlCheckerClick = { navController.navigate("url_checker") },
+                            onTextImageCheckerClick = { navController.navigate("text_image_checker") }
+                        )
+                    }
+                    composable("url_checker") {
+                        PhishingUrlDetectionScreen()
+                    }
+                    composable("text_image_checker") {
+                        PhishingTextDetectionScreen()
+                    }
+                }
             }
         }
     }
 }
 
 @Composable
-fun PhishingDetectionScreen(viewModel: PhishingDetectionViewModel = hiltViewModel()) {
+fun PhishingDetectionOptionScreen(
+    onUrlCheckerClick: () -> Unit = {},
+    onTextImageCheckerClick: () -> Unit = {}
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(color = androidx.compose.ui.graphics.Color.White)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 16.dp)
+                .systemBarsPadding(),
+            verticalArrangement = Arrangement.Top
+        ) {
+            Button(onClick = onUrlCheckerClick) {
+                Text("URL Checker")
+            }
+
+            Button(onClick = onTextImageCheckerClick) {
+                Text("Text/Image Checker")
+            }
+        }
+    }
+}
+
+@Composable
+fun PhishingTextDetectionScreen() {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(color = androidx.compose.ui.graphics.Color.White)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 16.dp)
+                .systemBarsPadding(),
+            verticalArrangement = Arrangement.Top
+        ) {
+            Text("Hello")
+        }
+    }
+}
+
+@Composable
+fun PhishingUrlDetectionScreen(viewModel: PhishingDetectionViewModel = hiltViewModel()) {
     val uiState by viewModel.uiState.collectAsState()
     var urlInput by remember { mutableStateOf("") }
     val focusManager = LocalFocusManager.current
