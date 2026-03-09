@@ -1,8 +1,10 @@
 package com.example.impl.urlguard
 
+import android.Manifest
 import android.accessibilityservice.AccessibilityService
 import android.annotation.SuppressLint
 import android.app.Activity
+import android.content.pm.PackageManager
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -10,12 +12,15 @@ import android.app.PendingIntent
 import android.content.ContentValues
 import android.content.Intent
 import android.content.pm.ApplicationInfo
+import android.content.pm.ServiceInfo
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.PixelFormat
 import android.graphics.Typeface
 import android.hardware.display.DisplayManager
+import android.hardware.display.VirtualDisplay
 import android.media.ImageReader
+import android.media.projection.MediaProjection
 import android.media.projection.MediaProjectionManager
 import android.net.Uri
 import android.os.Build
@@ -39,8 +44,6 @@ import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
 import androidx.core.content.res.ResourcesCompat
 import com.example.impl.urlguard.networking.ScamApiClient
-import com.safenest.urlguard.DefaultThreatEngine
-import com.safenest.urlguard.ThreatEngine
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -49,6 +52,8 @@ import kotlinx.coroutines.withContext
 import net.qualgo.safeNest.urlguard.impl.R
 import java.io.File
 import java.io.FileOutputStream
+import java.lang.ref.WeakReference
+import androidx.core.graphics.createBitmap
 
 /**
  * Listens to browser windows, extracts the URL from the address bar via the accessibility tree,
@@ -114,6 +119,23 @@ class UrlGuardAccessibilityService : AccessibilityService() {
     private var windowManager: WindowManager? = null
     private var floatingContainer: View? = null
     private var floatingLabel: TextView? = null
+    private var recordBtn: Button? = null
+
+    // -------------------------------------------------------------------------
+    // Frame-interception state
+    // -------------------------------------------------------------------------
+    private var isCapturing = false
+    private var capturingProjection: MediaProjection? = null
+    private var capturingVirtualDisplay: VirtualDisplay? = null
+    private var capturingImageReader: ImageReader? = null
+    private var frameCount = 0L
+    private var lastFrameTimeMs = 0L
+
+    /** Minimum gap between processed frames. Increase to reduce CPU/memory pressure. */
+    private val frameIntervalMs = 1_000L  // 1 frame per second
+
+    /** WebSocket streamer — created when capture starts, torn down when it stops. */
+    private var frameStreamClient: FrameStreamClient? = null
 
     // -------------------------------------------------------------------------
     // Lifecycle
@@ -121,10 +143,16 @@ class UrlGuardAccessibilityService : AccessibilityService() {
 
     override fun onServiceConnected() {
         Log.i(TAG, "UrlGuard accessibility service connected")
+        weakInstance = WeakReference(this)
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
         formInspector = FormInspectorWebView(this, windowManager!!)
         createNotificationChannel()
-        startForeground(1, buildNotification())
+        if(Build.VERSION.SDK_INT > Build.VERSION_CODES.P) {
+            startForeground(1, buildNotification(),
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION)
+        } else {
+            startForeground(1, buildNotification())
+        }
 
         showFloatingButton("chrome")
     }
@@ -133,6 +161,8 @@ class UrlGuardAccessibilityService : AccessibilityService() {
         super.onDestroy()
         formInspector.cleanup()
         Log.i(TAG, "UrlGuard accessibility service disconnect")
+        weakInstance = null
+        if (isCapturing) stopFrameCapture()
         hideFloatingButton()
     }
 
@@ -185,6 +215,7 @@ class UrlGuardAccessibilityService : AccessibilityService() {
             }
             floatingContainer = null
             floatingLabel = null
+            recordBtn = null
         }
     }
 
@@ -230,10 +261,23 @@ class UrlGuardAccessibilityService : AccessibilityService() {
         screenshotBtn.setOnClickListener { takeScreenshot() }
         container.addView(screenshotBtn)
 
+        // ── frame-capture button ──────────────────────────────────────────────
+        val recBtn = Button(this).apply {
+            text = "📹 Capture"
+            textSize = 11f
+            setTextColor(Color.WHITE)
+            setBackgroundColor(Color.TRANSPARENT)
+            val hpad = dpToPx(12)
+            setPadding(hpad, dpToPx(2), hpad, dpToPx(6))
+        }
+        recBtn.setOnClickListener { toggleFrameCapture() }
+        recordBtn = recBtn
+        container.addView(recBtn)
+
         floatingContainer = container
 
         // ── window params ─────────────────────────────────────────────────────
-        val overlayType = WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY
+        val overlayType = WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
 
         val params = WindowManager.LayoutParams(
             WindowManager.LayoutParams.WRAP_CONTENT,
@@ -298,7 +342,7 @@ class UrlGuardAccessibilityService : AccessibilityService() {
         if (event == null) return
         val pkg = event.packageName?.toString() ?: return
         if (pkg == packageName) return  // ignore our own overlay events
-
+        Log.d("xxx", "Event : $event")
         when (event.eventType) {
             AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED -> {
                 if (BROWSER_PACKAGES.contains(pkg)) {
@@ -635,6 +679,7 @@ class UrlGuardAccessibilityService : AccessibilityService() {
         val projection = try {
             projMgr.getMediaProjection(mediaProjectionResultCode, mediaProjectionData!!)
         } catch (e: Exception) {
+            e.printStackTrace()
             Log.e(TAG, "getMediaProjection failed: ${e.message}")
             updateFloatingText("📷 Permission expired\nReopen app")
             return
@@ -707,9 +752,161 @@ class UrlGuardAccessibilityService : AccessibilityService() {
             Log.i(TAG, "Screenshot saved: $filename")
             mainHandler.post { updateFloatingText("📷 Saved to gallery!") }
         } catch (e: Exception) {
+            e.printStackTrace()
             Log.e(TAG, "saveToGallery failed: ${e.message}", e)
             mainHandler.post { updateFloatingText("📷 Save failed") }
         }
+    }
+
+    // -------------------------------------------------------------------------
+    // Frame interception
+    // -------------------------------------------------------------------------
+
+    private fun toggleFrameCapture() {
+        if (isCapturing) stopFrameCapture() else startFrameCapture()
+    }
+
+    /**
+     * Entry point: launches the transparent [ScreenCapturePermissionActivity] which shows
+     * the system capture-consent dialog. When the user accepts,
+     * [onProjectionReady] is called back on the main thread to start frame interception.
+     */
+    private fun startFrameCapture() {
+        updateFloatingText("📹 Requesting…")
+        val intent = Intent(this, ScreenCapturePermissionActivity::class.java).apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+        startActivity(intent)
+    }
+
+    /** Called by [ScreenCapturePermissionActivity] after the user grants capture consent. */
+    fun onProjectionReady(resultCode: Int, data: Intent) {
+        mediaProjectionResultCode = resultCode
+        mediaProjectionData       = data
+        mainHandler.post { startFrameCaptureInternal() }
+    }
+
+    /** Called by [ScreenCapturePermissionActivity] when the user denies or cancels. */
+    fun onProjectionDenied() {
+        mainHandler.post {
+            updateFloatingText("📹 Permission denied")
+            recordBtn?.text = "📹 Capture"
+            recordBtn?.setTextColor(Color.WHITE)
+        }
+    }
+
+    /**
+     * Starts the frame-interception pipeline using [ImageReader] + [VirtualDisplay].
+     * Every time the display produces a new frame [onFrameCaptured] is called
+     * with a software [Bitmap] you can analyse, process, or forward as needed.
+     */
+    private fun startFrameCaptureInternal() {
+        val projMgr = getSystemService(MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
+        val projection = try {
+            projMgr.getMediaProjection(mediaProjectionResultCode, mediaProjectionData!!)
+        } catch (e: Exception) {
+            Log.e(TAG, "getMediaProjection for frame capture failed: ${e.message}")
+            updateFloatingText("📹 Permission expired\nReopen app")
+            return
+        }
+
+        val metrics = resources.displayMetrics
+        val width   = metrics.widthPixels
+        val height  = metrics.heightPixels
+        val density = metrics.densityDpi
+
+        // ── ImageReader: buffer size 2 so the producer is never stalled ───────
+        val imageReader = ImageReader.newInstance(width, height, PixelFormat.RGBA_8888, 2)
+
+        imageReader.setOnImageAvailableListener({ reader ->
+            val image = reader.acquireLatestImage() ?: return@setOnImageAvailableListener
+            image.use { image ->
+                val plane      = image.planes[0]
+                val rowPadding = plane.rowStride - plane.pixelStride * width
+                val raw = createBitmap(width + rowPadding / plane.pixelStride, height)
+                raw.copyPixelsFromBuffer(plane.buffer)
+                // Crop to exact screen dimensions (strip row padding)
+                val bitmap = if (rowPadding == 0) raw
+                else Bitmap.createBitmap(raw, 0, 0, width, height).also { raw.recycle() }
+                onFrameCaptured(bitmap)
+            }
+        }, mainHandler)
+
+        projection?.registerCallback(object : MediaProjection.Callback() {
+            override fun onStop() {
+                super.onStop()
+                stopFrameCapture()
+            }
+        }, mainHandler)
+
+        // ── VirtualDisplay → ImageReader surface ──────────────────────────────
+        val vDisplay = projection?.createVirtualDisplay(
+            "safenest_frame_capture", width, height, density,
+            DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,
+            imageReader.surface, null, null
+        )
+
+        capturingProjection    = projection
+        capturingVirtualDisplay = vDisplay
+        capturingImageReader   = imageReader
+        frameCount             = 0L
+        lastFrameTimeMs        = 0L
+        isCapturing            = true
+
+        // ── Start WebSocket stream to backend ─────────────────────────────────
+        frameStreamClient = FrameStreamClient(FrameStreamClient.DEFAULT_URL).also { it.start() }
+
+        mainHandler.post {
+            recordBtn?.text = "⏹ Stop"
+            recordBtn?.setTextColor(Color.RED)
+        }
+        Log.i(TAG, "Frame capture started (${width}x${height})")
+    }
+
+    private fun stopFrameCapture() {
+        isCapturing = false
+
+        capturingImageReader?.setOnImageAvailableListener(null, null)
+        capturingImageReader?.close()
+        capturingImageReader = null
+
+        capturingVirtualDisplay?.release()
+        capturingVirtualDisplay = null
+
+        capturingProjection?.stop()
+        capturingProjection = null
+
+        frameStreamClient?.stop()
+        frameStreamClient = null
+
+        mainHandler.post {
+            recordBtn?.text = "📹 Capture"
+            recordBtn?.setTextColor(Color.WHITE)
+        }
+        Log.i(TAG, "Frame capture stopped — total frames intercepted: $frameCount")
+    }
+
+    /**
+     * Called on the main thread for every new frame produced by the display.
+     *
+     * The [bitmap] is a full-resolution software [Bitmap] (ARGB_8888) that you own;
+     * **you must call [Bitmap.recycle] when you are done with it.**
+     *
+     * Override or extend this method to plug in your own analysis pipeline
+     * (e.g. OCR, phishing-screenshot detection, image hashing, etc.).
+     */
+    private fun onFrameCaptured(bitmap: Bitmap) {
+        val now = System.currentTimeMillis()
+        if (now - lastFrameTimeMs < frameIntervalMs) {
+            // Too soon — drop this frame and release it immediately
+            bitmap.recycle()
+            return
+        }
+        lastFrameTimeMs = now
+        frameCount++
+        Log.d(TAG, "Frame #$frameCount intercepted (${bitmap.width}x${bitmap.height})")
+        // Stream frame to backend over WebSocket (enqueueFrame recycles the bitmap)
+        frameStreamClient?.enqueueFrame(bitmap) ?: bitmap.recycle()
     }
 
     private fun triggerBlocking(blockedUrl: String, browserPackage: String?) {
@@ -775,12 +972,10 @@ class UrlGuardAccessibilityService : AccessibilityService() {
     }
 
     private fun setUrlBarText(urlBar: AccessibilityNodeInfo, text: String) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            val args = Bundle().apply {
-                putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, text)
-            }
-            urlBar.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, args)
+        val args = Bundle().apply {
+            putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, text)
         }
+        urlBar.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, args)
     }
 
     private fun findAndClickGoButton(root: AccessibilityNodeInfo) {
@@ -815,6 +1010,10 @@ class UrlGuardAccessibilityService : AccessibilityService() {
 
     companion object {
         private const val TAG = "UrlGuardA11y"
+
+        // ── Live service reference (used by ScreenCapturePermissionActivity) ──
+        @Volatile private var weakInstance: WeakReference<UrlGuardAccessibilityService>? = null
+        fun getInstance(): UrlGuardAccessibilityService? = weakInstance?.get()
 
         // ── URL cache settings ────────────────────────────────────────────────
         private const val URL_CACHE_TTL_MS   = 5 * 60 * 1000L  // 5 minutes
