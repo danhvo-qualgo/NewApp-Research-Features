@@ -22,4 +22,6 @@ dependencies {
     implementation(project(":modules:authChallenge:impl"))
     implementation(project(":modules:signIn:impl"))
     implementation(project(":modules:urlguard:impl"))
+    implementation(project(":modules:phishingDetection:impl"))
+    implementation(project(":modules:notificationInterceptor:impl"))
 }
