@@ -4,6 +4,8 @@ import com.uney.core.router.Router
 import com.safeNest.features.call.callDetection.api.CallDetectionProvider
 import com.safeNest.features.call.callDetection.impl.presentation.CallDetectionProviderImpl
 import com.safeNest.features.call.callDetection.impl.presentation.router.CallDetectionRouter
+import com.safeNest.features.call.callDetection.impl.presentation.service.handler.CallDetectionHandler
+import com.safeNest.features.call.callDetection.impl.presentation.service.handler.CallDetectionHandlerImpl
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -19,4 +21,7 @@ internal class AppModule {
     @IntoSet
     @Provides
     fun providerCallDetectionRouter(impl: CallDetectionRouter): Router = impl
+
+    @Provides
+    fun providerCallDetectionHandler(impl: CallDetectionHandlerImpl): CallDetectionHandler = impl
 }

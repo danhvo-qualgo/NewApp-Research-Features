@@ -1,0 +1,11 @@
+package com.safeNest.features.call.callDetection.impl.domain.repository
+
+import com.safeNest.features.call.callDetection.impl.domain.model.BlacklistPattern
+import com.safeNest.features.call.callDetection.impl.domain.model.WhitelistNumber
+import kotlinx.coroutines.flow.Flow
+
+interface BlacklistPatternRepository {
+    fun getBlacklistPatterns(): Flow<List<BlacklistPattern>>
+    suspend fun add(pattern: String)
+    suspend fun remove(pattern: String)
+}

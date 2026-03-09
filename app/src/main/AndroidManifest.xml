@@ -14,5 +14,16 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.App"
-        tools:replace="android:dataExtractionRules,android:fullBackupContent" />
+        tools:replace="android:dataExtractionRules,android:fullBackupContent" >
+        <service
+            android:name="com.safeNest.features.call.callDetection.impl.presentation.service.call.MyConnectionService"
+            android:permission="android.permission.BIND_TELECOM_CONNECTION_SERVICE"
+            android:exported="true"
+            tools:node="merge">
+
+            <intent-filter>
+                <action android:name="android.telecom.ConnectionService"/>
+            </intent-filter>
+        </service>
+    </application>
 </manifest>

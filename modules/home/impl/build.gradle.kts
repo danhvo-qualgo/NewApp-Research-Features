@@ -15,6 +15,7 @@ android {
 
 dependencies {
     implementation(project(":modules:home:api"))
+    implementation(project(":modules:callDetection:impl"))
     implementation(libs.core.router)
     implementation(project(":modules:signIn:api"))
 }
