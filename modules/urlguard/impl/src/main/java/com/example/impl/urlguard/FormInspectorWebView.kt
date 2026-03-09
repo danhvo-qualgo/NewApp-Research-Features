@@ -116,7 +116,7 @@ class FormInspectorWebView(
             (function() {
                 var inputs = document.querySelectorAll('input, select, textarea');
                 var sensitiveTypes = ['password', 'tel', 'date'];
-                var sensitiveKeywords = ['phone','birth','dob','national','id',
+                var sensitiveKeywords = ['phone','birth','dob',
                     'passport','ssn','identity','mobile','pin'];
                 var sensitiveAC = ['bday','bday-day','bday-month','bday-year','tel',
                     'tel-national','new-password','current-password',
