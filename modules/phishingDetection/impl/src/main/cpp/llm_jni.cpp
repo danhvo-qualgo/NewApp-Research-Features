@@ -201,20 +201,46 @@ Java_net_qualgo_safeNest_features_phishingDetection_impl_presentation_PhishingLl
 
     LOGI("nativeCreate: loading model from %s", pathStr.c_str());
     Llm* llm = nullptr;
+
+    // ── Attempt 1: OpenCL (GPU) ───────────────────────────────────────────────
+    // thread_num=68 is the value recommended by MNN maintainers for OpenCL on Android.
+    // If OpenCL is unavailable (libMNN not built with it, or device has no GPU driver),
+    // MNN will either throw or return a broken state — we catch that and fall back below.
     try {
         llm = Llm::createLLM(pathStr);
         if (!llm) {
             LOGE("nativeCreate: Llm::createLLM returned null");
             return 0L;
         }
+        llm->set_config("{\"backend_type\": \"opencl\", \"thread_num\": 68}");
         llm->load();
-        LOGI("nativeCreate: model loaded successfully");
+        LOGI("nativeCreate: model loaded successfully on GPU (OpenCL)");
+        return reinterpret_cast<jlong>(llm);
     } catch (const std::exception& e) {
-        LOGE("nativeCreate: exception: %s", e.what());
+        LOGI("nativeCreate: GPU load failed (%s), retrying on CPU", e.what());
+        delete llm;
+        llm = nullptr;
+    } catch (...) {
+        LOGI("nativeCreate: GPU load failed (unknown), retrying on CPU");
+        delete llm;
+        llm = nullptr;
+    }
+
+    // ── Attempt 2: CPU fallback ───────────────────────────────────────────────
+    try {
+        llm = Llm::createLLM(pathStr);
+        if (!llm) {
+            LOGE("nativeCreate: Llm::createLLM returned null on CPU fallback");
+            return 0L;
+        }
+        llm->load();
+        LOGI("nativeCreate: model loaded successfully on CPU");
+    } catch (const std::exception& e) {
+        LOGE("nativeCreate: CPU fallback also failed: %s", e.what());
         delete llm;
         return 0L;
     } catch (...) {
-        LOGE("nativeCreate: unknown exception");
+        LOGE("nativeCreate: CPU fallback failed (unknown exception)");
         delete llm;
         return 0L;
     }
