@@ -64,6 +64,8 @@ import com.uney.core.router.compose.LocalRouterManager
 import dagger.hilt.android.AndroidEntryPoint
 import net.qualgo.safeNest.features.phishingDetection.impl.presentation.models.ExtractedEntities
 import net.qualgo.safeNest.features.phishingDetection.impl.presentation.models.WebsiteMetadata
+import net.qualgo.safeNest.features.phishingDetection.impl.presentation.ModelState
+import net.qualgo.safeNest.features.phishingDetection.impl.presentation.OptionViewModel
 import net.qualgo.safeNest.features.phishingDetection.impl.presentation.textPhisingDetection.ExtractionMethod
 import net.qualgo.safeNest.features.phishingDetection.impl.presentation.textPhisingDetection.TextImageUiState
 import net.qualgo.safeNest.features.phishingDetection.impl.presentation.textPhisingDetection.TextImageViewModel
@@ -112,9 +114,12 @@ class PhishingDetectionActivity : ComponentActivity() {
 
 @Composable
 fun PhishingDetectionOptionScreen(
+    viewModel: OptionViewModel = hiltViewModel(),
     onUrlCheckerClick: () -> Unit = {},
     onTextImageCheckerClick: () -> Unit = {}
 ) {
+    val modelState by viewModel.modelState.collectAsState()
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -127,12 +132,92 @@ fun PhishingDetectionOptionScreen(
                 .systemBarsPadding(),
             verticalArrangement = Arrangement.Top
         ) {
-            Button(onClick = onUrlCheckerClick) {
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Text(
+                text = "Phishing Detection",
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold,
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // ── Model status ─────────────────────────────────────────────────
+            when (val state = modelState) {
+                is ModelState.Idle -> {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                        Text(
+                            text = "Preparing model…",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+                is ModelState.Downloading -> {
+                    Text(
+                        text = "Downloading model… ${state.progressPercent}%",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    LinearProgressIndicator(
+                        progress = { state.progressPercent / 100f },
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+                is ModelState.Loading -> {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                        Text(
+                            text = "Loading model into memory…",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+                is ModelState.Ready -> {
+                    Text(
+                        text = "Model ready",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                }
+                is ModelState.Error -> {
+                    Text(
+                        text = "Model error: ${state.message}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            val modelReady = modelState is ModelState.Ready
+
+            Button(
+                onClick = onUrlCheckerClick,
+                modifier = Modifier.fillMaxWidth(),
+                enabled = modelReady,
+            ) {
                 Text("URL Checker")
             }
 
-            Button(onClick = onTextImageCheckerClick) {
-                Text("Text/Image Checker")
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Button(
+                onClick = onTextImageCheckerClick,
+                modifier = Modifier.fillMaxWidth(),
+                enabled = modelReady,
+            ) {
+                Text("Text / Image Checker")
             }
         }
     }

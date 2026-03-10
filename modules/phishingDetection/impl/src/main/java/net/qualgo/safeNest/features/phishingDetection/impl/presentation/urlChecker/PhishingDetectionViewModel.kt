@@ -11,9 +11,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import net.qualgo.safeNest.features.phishingDetection.impl.presentation.ModelDownloader
-import net.qualgo.safeNest.features.phishingDetection.impl.presentation.ModelStorage
-import net.qualgo.safeNest.features.phishingDetection.impl.presentation.PhishingLlmAnalyzer
+import net.qualgo.safeNest.features.phishingDetection.impl.presentation.ModelManager
 import net.qualgo.safeNest.features.phishingDetection.impl.presentation.models.WebsiteMetadata
 import javax.inject.Inject
 
@@ -32,7 +30,7 @@ sealed class PhishingUiEffect {
 
 @HiltViewModel
 class PhishingDetectionViewModel @Inject constructor(
-    private val modelStorage: ModelStorage
+    private val modelManager: ModelManager,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<PhishingUiState>(PhishingUiState.Idle)
@@ -40,8 +38,6 @@ class PhishingDetectionViewModel @Inject constructor(
 
     private val _effect = Channel<PhishingUiEffect>(Channel.BUFFERED)
     val effect: Flow<PhishingUiEffect> = _effect.receiveAsFlow()
-
-    private val analyzer = PhishingLlmAnalyzer()
 
     fun onScanRequested(url: String) {
         val trimmedUrl = url.trim()
@@ -71,22 +67,15 @@ class PhishingDetectionViewModel @Inject constructor(
     private fun startAnalysis(url: String, metadata: WebsiteMetadata) {
         viewModelScope.launch {
             try {
-                val modelFolder = ModelDownloader.ensureModel(
-                    modelDir = modelStorage.modelDir,
-                    onProgress = { percent ->
-                        _uiState.value = PhishingUiState.Downloading(metadata, percent)
-                    },
-                )
-
-                withContext(Dispatchers.IO) {
-                    analyzer.load(modelFolder)
-                }
+                // Model is already loaded by the option screen; ensureReady() is a no-op
+                // if already Ready, so this acts as a safe fallback only.
+                modelManager.ensureReady()
 
                 _uiState.value = PhishingUiState.Analyzing(metadata, "")
 
                 withContext(Dispatchers.IO) {
                     val tokens = StringBuilder()
-                    analyzer.analyze(
+                    modelManager.analyzer.analyze(
                         url = url,
                         metadata = metadata,
                         onToken = { token ->
@@ -102,10 +91,5 @@ class PhishingDetectionViewModel @Inject constructor(
                 _uiState.value = PhishingUiState.Error(e.message ?: "Analysis failed")
             }
         }
-    }
-
-    override fun onCleared() {
-        super.onCleared()
-        analyzer.release()
     }
 }

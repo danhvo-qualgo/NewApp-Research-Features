@@ -14,22 +14,19 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import net.qualgo.safeNest.features.phishingDetection.impl.presentation.ModelDownloader
-import net.qualgo.safeNest.features.phishingDetection.impl.presentation.ModelStorage
-import net.qualgo.safeNest.features.phishingDetection.impl.presentation.PhishingLlmAnalyzer
+import net.qualgo.safeNest.features.phishingDetection.impl.presentation.ModelManager
 import net.qualgo.safeNest.features.phishingDetection.impl.presentation.models.ExtractedEntities
 import javax.inject.Inject
 
 @HiltViewModel
 class TextImageViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
-    private val modelStorage: ModelStorage,
+    private val modelManager: ModelManager,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<TextImageUiState>(TextImageUiState.Idle)
     val uiState: StateFlow<TextImageUiState> = _uiState
     private val regexExtractor = RegexEntityExtractor()
-    private val llmAnalyzer = PhishingLlmAnalyzer()
 
     fun onTextSubmit(text: String, method: ExtractionMethod) {
         val trimmed = text.trim()
@@ -76,16 +73,12 @@ class TextImageViewModel @Inject constructor(
                     Log.d("LLM extraction", text)
                     _uiState.value = TextImageUiState.Extracting(method, text)
                     try {
-                        val modelFolder = ModelDownloader.ensureModel(
-                            modelDir = modelStorage.modelDir,
-                            onProgress = { /* model already cached for URL checker usage */ },
-                        )
-                        withContext(Dispatchers.IO) {
-                            llmAnalyzer.load(modelFolder)
-                        }
+                        // Model is guaranteed loaded by the option screen; ensureReady()
+                        // is a no-op if already Ready, so this is safe as a fallback.
+                        modelManager.ensureReady()
                         val entities = LlmEntityExtractor.extract(
                             text = text,
-                            analyzer = llmAnalyzer,
+                            analyzer = modelManager.analyzer,
                             onProgress = { partial ->
                                 _uiState.value = TextImageUiState.Extracting(method, text, partial)
                             },
@@ -117,9 +110,12 @@ class TextImageViewModel @Inject constructor(
             val summary = DeepResearchSummarizer.summarize(researchResult)
             val analysisPrompt = buildAnalysisPrompt(redactedText, summary)
 
+            // Model is already loaded; ensureReady() is a no-op here.
+            modelManager.ensureReady()
+
             val tokens = StringBuilder()
             withContext(Dispatchers.IO) {
-                llmAnalyzer.llmProcessing(
+                modelManager.analyzer.llmProcessing(
                     prompt = analysisPrompt,
                     onToken = { token ->
                         tokens.append(token)
@@ -157,13 +153,8 @@ class TextImageViewModel @Inject constructor(
         if (summary.isNotBlank()) {
             append("Research findings:\n$summary\n\n")
         }
-        append("Assess the phishing risk. Respond text only with:: Risk level (Likely Scam | Suspicious | Likely Legit | Unknown), Confidence (0% to 100%), and 2-3 key signals.")
+        append("Assess the phishing risk. Respond text only with: Risk level (Likely Scam | Suspicious | Likely Legit | Unknown), Confidence (0% to 100%), and 2-3 key signals.")
         append("<|im_end|>\n")
         append("<|im_start|>assistant\n")
-    }
-
-    override fun onCleared() {
-        super.onCleared()
-        llmAnalyzer.release()
     }
 }
