@@ -2,13 +2,12 @@ package net.qualgo.safeNest.features.phishingDetection.impl.presentation.textPhi
 
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
-import net.qualgo.safeNest.features.phishingDetection.impl.presentation.models.BrandImpersonationInfo
+import net.qualgo.safeNest.features.phishingDetection.impl.presentation.models.ConfusableChar
 import net.qualgo.safeNest.features.phishingDetection.impl.presentation.models.ExtractedEntities
-import net.qualgo.safeNest.features.phishingDetection.impl.presentation.models.HeuristicsInfo
 import net.qualgo.safeNest.features.phishingDetection.impl.presentation.models.HomographInfo
-import net.qualgo.safeNest.features.phishingDetection.impl.presentation.models.PageContentInfo
+import net.qualgo.safeNest.features.phishingDetection.impl.presentation.models.PageInfo
 import net.qualgo.safeNest.features.phishingDetection.impl.presentation.models.SslInfo
-import net.qualgo.safeNest.features.phishingDetection.impl.presentation.models.TyposquattingInfo
+import net.qualgo.safeNest.features.phishingDetection.impl.presentation.models.TyposquatInfo
 import net.qualgo.safeNest.features.phishingDetection.impl.presentation.models.UrlCheckerResponse
 
 data class DeepResearchResult(
@@ -73,49 +72,38 @@ object DeepResearchService {
     }
 
     private fun mockUrlCheckerResponse(url: String): UrlCheckerResponse {
-        val domain = runCatching {
-            java.net.URL(url).host.removePrefix("www.")
-        }.getOrDefault("")
+        val isHttps = url.startsWith("https://")
 
         return UrlCheckerResponse(
             url = url,
-            domain = domain,
             ssl = SslInfo(
-                sslValid = url.startsWith("https://"),
-                error = if (url.startsWith("https://")) "" else "No SSL certificate",
+                valid = isHttps,
+                issuer = if (isHttps) "" else "",
+                protocol = if (isHttps) "TLSv1.3" else "",
+                expiresAt = "",
+                daysUntilExpiry = 0,
+                subjectAltNames = emptyList(),
             ),
             homograph = HomographInfo(
                 isHomograph = false,
-                punycodeDomain = domain,
-                decodedDomain = domain,
+                isIDN = false,
+                hasMixedScripts = false,
+                punycode = "",
+                score = 0.0,
+                confusableChars = emptyList(),
             ),
-            typosquatting = TyposquattingInfo(
-                isTyposquatting = SCAM_DOMAINS.any { scam ->
-                    domain.contains(scam.substringBefore(".")) && domain != scam
-                },
-                matchedBrand = "",
-                similarityScore = 0.0,
+            typosquat = TyposquatInfo(
+                isTyposquat = false,
+                matchedDomain = "",
+                distance = 0,
+                score = 0.0,
             ),
-            brandImpersonation = BrandImpersonationInfo(
-                isImpersonation = false,
-                matchedBrand = "",
-                detectionMethod = "",
-            ),
-            pageContent = PageContentInfo(
+            pageInfo = PageInfo(
                 reachable = true,
+                statusCode = 200,
                 title = "",
                 description = "",
-                redirected = false,
                 finalUrl = url,
-                redirectChain = emptyList(),
-            ),
-            heuristics = HeuristicsInfo(
-                suspiciousTld = listOf(".vip", ".cc", ".xyz", ".top", ".tk").any { tld ->
-                    domain.endsWith(tld)
-                },
-                tld = domain.substringAfterLast(".").let { ".$it" },
-                suspiciousKeywords = emptyList(),
-                paymentContextDetected = false,
             ),
         )
     }

@@ -2,50 +2,48 @@ package net.qualgo.safeNest.features.phishingDetection.impl.presentation.models
 
 data class UrlCheckerResponse(
     val url: String,
-    val domain: String,
     val ssl: SslInfo,
     val homograph: HomographInfo,
-    val typosquatting: TyposquattingInfo,
-    val brandImpersonation: BrandImpersonationInfo,
-    val pageContent: PageContentInfo,
-    val heuristics: HeuristicsInfo,
+    val typosquat: TyposquatInfo,
+    val pageInfo: PageInfo,
 )
 
 data class SslInfo(
-    val sslValid: Boolean,
-    val error: String,
+    val valid: Boolean,
+    val issuer: String,
+    val protocol: String,
+    val expiresAt: String,
+    val daysUntilExpiry: Int,
+    val subjectAltNames: List<String>,
+)
+
+data class ConfusableChar(
+    val char: String,
+    val looksLike: String,
+    val script: String,
+    val unicode: String,
 )
 
 data class HomographInfo(
     val isHomograph: Boolean,
-    val punycodeDomain: String,
-    val decodedDomain: String,
+    val isIDN: Boolean,
+    val hasMixedScripts: Boolean,
+    val punycode: String,
+    val score: Double,
+    val confusableChars: List<ConfusableChar>,
 )
 
-data class TyposquattingInfo(
-    val isTyposquatting: Boolean,
-    val matchedBrand: String,
-    val similarityScore: Double,
+data class TyposquatInfo(
+    val isTyposquat: Boolean,
+    val matchedDomain: String,
+    val distance: Int,
+    val score: Double,
 )
 
-data class BrandImpersonationInfo(
-    val isImpersonation: Boolean,
-    val matchedBrand: String,
-    val detectionMethod: String,
-)
-
-data class PageContentInfo(
+data class PageInfo(
     val reachable: Boolean,
+    val statusCode: Int,
     val title: String,
     val description: String,
-    val redirected: Boolean,
     val finalUrl: String,
-    val redirectChain: List<String>,
-)
-
-data class HeuristicsInfo(
-    val suspiciousTld: Boolean,
-    val tld: String,
-    val suspiciousKeywords: List<String>,
-    val paymentContextDetected: Boolean,
 )
