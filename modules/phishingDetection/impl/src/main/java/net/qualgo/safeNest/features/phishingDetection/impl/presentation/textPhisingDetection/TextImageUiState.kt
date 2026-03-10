@@ -16,5 +16,17 @@ sealed class TextImageUiState {
         val sourceText: String,
         val entities: ExtractedEntities,
     ) : TextImageUiState()
+    data class DeepAnalyzing(
+        val sourceText: String,
+        val entities: ExtractedEntities,
+        val partialOutput: String = "",
+    ) : TextImageUiState()
+    data class AnalysisComplete(
+        val sourceText: String,
+        val entities: ExtractedEntities,
+        val redactedText: String,
+        val summary: String,
+        val analysis: String,
+    ) : TextImageUiState()
     data class Error(val message: String) : TextImageUiState()
 }

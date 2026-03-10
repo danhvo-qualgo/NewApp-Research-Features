@@ -157,7 +157,8 @@ fun PhishingTextDetectionScreen(
     }
 
     val isBusy = uiState is TextImageUiState.OcrRunning ||
-        uiState is TextImageUiState.Extracting
+        uiState is TextImageUiState.Extracting ||
+        uiState is TextImageUiState.DeepAnalyzing
 
     Box(
         modifier = Modifier
@@ -312,6 +313,44 @@ fun PhishingTextDetectionScreen(
                     EntitiesResultCard(entities = state.entities)
                 }
 
+                is TextImageUiState.DeepAnalyzing -> {
+                    EntitiesResultCard(entities = state.entities)
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                        Text(
+                            text = "Analyzing deeply…",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    if (state.partialOutput.isNotBlank()) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = state.partialOutput,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+
+                is TextImageUiState.AnalysisComplete -> {
+                    if (state.sourceText.isNotBlank() && state.sourceText != textInput) {
+                        OcrSourceTextCard(text = state.sourceText)
+                        Spacer(modifier = Modifier.height(16.dp))
+                    }
+                    EntitiesResultCard(entities = state.entities)
+                    Spacer(modifier = Modifier.height(16.dp))
+                    AnalysisDetailCard(
+                        redactedText = state.redactedText,
+                        summary = state.summary,
+                        analysis = state.analysis,
+                    )
+                }
+
                 is TextImageUiState.Error -> {
                     Text(
                         text = state.message,
@@ -406,6 +445,71 @@ private fun EntitySection(label: String, items: List<String>) {
         items.forEach { item ->
             Text(
                 text = item,
+                style = MaterialTheme.typography.bodyMedium,
+            )
+        }
+    }
+}
+
+@Composable
+private fun AnalysisDetailCard(
+    redactedText: String,
+    summary: String,
+    analysis: String,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .border(
+                width = 1.dp,
+                color = MaterialTheme.colorScheme.outline,
+                shape = RoundedCornerShape(12.dp),
+            )
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Text(
+            text = "Deep Analysis",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold,
+        )
+
+        if (redactedText.isNotBlank()) {
+            Text(
+                text = "Redacted Message",
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.Medium,
+                color = MaterialTheme.colorScheme.primary,
+            )
+            Text(
+                text = redactedText,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+
+        if (summary.isNotBlank()) {
+            Text(
+                text = "Research Findings",
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.Medium,
+                color = MaterialTheme.colorScheme.primary,
+            )
+            Text(
+                text = summary,
+                style = MaterialTheme.typography.bodySmall,
+            )
+        }
+
+        if (analysis.isNotBlank()) {
+            Text(
+                text = "AI Risk Assessment",
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.Medium,
+                color = MaterialTheme.colorScheme.primary,
+            )
+            Text(
+                text = analysis,
                 style = MaterialTheme.typography.bodyMedium,
             )
         }

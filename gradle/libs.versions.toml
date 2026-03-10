@@ -7,6 +7,7 @@ appUpdate = "2.1.0"
 appcompat = "1.7.1"
 appsFlyer = "6.17.5"
 barcodeScanning = "17.3.0"
+textRecognition = "16.0.1"
 binaryCompatibilityValidator = "0.18.1"
 browser = "1.9.0"
 cameraCore = "1.5.2"
@@ -72,6 +73,7 @@ app-update = { module = "com.google.android.play:app-update", version.ref = "app
 app-update-ktx = { module = "com.google.android.play:app-update-ktx", version.ref = "appUpdate" }
 appsflyer = { module = "com.appsflyer:af-android-sdk", version.ref = "appsFlyer" }
 barcode-scanning = { module = "com.google.mlkit:barcode-scanning", version.ref = "barcodeScanning" }
+mlkit-text-recognition = { module = "com.google.mlkit:text-recognition", version.ref = "textRecognition" }
 camera-camera2 = { module = "androidx.camera:camera-camera2", version.ref = "cameraCore" }
 camera-core = { module = "androidx.camera:camera-core", version.ref = "cameraCore" }
 camera-lifecycle = { module = "androidx.camera:camera-lifecycle", version.ref = "cameraCore" }

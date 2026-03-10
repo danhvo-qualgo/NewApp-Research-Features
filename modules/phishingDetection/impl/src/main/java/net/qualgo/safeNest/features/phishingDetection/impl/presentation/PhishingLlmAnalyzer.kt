@@ -66,12 +66,12 @@ class PhishingLlmAnalyzer {
      * Runs inference with a raw pre-built [prompt] and streams the result token-by-token.
      * Blocking — call on IO dispatcher.
      */
-    fun extractEntities(
+    fun llmProcessing(
         prompt: String,
         onToken: (String) -> Unit,
         onDone: () -> Unit,
     ) {
-        check(nativePtr != 0L) { "PhishingLlmAnalyzer.load() must be called before extractEntities()" }
+        check(nativePtr != 0L) { "PhishingLlmAnalyzer.load() must be called before llmProcessing()" }
         nativeGenerate(
             ptr = nativePtr,
             prompt = prompt,

@@ -4,7 +4,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import net.qualgo.safeNest.features.phishingDetection.impl.presentation.PhishingLlmAnalyzer
 import net.qualgo.safeNest.features.phishingDetection.impl.presentation.models.ExtractedEntities
-import java.io.File
 
 object LlmEntityExtractor {
 
@@ -17,7 +16,7 @@ object LlmEntityExtractor {
         val prompt = buildEntityExtractionPrompt(text)
 
         var done = false
-        analyzer.extractEntities(
+        analyzer.llmProcessing(
             prompt = prompt,
             onToken = { token ->
                 tokens.append(token)

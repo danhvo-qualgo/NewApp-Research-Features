@@ -17,7 +17,7 @@ class LlmEntityExtractor {
         val prompt = buildEntityExtractionPrompt(text)
 
         var done = false
-        analyzer.extractEntities(
+        analyzer.llmProcessing(
             prompt = prompt,
             onToken = { token ->
                 tokens.append(token)
@@ -62,7 +62,6 @@ class LlmEntityExtractor {
     }
 
     private fun buildEntityExtractionPrompt(text: String): String {
-        val truncated = text.take(1500)
         return buildString {
             append("<|im_start|>system\n")
             append("You are an entity extraction assistant. ")
@@ -71,7 +70,7 @@ class LlmEntityExtractor {
             append("<|im_end|>\n")
             append("<|im_start|>user\n")
             append("Extract all entities from the following text.\n\n")
-            append("Text:\n$truncated\n\n")
+            append("Text:\n$text\n\n")
             append("Return a JSON object with exactly these keys: \"phones\", \"emails\", \"urls\", \"domains\".\n")
             append("Each key maps to an array of strings. Use an empty array if none are found.\n")
             append("Example: {\"phones\": [\"+1 800 555 1234\"], \"emails\": [\"a@b.com\"], \"urls\": [\"https://x.com\"], \"domains\": [\"x.com\"]}")
