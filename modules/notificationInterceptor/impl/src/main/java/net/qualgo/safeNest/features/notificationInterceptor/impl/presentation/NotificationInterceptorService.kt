@@ -2,6 +2,7 @@ package net.qualgo.safeNest.features.notificationInterceptor.impl.presentation
 
 import android.app.Notification
 import android.content.ComponentName
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.provider.Telephony
@@ -62,7 +63,7 @@ class NotificationInterceptorService : NotificationListenerService() {
         val messages: List<String>
         var senderName: String? = null
         var conversationTitle: String? = null
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             val rawMessages = extras.getParcelableArray(Notification.EXTRA_MESSAGES)
             val parsedMessages = if (rawMessages != null) {
                 Notification.MessagingStyle.Message.getMessagesFromBundleArray(rawMessages)
@@ -82,9 +83,7 @@ class NotificationInterceptorService : NotificationListenerService() {
             ?.mapNotNull { it.title?.toString() }
             ?: emptyList()
 
-        val channelId = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            notification.channelId
-        } else null
+        val channelId = notification.channelId
 
         val record = NotificationRecord(
             id = "${sbn.packageName}:${sbn.id}:${sbn.tag ?: ""}",
@@ -119,7 +118,24 @@ class NotificationInterceptorService : NotificationListenerService() {
         if (reason == REASON_CLICK) {
             val key = "${sbn.packageName}:${sbn.id}:${sbn.tag ?: ""}"
             NotificationStore.markClicked(key)
+            val record = NotificationStore.notifications.value.find { it.id == key }
+            if (record != null && containsScamContent(record)) {
+                Log.d("NotifInterceptor", "Scam content detected on click for: ${record.appName}")
+                startScamWarningOverlay()
+            }
         }
+    }
+
+    private fun containsScamContent(record: NotificationRecord): Boolean {
+        val scamKeyword = "scam"
+        return listOfNotNull(record.title, record.text, record.bigText)
+            .plus(record.messages)
+            .any { it.contains(scamKeyword, ignoreCase = true) }
+    }
+
+    private fun startScamWarningOverlay() {
+        val intent = Intent(applicationContext, ScamWarningOverlayService::class.java)
+        applicationContext.startService(intent)
     }
 
     private fun resolveAppName(packageName: String): String {
