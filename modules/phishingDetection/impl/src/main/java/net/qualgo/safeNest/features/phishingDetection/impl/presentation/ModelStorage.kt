@@ -14,5 +14,5 @@ interface ModelStorage {
 class AppModelStorage @Inject constructor(
     @ApplicationContext context: Context
 ) : ModelStorage {
-    override val modelDir: File = File(context.filesDir, ".mnnmodels/Qwen3-0.6B-MNN")
+    override val modelDir: File = File(context.filesDir, ".mnnmodels/Qwen3.5-2B-MNN")
 }

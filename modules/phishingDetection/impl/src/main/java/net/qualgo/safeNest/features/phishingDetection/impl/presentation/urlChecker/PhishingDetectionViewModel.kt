@@ -1,4 +1,4 @@
-package net.qualgo.safeNest.features.phishingDetection.impl.presentation
+package net.qualgo.safeNest.features.phishingDetection.impl.presentation.urlChecker
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -11,6 +11,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import net.qualgo.safeNest.features.phishingDetection.impl.presentation.ModelDownloader
+import net.qualgo.safeNest.features.phishingDetection.impl.presentation.ModelStorage
+import net.qualgo.safeNest.features.phishingDetection.impl.presentation.PhishingLlmAnalyzer
 import net.qualgo.safeNest.features.phishingDetection.impl.presentation.models.WebsiteMetadata
 import javax.inject.Inject
 

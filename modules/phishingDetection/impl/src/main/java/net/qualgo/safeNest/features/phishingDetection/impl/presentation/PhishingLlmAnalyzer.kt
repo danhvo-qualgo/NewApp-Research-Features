@@ -62,6 +62,29 @@ class PhishingLlmAnalyzer {
         )
     }
 
+    /**
+     * Runs inference with a raw pre-built [prompt] and streams the result token-by-token.
+     * Blocking — call on IO dispatcher.
+     */
+    fun extractEntities(
+        prompt: String,
+        onToken: (String) -> Unit,
+        onDone: () -> Unit,
+    ) {
+        check(nativePtr != 0L) { "PhishingLlmAnalyzer.load() must be called before extractEntities()" }
+        nativeGenerate(
+            ptr = nativePtr,
+            prompt = prompt,
+            listener = object : ProgressListener {
+                override fun onProgress(token: String): Boolean {
+                    onToken(token)
+                    return true
+                }
+                override fun onFinish() = onDone()
+            },
+        )
+    }
+
     /** Frees the native LLM instance. Safe to call multiple times. */
     fun release() {
         if (nativePtr != 0L) {

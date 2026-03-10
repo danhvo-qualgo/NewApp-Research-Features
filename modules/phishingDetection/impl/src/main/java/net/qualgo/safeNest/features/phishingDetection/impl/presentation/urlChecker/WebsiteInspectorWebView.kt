@@ -1,4 +1,4 @@
-package net.qualgo.safeNest.features.phishingDetection.impl.presentation
+package net.qualgo.safeNest.features.phishingDetection.impl.presentation.urlChecker
 
 import android.annotation.SuppressLint
 import android.content.Context

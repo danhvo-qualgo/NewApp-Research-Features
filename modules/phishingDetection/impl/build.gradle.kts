@@ -31,6 +31,8 @@ android {
 dependencies {
     implementation(project(":modules:phishingDetection:api"))
     implementation(libs.core.router)
+    implementation(libs.mlkit.text.recognition)
+    implementation(libs.libphonenumber)
 }
 
 uneyPublishing {

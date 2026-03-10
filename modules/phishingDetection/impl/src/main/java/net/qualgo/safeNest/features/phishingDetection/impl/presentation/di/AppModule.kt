@@ -10,7 +10,7 @@ import dagger.multibindings.IntoSet
 import net.qualgo.safeNest.features.phishingDetection.api.PhishingDetectionProvider
 import net.qualgo.safeNest.features.phishingDetection.impl.presentation.AppModelStorage
 import net.qualgo.safeNest.features.phishingDetection.impl.presentation.ModelStorage
-import net.qualgo.safeNest.features.phishingDetection.impl.presentation.PhishingDetectionProviderImpl
+import net.qualgo.safeNest.features.phishingDetection.impl.presentation.urlChecker.PhishingDetectionProviderImpl
 import net.qualgo.safeNest.features.phishingDetection.impl.presentation.router.PhishingDetectionRouter
 
 @Module
