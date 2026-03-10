@@ -6,6 +6,7 @@ import android.content.ComponentName
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
@@ -65,6 +66,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import javax.inject.Inject
+import androidx.core.net.toUri
 
 @AndroidEntryPoint
 class NotificationInterceptorActivity : ComponentActivity() {
@@ -108,13 +110,10 @@ fun NotificationInterceptorScreen(viewModel: NotificationInterceptorViewModel) {
     val uiState by viewModel.uiState.collectAsState()
 
     var listenerEnabled by remember { mutableStateOf(isNotificationListenerEnabled(context)) }
-    var postNotifGranted by remember {
+
+    var overlayPermissionGranted by remember {
         mutableStateOf(
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
-            } else {
-                true
-            }
+            Settings.canDrawOverlays(context)
         )
     }
 
@@ -123,6 +122,7 @@ fun NotificationInterceptorScreen(viewModel: NotificationInterceptorViewModel) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
                 listenerEnabled = isNotificationListenerEnabled(context)
+                overlayPermissionGranted = Settings.canDrawOverlays(context)
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
@@ -156,6 +156,20 @@ fun NotificationInterceptorScreen(viewModel: NotificationInterceptorViewModel) {
                 ) {
                     context.startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
                     listenerEnabled = isNotificationListenerEnabled(context)
+                }
+                return@Column
+            }
+
+            if (!overlayPermissionGranted) {
+                PermissionCard(
+                    message = "\"Display over other apps\" permission is required to show scam warnings on top of other apps.",
+                    buttonText = "Grant Overlay Permission"
+                ) {
+                    val intent = Intent(
+                        Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                        "package:${context.packageName}".toUri()
+                    )
+                    context.startActivity(intent)
                 }
                 return@Column
             }
