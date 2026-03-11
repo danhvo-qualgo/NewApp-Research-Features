@@ -18,6 +18,9 @@ dependencies {
     implementation(project(":modules:callDetection:impl"))
     implementation(libs.core.router)
     implementation(project(":modules:signIn:api"))
+    implementation(project(":modules:urlguard:api"))
+    implementation(project(":modules:phishingDetection:api"))
+    implementation(project(":modules:notificationInterceptor:api"))
 }
 
 uneyPublishing {

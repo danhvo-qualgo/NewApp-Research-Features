@@ -64,8 +64,8 @@ dependencyResolutionManagement {
 
         maven(System.getenv("CORE_REPOSITORY_URL")) {
             credentials {
-                username = System.getenv("CORE_USERNAME")
-                password = System.getenv("CORE_PASSWORD")
+                username = System.getenv("CORE_REPOSITORY_USERNAME")
+                password = System.getenv("CORE_REPOSITORY_PASSWORD")
             }
         }
 
@@ -102,3 +102,9 @@ include(":modules:callDetection:api")
 include(":modules:callDetection:impl")
 include(":modules:call_detection:api")
 include(":modules:call_detection:impl")
+include(":modules:urlguard:api")
+include(":modules:urlguard:impl")
+include(":modules:phishingDetection:impl")
+include(":modules:phishingDetection:api")
+include(":modules:notificationInterceptor:impl")
+include(":modules:notificationInterceptor:api")

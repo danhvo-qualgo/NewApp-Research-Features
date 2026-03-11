@@ -19,11 +19,14 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.example.api.presentation.router.UrlGuardDeeplink
 import com.safeNest.features.call.callDetection.impl.presentation.router.CallDetectionDeeplink
 import net.qualgo.safeNest.core.signIn.api.presentation.router.SignInDeeplink
 import com.uney.core.router.compose.LocalRouterManager
 import com.uney.core.router.RouterManager
 import dagger.hilt.android.AndroidEntryPoint
+import net.qualgo.safeNest.features.notificationInterceptor.api.presentation.router.NotificationInterceptorDeeplink
+import net.qualgo.safeNest.features.phishingDetection.api.presentation.router.PhishingDetectionDeeplink
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -74,6 +77,25 @@ class HomeActivity : ComponentActivity() {
                         routerManager.navigate(this@HomeActivity, CallDetectionDeeplink.entryPoint())
                     }
                 ) { Text("Call Detection") }
+
+
+                Button(
+                    onClick = {
+                        routerManager.navigate(this@HomeActivity, UrlGuardDeeplink.entryPoint())
+                    }
+                ) { Text("Url Guard") }
+
+                Button(
+                    onClick = {
+                        routerManager.navigate(this@HomeActivity, PhishingDetectionDeeplink.entryPoint())
+                    }
+                ) { Text("Phishing Detection") }
+
+                Button(
+                    onClick = {
+                        routerManager.navigate(this@HomeActivity, NotificationInterceptorDeeplink.entryPoint())
+                    }
+                ) { Text("Notification Interceptor") }
             }
         }
     }

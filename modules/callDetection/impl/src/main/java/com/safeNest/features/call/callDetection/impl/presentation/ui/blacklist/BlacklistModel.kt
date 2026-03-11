@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.safeNest.features.call.callDetection.impl.domain.usecase.AddBlacklistPatternUseCase
 import com.safeNest.features.call.callDetection.impl.domain.usecase.AddNumberToWhiteListUseCase
+import com.safeNest.features.call.callDetection.impl.domain.usecase.EnableBlackListUseCase
 import com.safeNest.features.call.callDetection.impl.domain.usecase.GetBlacklistPatternsUseCase
 import com.safeNest.features.call.callDetection.impl.domain.usecase.GetWhiteListUseCase
 import com.safeNest.features.call.callDetection.impl.domain.usecase.RemoveBlackListPatternUseCase
@@ -18,11 +19,15 @@ import javax.inject.Inject
 class BlacklistModel @Inject constructor(
     private val addBlacklistPatternUseCase: AddBlacklistPatternUseCase,
     private val getBlacklistPatternsUseCase: GetBlacklistPatternsUseCase,
-    private val removeBlackListPatternUseCase: RemoveBlackListPatternUseCase
+    private val removeBlackListPatternUseCase: RemoveBlackListPatternUseCase,
+    private val enableBlackListUseCase: EnableBlackListUseCase
 ) : ViewModel() {
 
     val blacklist = getBlacklistPatternsUseCase()
         .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+
+    val isEnable = enableBlackListUseCase.isEnable()
+        .stateIn(viewModelScope, SharingStarted.Lazily, false)
 
     fun add(number: String) {
         viewModelScope.launch {
@@ -33,6 +38,12 @@ class BlacklistModel @Inject constructor(
     fun remove(number: String) {
         viewModelScope.launch {
             removeBlackListPatternUseCase(number)
+        }
+    }
+
+    fun enable(isEnable: Boolean) {
+        viewModelScope.launch {
+            enableBlackListUseCase(isEnable)
         }
     }
 }

@@ -54,16 +54,22 @@ class CallDetectionActivity : ComponentActivity() {
                         onGoToWhitelist = {
                             backStack.add(Screen.Whitelist)
                         },
-                        onGoToBacklist = {
+                        onGoToBlacklist = {
                             backStack.add(Screen.Blacklist)
                         }
                     )
                 }
+
                 is Screen.Whitelist -> NavEntry(key) {
-                    WhitelistScreen()
+                    WhitelistScreen(onBack = {
+                        backStack.removeLastOrNull()
+                    })
                 }
+
                 is Screen.Blacklist -> NavEntry(key) {
-                    BlacklistScreen()
+                    BlacklistScreen(onBack = {
+                        backStack.removeLastOrNull()
+                    })
                 }
 
                 else -> NavEntry(Unit) { Text("Unknown route") }

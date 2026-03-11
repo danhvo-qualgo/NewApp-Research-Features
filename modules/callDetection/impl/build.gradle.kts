@@ -27,6 +27,7 @@ dependencies {
     implementation(libsCustom.androidx.material3.adaptive.navigation3)
     implementation(libsCustom.kotlinx.serialization.core)
     implementation(libs.androidx.media3.common.ktx)
+    implementation(libs.core.storage.api)
 
     ksp(libs.room.compiler)
 }

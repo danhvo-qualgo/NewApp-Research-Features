@@ -9,4 +9,6 @@ interface WhitelistRepository {
     suspend fun remove(number: String)
     suspend fun isWhitelisted(number: String): Boolean
     fun getPhoneNumber(phoneNumber: String): Flow<WhitelistNumber?>
+    fun isEnable(): Flow<Boolean>
+    suspend fun setEnable(isEnable: Boolean)
 }

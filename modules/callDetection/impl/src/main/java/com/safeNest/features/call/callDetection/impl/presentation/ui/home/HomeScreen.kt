@@ -14,29 +14,41 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import android.provider.Settings
 import android.telecom.TelecomManager
+import androidx.compose.foundation.layout.Row
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat.getSystemService
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import com.safeNest.features.call.callDetection.impl.R
 import com.safeNest.features.call.callDetection.impl.presentation.service.recorder.RecorderService
 
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel(),
     onGoToWhitelist: () -> Unit,
-    onGoToBacklist: () -> Unit
+    onGoToBlacklist: () -> Unit
 ){
     val context = LocalContext.current
     val activity = context as? Activity
     Column(Modifier.fillMaxSize().background(Color.White).padding(16.dp)) {
-        TextButton(onClick = {
-            RecorderService.stop(context)
-            activity?.finish()
-        }) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            IconButton(onClick = {
+                RecorderService.stop(context)
+                activity?.finish()
+            }) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_back),
+                    contentDescription = "Back"
+                )
+            }
             Text(text = "Call Detection", fontSize = 24.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(vertical = 24.dp))
         }
 
@@ -47,7 +59,7 @@ fun HomeScreen(
         }
 
         Button(onClick = {
-            onGoToBacklist()
+            onGoToBlacklist()
         }, modifier = Modifier.padding(vertical = 12.dp)) {
             Text("Blacklist")
         }
