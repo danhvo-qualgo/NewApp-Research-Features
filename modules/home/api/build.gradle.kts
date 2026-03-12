@@ -6,11 +6,11 @@ androidModule {
 }
 
 android {
-    namespace = "net.qualgo.safeNest.core.home.api"
+    namespace = "com.safeNest.demo.home.api"
 }
 
 uneyPublishing {
-    groupId = "net.qualgo.safeNest.core"
+    groupId = "com.safeNest.demo"
     artifactId = "home-api"
 }
 

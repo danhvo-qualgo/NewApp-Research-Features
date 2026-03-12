@@ -9,7 +9,7 @@
 
     <application>
         <activity
-            android:name="net.qualgo.safeNest.permissionmanager.impl.presentation.PermissionManagerActivity"
+            android:name="com.safeNest.demo.permissionmanager.impl.presentation.PermissionManagerActivity"
             android:exported="false"
             android:label="@string/title_activity_permission_manager"/>
     </application>

@@ -4,14 +4,14 @@ plugins {
 }
 
 applicationModule {
-    buildName = "SafeNest-Core-Features"
+    buildName = "SafeNest-Demo"
 }
 
 android {
-    namespace = "com.safeNest.features.core.app"
+    namespace = "com.safeNest.demo.app"
 
     defaultConfig {
-        applicationId = "com.safeNest.features.core.app"
+        applicationId = "com.safeNest.demo.app"
     }
 }
 
@@ -19,8 +19,6 @@ android {
 dependencies {
     implementation(project(":modules:baseApp"))
     implementation(project(":modules:home:impl"))
-    implementation(project(":modules:authChallenge:impl"))
-    implementation(project(":modules:signIn:impl"))
     implementation(project(":modules:callDetection:api"))
     implementation(project(":modules:callDetection:impl"))
     implementation(project(":modules:urlguard:impl"))

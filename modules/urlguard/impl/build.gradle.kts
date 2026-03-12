@@ -10,7 +10,7 @@ androidModule {
 }
 
 android {
-    namespace = "net.qualgo.safeNest.urlguard.impl"
+    namespace = "com.safeNest.demo.urlguard.impl"
 }
 
 dependencies {
@@ -27,6 +27,6 @@ dependencies {
 }
 
 uneyPublishing {
-    groupId = "net.qualgo.safeNest.feauture"
+    groupId = "com.safeNest.demo.urlguard"
     artifactId = "urlguard-impl"
 }

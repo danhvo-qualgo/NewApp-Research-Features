@@ -12,7 +12,7 @@ androidModule {
 }
 
 android {
-    namespace = "com.safeNest.features.call.callDetection.impl"
+    namespace = "com.safeNest.demo.call.main.impl"
 }
 
 dependencies {
@@ -33,6 +33,6 @@ dependencies {
 }
 
 uneyPublishing {
-    groupId = "com.safeNest.features.call"
-    artifactId = "call-detection-impl"
+    groupId = "com.safeNest.demo.call"
+    artifactId = "main-impl"
 }

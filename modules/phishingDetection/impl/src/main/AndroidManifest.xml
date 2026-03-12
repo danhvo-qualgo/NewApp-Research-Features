@@ -3,7 +3,7 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <application>
         <activity
-            android:name="net.qualgo.safeNest.features.phishingDetection.impl.presentation.PhishingDetectionActivity"
+            android:name="com.safeNest.demo.phishingDetection.impl.presentation.PhishingDetectionActivity"
             android:exported="false" />
     </application>
 </manifest>

@@ -88,16 +88,12 @@ dependencyResolutionManagement {
 
 
 
-rootProject.name = "SafeNest-Core-Features"
+rootProject.name = "SafeNest-Demo"
 
 include(":app")
 include(":modules:baseApp")
 include(":modules:home:api")
 include(":modules:home:impl")
-include(":modules:authChallenge:api")
-include(":modules:authChallenge:impl")
-include(":modules:signIn:api")
-include(":modules:signIn:impl")
 include(":modules:callDetection:api")
 include(":modules:callDetection:impl")
 include(":modules:call_detection:api")

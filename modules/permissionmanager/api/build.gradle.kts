@@ -6,11 +6,11 @@ androidModule {
 }
 
 android {
-    namespace = "net.qualgo.safeNest.permissionmanager.api"
+    namespace = "com.safeNest.demo.permissionmanager.api"
 }
 
 uneyPublishing {
-    groupId = "net.qualgo.safeNest.feauture"
+    groupId = "com.safeNest.demo"
     artifactId = "permissionmanager-api"
 }
 

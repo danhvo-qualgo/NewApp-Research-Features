@@ -10,7 +10,7 @@ androidModule {
 }
 
 android {
-    namespace = "net.qualgo.safeNest.permissionmanager.impl"
+    namespace = "com.safeNest.demo.permissionmanager.impl"
 }
 
 dependencies {
@@ -22,6 +22,6 @@ dependencies {
 }
 
 uneyPublishing {
-    groupId = "net.qualgo.safeNest.feauture"
+    groupId = "com.safeNest.demo"
     artifactId = "permissionmanager-impl"
 }

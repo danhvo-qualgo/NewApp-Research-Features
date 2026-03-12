@@ -1,0 +1,13 @@
+package com.safeNest.demo.call.main.impl.presentation.navigator
+
+import kotlinx.serialization.Serializable
+
+@Serializable
+sealed interface Screen {
+    @Serializable
+    object Home: Screen
+    @Serializable
+    object Whitelist: Screen
+    @Serializable
+    object Blacklist: Screen
+}
