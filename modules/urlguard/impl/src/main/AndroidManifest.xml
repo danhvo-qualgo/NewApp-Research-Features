@@ -42,7 +42,7 @@
 
         <provider
             android:name="com.example.impl.urlguard.BlockedPageContentProvider"
-            android:authorities="com.safenest.urlguard"
+            android:authorities="com.safenest.urlguard.blocked"
             android:exported="true"
             android:grantUriPermissions="true" />
 
