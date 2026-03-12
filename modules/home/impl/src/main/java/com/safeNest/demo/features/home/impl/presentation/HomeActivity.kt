@@ -18,7 +18,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.safeNest.demo.features.call.impl.presentation.router.CallDetectionDeeplink
+import com.safeNest.demo.features.callProtection.impl.presentation.router.CallDetectionDeeplink
 import com.safeNest.demo.features.designSystem.component.DSButton
 import com.safeNest.demo.features.designSystem.component.gradientBackground
 import com.safeNest.demo.features.designSystem.theme.DSTheme

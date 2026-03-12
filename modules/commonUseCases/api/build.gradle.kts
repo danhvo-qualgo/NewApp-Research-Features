@@ -5,5 +5,5 @@ plugins {
 
 uneyPublishing {
     groupId = "com.safeNest.demo.features"
-    artifactId = "common-usecases-api"
+    artifactId = "commonUsecases-api"
 }
