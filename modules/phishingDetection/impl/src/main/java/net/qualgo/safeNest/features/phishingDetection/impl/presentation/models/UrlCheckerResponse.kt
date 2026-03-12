@@ -1,5 +1,9 @@
 package net.qualgo.safeNest.features.phishingDetection.impl.presentation.models
 
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+
+@Serializable
 data class UrlCheckerResponse(
     val url: String,
     val ssl: SslInfo,
@@ -8,6 +12,7 @@ data class UrlCheckerResponse(
     val pageInfo: PageInfo,
 )
 
+@Serializable
 data class SslInfo(
     val valid: Boolean,
     val issuer: String,
@@ -17,6 +22,7 @@ data class SslInfo(
     val subjectAltNames: List<String>,
 )
 
+@Serializable
 data class ConfusableChar(
     val char: String,
     val looksLike: String,
@@ -24,6 +30,7 @@ data class ConfusableChar(
     val unicode: String,
 )
 
+@Serializable
 data class HomographInfo(
     val isHomograph: Boolean,
     val isIDN: Boolean,
@@ -33,6 +40,7 @@ data class HomographInfo(
     val confusableChars: List<ConfusableChar>,
 )
 
+@Serializable
 data class TyposquatInfo(
     val isTyposquat: Boolean,
     val matchedDomain: String,
@@ -40,6 +48,7 @@ data class TyposquatInfo(
     val score: Double,
 )
 
+@Serializable
 data class PageInfo(
     val reachable: Boolean,
     val statusCode: Int,

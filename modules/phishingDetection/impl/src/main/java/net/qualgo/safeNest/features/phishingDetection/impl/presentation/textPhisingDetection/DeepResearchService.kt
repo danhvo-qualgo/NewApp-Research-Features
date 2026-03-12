@@ -1,13 +1,10 @@
 package net.qualgo.safeNest.features.phishingDetection.impl.presentation.textPhisingDetection
 
+import android.util.Log
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
-import net.qualgo.safeNest.features.phishingDetection.impl.presentation.models.ConfusableChar
+import net.qualgo.safeNest.features.phishingDetection.impl.presentation.models.ApiResult
 import net.qualgo.safeNest.features.phishingDetection.impl.presentation.models.ExtractedEntities
-import net.qualgo.safeNest.features.phishingDetection.impl.presentation.models.HomographInfo
-import net.qualgo.safeNest.features.phishingDetection.impl.presentation.models.PageInfo
-import net.qualgo.safeNest.features.phishingDetection.impl.presentation.models.SslInfo
-import net.qualgo.safeNest.features.phishingDetection.impl.presentation.models.TyposquatInfo
 import net.qualgo.safeNest.features.phishingDetection.impl.presentation.models.UrlCheckerResponse
 
 data class DeepResearchResult(
@@ -17,6 +14,8 @@ data class DeepResearchResult(
 )
 
 object DeepResearchService {
+
+    private const val TAG = "DeepResearchService"
 
     private val SCAM_PHONES = setOf(
         "0814936074",
@@ -67,44 +66,19 @@ object DeepResearchService {
         }
     }
 
-    private fun fetchUrlCheckerResults(urls: List<String>): List<UrlCheckerResponse> {
-        return urls.map { url -> mockUrlCheckerResponse(url) }
-    }
-
-    private fun mockUrlCheckerResponse(url: String): UrlCheckerResponse {
-        val isHttps = url.startsWith("https://")
-
-        return UrlCheckerResponse(
-            url = url,
-            ssl = SslInfo(
-                valid = isHttps,
-                issuer = if (isHttps) "" else "",
-                protocol = if (isHttps) "TLSv1.3" else "",
-                expiresAt = "",
-                daysUntilExpiry = 0,
-                subjectAltNames = emptyList(),
-            ),
-            homograph = HomographInfo(
-                isHomograph = false,
-                isIDN = false,
-                hasMixedScripts = false,
-                punycode = "",
-                score = 0.0,
-                confusableChars = emptyList(),
-            ),
-            typosquat = TyposquatInfo(
-                isTyposquat = false,
-                matchedDomain = "",
-                distance = 0,
-                score = 0.0,
-            ),
-            pageInfo = PageInfo(
-                reachable = true,
-                statusCode = 200,
-                title = "",
-                description = "",
-                finalUrl = url,
-            ),
-        )
+    private suspend fun fetchUrlCheckerResults(urls: List<String>): List<UrlCheckerResponse> {
+        return urls.mapNotNull { url ->
+            when (val result = UrlCheckerApiClient.analyze(url)) {
+                is ApiResult.Success -> result.data
+                is ApiResult.Error -> {
+                    Log.w(TAG, "URL check error for $url: ${result.error.detail}")
+                    null
+                }
+                is ApiResult.Exception -> {
+                    Log.e(TAG, "URL check exception for $url", result.throwable)
+                    null
+                }
+            }
+        }
     }
 }
