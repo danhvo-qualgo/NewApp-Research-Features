@@ -1,7 +1,6 @@
 package com.safeNest.demo.urlguard.impl.urlguard
 
 import android.app.Activity
-import android.content.Intent
 import android.media.projection.MediaProjectionManager
 import android.os.Bundle
 import androidx.activity.ComponentActivity

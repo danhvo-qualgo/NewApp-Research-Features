@@ -6,14 +6,14 @@ import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
 import android.os.Build
 import android.util.Log
-import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import com.safeNest.demo.permissionmanager.impl.domain.model.AppCategory
 import com.safeNest.demo.permissionmanager.impl.domain.model.AppInfo
 import com.safeNest.demo.permissionmanager.impl.domain.model.InstallSource
 import com.safeNest.demo.permissionmanager.impl.domain.model.PermissionInfo
 import com.safeNest.demo.permissionmanager.impl.domain.model.PermissionProtectionLevel
+import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -64,7 +64,10 @@ class AppPermissionManager @Inject constructor(
             val isGranted = if (idx < requestedFlags.size) {
                 (requestedFlags[idx] and PackageInfo.REQUESTED_PERMISSION_GRANTED) != 0
             } else {
-                pm.checkPermission(permName, pkgInfo.packageName) == PackageManager.PERMISSION_GRANTED
+                pm.checkPermission(
+                    permName,
+                    pkgInfo.packageName
+                ) == PackageManager.PERMISSION_GRANTED
             }
 
             val permInfo = runCatching { pm.getPermissionInfo(permName, 0) }.getOrNull()
@@ -72,7 +75,7 @@ class AppPermissionManager @Inject constructor(
                 @Suppress("DEPRECATION")
                 when (it.protectionLevel and android.content.pm.PermissionInfo.PROTECTION_MASK_BASE) {
                     android.content.pm.PermissionInfo.PROTECTION_DANGEROUS -> PermissionProtectionLevel.DANGEROUS
-                    android.content.pm.PermissionInfo.PROTECTION_NORMAL    -> PermissionProtectionLevel.NORMAL
+                    android.content.pm.PermissionInfo.PROTECTION_NORMAL -> PermissionProtectionLevel.NORMAL
                     android.content.pm.PermissionInfo.PROTECTION_SIGNATURE -> PermissionProtectionLevel.SIGNATURE
                     else -> PermissionProtectionLevel.OTHER
                 }
@@ -136,7 +139,7 @@ class AppPermissionManager @Inject constructor(
                 pm.getInstallerPackageName(packageName)
             }
         }.getOrNull()
-        if(installerPackageName != null) {
+        if (installerPackageName != null) {
             Log.d("xxx", "app packageName: ${packageName}")
             Log.d("xxx", "install packageName: $installerPackageName")
         }

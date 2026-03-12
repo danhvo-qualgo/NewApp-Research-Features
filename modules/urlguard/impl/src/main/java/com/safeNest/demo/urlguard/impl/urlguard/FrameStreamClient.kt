@@ -63,7 +63,8 @@ class FrameStreamClient(
         onBufferOverflow = BufferOverflow.DROP_OLDEST,
     )
 
-    @Volatile private var running = false
+    @Volatile
+    private var running = false
 
     // ── Public API ────────────────────────────────────────────────────────────
 

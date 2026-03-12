@@ -10,7 +10,6 @@ import android.content.Intent
 import android.media.AudioManager
 import android.media.MediaRecorder
 import android.os.Build
-import android.os.IBinder
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
@@ -61,6 +60,7 @@ class RecorderService : Service() {
 
         return START_NOT_STICKY
     }
+
     private fun configureAudioForCall() {
         val audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
 

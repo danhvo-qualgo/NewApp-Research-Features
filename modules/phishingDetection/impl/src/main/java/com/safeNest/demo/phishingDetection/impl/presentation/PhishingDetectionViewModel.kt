@@ -2,6 +2,7 @@ package com.safeNest.demo.phishingDetection.impl.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.safeNest.demo.phishingDetection.impl.presentation.models.WebsiteMetadata
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
@@ -11,15 +12,20 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import com.safeNest.demo.phishingDetection.impl.presentation.models.WebsiteMetadata
 import javax.inject.Inject
 
 sealed class PhishingUiState {
     object Idle : PhishingUiState()
     object Loading : PhishingUiState()
-    data class Downloading(val metadata: WebsiteMetadata, val progressPercent: Int) : PhishingUiState()
-    data class Analyzing(val metadata: WebsiteMetadata, val partialAnalysis: String) : PhishingUiState()
-    data class AnalysisComplete(val metadata: WebsiteMetadata, val analysis: String) : PhishingUiState()
+    data class Downloading(val metadata: WebsiteMetadata, val progressPercent: Int) :
+        PhishingUiState()
+
+    data class Analyzing(val metadata: WebsiteMetadata, val partialAnalysis: String) :
+        PhishingUiState()
+
+    data class AnalysisComplete(val metadata: WebsiteMetadata, val analysis: String) :
+        PhishingUiState()
+
     data class Error(val message: String) : PhishingUiState()
 }
 
@@ -46,11 +52,12 @@ class PhishingDetectionViewModel @Inject constructor(
             _uiState.value = PhishingUiState.Error("Please enter a URL")
             return
         }
-        val normalizedUrl = if (trimmedUrl.startsWith("http://") || trimmedUrl.startsWith("https://")) {
-            trimmedUrl
-        } else {
-            "https://$trimmedUrl"
-        }
+        val normalizedUrl =
+            if (trimmedUrl.startsWith("http://") || trimmedUrl.startsWith("https://")) {
+                trimmedUrl
+            } else {
+                "https://$trimmedUrl"
+            }
 
         _uiState.value = PhishingUiState.Loading
         viewModelScope.launch {
@@ -61,7 +68,9 @@ class PhishingDetectionViewModel @Inject constructor(
     fun onWebInspectionResult(url: String, result: Result<WebsiteMetadata>) {
         result.fold(
             onSuccess = { metadata -> startAnalysis(url, metadata) },
-            onFailure = { error -> _uiState.value = PhishingUiState.Error(error.message ?: "Unknown error") }
+            onFailure = { error ->
+                _uiState.value = PhishingUiState.Error(error.message ?: "Unknown error")
+            }
         )
     }
 
@@ -91,7 +100,8 @@ class PhishingDetectionViewModel @Inject constructor(
                             _uiState.value = PhishingUiState.Analyzing(metadata, tokens.toString())
                         },
                         onDone = {
-                            _uiState.value = PhishingUiState.AnalysisComplete(metadata, tokens.toString())
+                            _uiState.value =
+                                PhishingUiState.AnalysisComplete(metadata, tokens.toString())
                         },
                     )
                 }

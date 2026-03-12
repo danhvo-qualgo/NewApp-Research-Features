@@ -26,32 +26,40 @@ class FormWarningPageContentProvider : ContentProvider() {
         if (sUriMatcher.match(uri) != CODE_FORM_WARNING || mode != "r") return null
         grantReadPermissionToCaller(uri)
 
-        val rawUrl    = uri.getQueryParameter(QUERY_URL) ?: ""
+        val rawUrl = uri.getQueryParameter(QUERY_URL) ?: ""
         val rawFields = uri.getQueryParameter(QUERY_FIELDS) ?: ""
 
         val originalUrl = decode(rawUrl)
-        val fields      = decode(rawFields).split(",").filter { it.isNotBlank() }
+        val fields = decode(rawFields).split(",").filter { it.isNotBlank() }
 
         val html = buildWarningHtml(originalUrl, fields)
         return createTempHtmlFile(html)
     }
 
-    override fun query(uri: Uri, projection: Array<out String>?, selection: String?,
-                       selectionArgs: Array<out String>?, sortOrder: String?): Cursor? = null
+    override fun query(
+        uri: Uri, projection: Array<out String>?, selection: String?,
+        selectionArgs: Array<out String>?, sortOrder: String?
+    ): Cursor? = null
+
     override fun insert(uri: Uri, values: ContentValues?): Uri? = null
     override fun delete(uri: Uri, selection: String?, selectionArgs: Array<out String>?): Int = 0
-    override fun update(uri: Uri, values: ContentValues?, selection: String?,
-                        selectionArgs: Array<out String>?): Int = 0
+    override fun update(
+        uri: Uri, values: ContentValues?, selection: String?,
+        selectionArgs: Array<out String>?
+    ): Int = 0
 
     private fun grantReadPermissionToCaller(uri: Uri) {
         val ctx = context ?: return
-        val pkg = ctx.packageManager.getPackagesForUid(Binder.getCallingUid())?.firstOrNull() ?: return
+        val pkg =
+            ctx.packageManager.getPackagesForUid(Binder.getCallingUid())?.firstOrNull() ?: return
         ctx.grantUriPermission(pkg, uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
     }
 
     private fun decode(raw: String): String = try {
         URLDecoder.decode(raw, StandardCharsets.UTF_8.name())
-    } catch (_: Exception) { raw }
+    } catch (_: Exception) {
+        raw
+    }
 
     private fun createTempHtmlFile(html: String): ParcelFileDescriptor? = try {
         val file = File(context!!.cacheDir, "form_warning_${System.currentTimeMillis()}.html")
@@ -65,11 +73,11 @@ class FormWarningPageContentProvider : ContentProvider() {
     }
 
     companion object {
-        private const val TAG       = "FormWarningProvider"
+        private const val TAG = "FormWarningProvider"
         private const val AUTHORITY = "com.safenest.urlguard.warning"
-        private const val PATH      = "form-warning"
+        private const val PATH = "form-warning"
         private const val CODE_FORM_WARNING = 1
-        const val QUERY_URL    = "url"
+        const val QUERY_URL = "url"
         const val QUERY_FIELDS = "fields"
 
         val BASE_URI: Uri = Uri.parse("content://$AUTHORITY/$PATH")
@@ -85,7 +93,7 @@ class FormWarningPageContentProvider : ContentProvider() {
                 .build()
 
         fun buildWarningHtml(originalUrl: String, fields: List<String>): String {
-            val domain     = Uri.parse(originalUrl).host ?: originalUrl
+            val domain = Uri.parse(originalUrl).host ?: originalUrl
             val fieldsHtml = if (fields.isEmpty()) "Sensitive fields detected"
             else fields.joinToString(" &bull; ") {
                 it.replace("-", " ")

@@ -48,7 +48,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color as ComposeColor
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.font.FontWeight
@@ -57,14 +56,15 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import com.safeNest.demo.notificationInterceptor.impl.data.NotificationRecord
 import com.uney.core.router.RouterManager
 import com.uney.core.router.compose.LocalRouterManager
 import dagger.hilt.android.AndroidEntryPoint
-import com.safeNest.demo.notificationInterceptor.impl.data.NotificationRecord
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import javax.inject.Inject
+import androidx.compose.ui.graphics.Color as ComposeColor
 
 @AndroidEntryPoint
 class NotificationInterceptorActivity : ComponentActivity() {
@@ -111,7 +111,10 @@ fun NotificationInterceptorScreen(viewModel: NotificationInterceptorViewModel) {
     var postNotifGranted by remember {
         mutableStateOf(
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
+                ContextCompat.checkSelfPermission(
+                    context,
+                    Manifest.permission.POST_NOTIFICATIONS
+                ) == PackageManager.PERMISSION_GRANTED
             } else {
                 true
             }
@@ -293,9 +296,21 @@ private fun NotificationRow(record: NotificationRecord) {
             horizontalArrangement = Arrangement.spacedBy(4.dp),
             modifier = Modifier.padding(top = 6.dp)
         ) {
-            if (record.wasClicked) StatusChip("Clicked", ComposeColor(0xFFDCFCE7), ComposeColor(0xFF166534))
-            if (record.isOngoing) StatusChip("Ongoing", ComposeColor(0xFFE0E7FF), ComposeColor(0xFF3730A3))
-            if (record.isForegroundService) StatusChip("FG Service", ComposeColor(0xFFFEF3C7), ComposeColor(0xFF92400E))
+            if (record.wasClicked) StatusChip(
+                "Clicked",
+                ComposeColor(0xFFDCFCE7),
+                ComposeColor(0xFF166534)
+            )
+            if (record.isOngoing) StatusChip(
+                "Ongoing",
+                ComposeColor(0xFFE0E7FF),
+                ComposeColor(0xFF3730A3)
+            )
+            if (record.isForegroundService) StatusChip(
+                "FG Service",
+                ComposeColor(0xFFFEF3C7),
+                ComposeColor(0xFF92400E)
+            )
         }
 
         // Expanded details
@@ -329,10 +344,16 @@ private fun DetailBlock(record: NotificationRecord) {
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         DetailRow("Package", record.packageName)
-        DetailRow("Notif ID", "${record.notificationId}${if (record.notificationTag != null) " / tag: ${record.notificationTag}" else ""}")
+        DetailRow(
+            "Notif ID",
+            "${record.notificationId}${if (record.notificationTag != null) " / tag: ${record.notificationTag}" else ""}"
+        )
         record.notificationChannelId?.let { DetailRow("Channel", it) }
 
-        if (!record.conversationTitle.isNullOrBlank()) DetailRow("Conversation", record.conversationTitle)
+        if (!record.conversationTitle.isNullOrBlank()) DetailRow(
+            "Conversation",
+            record.conversationTitle
+        )
         if (!record.senderName.isNullOrBlank()) DetailRow("Sender", record.senderName)
         if (!record.subText.isNullOrBlank()) DetailRow("Sub-text", record.subText)
         if (!record.infoText.isNullOrBlank()) DetailRow("Info", record.infoText)

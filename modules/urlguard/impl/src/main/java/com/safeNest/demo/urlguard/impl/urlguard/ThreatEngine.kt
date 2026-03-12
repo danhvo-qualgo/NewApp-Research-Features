@@ -12,7 +12,6 @@ interface ThreatEngine {
 }
 
 
-
 /**
  * Example implementation: blocklist + optional domain blocklist.
  * In production, use Google Safe Browsing API or similar.
@@ -23,7 +22,7 @@ class DefaultThreatEngine : ThreatEngine {
         if (url.isBlank()) return false
         val normalized = normalizeUrl(url) ?: return false
         val blocked = BLOCKED_DOMAINS.any { normalized.contains(it) } ||
-            BLOCKED_PATTERNS.any { Pattern.compile(it).matcher(normalized).find() }
+                BLOCKED_PATTERNS.any { Pattern.compile(it).matcher(normalized).find() }
         if (blocked) Log.w(TAG, "ThreatEngine: blocked URL $normalized")
         return blocked
     }
@@ -40,6 +39,7 @@ class DefaultThreatEngine : ThreatEngine {
 
     companion object {
         private const val TAG = "ThreatEngine"
+
         // Example blocklist — replace with your threat feed or API.
         private val BLOCKED_DOMAINS = setOf(
             "malware.example.com",

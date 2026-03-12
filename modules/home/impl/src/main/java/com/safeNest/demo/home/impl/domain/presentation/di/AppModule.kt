@@ -1,9 +1,9 @@
 package com.safeNest.demo.home.impl.domain.presentation.di
 
-import com.uney.core.router.Router
 import com.safeNest.demo.home.api.HomeProvider
 import com.safeNest.demo.home.impl.domain.presentation.HomeProviderImpl
 import com.safeNest.demo.home.impl.domain.presentation.router.HomeRouter
+import com.uney.core.router.Router
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn

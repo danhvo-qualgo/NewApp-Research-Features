@@ -1,6 +1,5 @@
 package com.safeNest.demo.app
 
-import com.safeNest.demo.baseApp.base.app.BaseApplication
 import com.uney.core.remoteConfig.api.RemoteConfig
 import com.uney.core.remoteConfig.api.RemoteConfigManager
 import dagger.Lazy

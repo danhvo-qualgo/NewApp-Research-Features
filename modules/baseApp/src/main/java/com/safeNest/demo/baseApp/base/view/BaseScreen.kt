@@ -4,8 +4,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import com.safeNest.demo.baseApp.base.viewModel.BaseUiEvent
-import com.safeNest.demo.baseApp.base.viewModel.BaseUiState
 import kotlinx.coroutines.flow.SharedFlow
 
 @Composable

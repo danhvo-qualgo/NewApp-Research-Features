@@ -7,13 +7,13 @@ import javax.inject.Inject
 
 class CallDeviceStoreImpl @Inject constructor(
     private val deviceStorage: DeviceStorage
-): CallDeviceStore {
+) : CallDeviceStore {
     override suspend fun setEnableWhitelist(isEnable: Boolean) {
         deviceStorage.setBoolean(ENABLE_WHITELIST, isEnable)
     }
 
     override fun isEnableWhitelist(): Flow<Boolean> {
-       return deviceStorage.getBoolean(ENABLE_WHITELIST).map { it ?: false }
+        return deviceStorage.getBoolean(ENABLE_WHITELIST).map { it ?: false }
 
     }
 

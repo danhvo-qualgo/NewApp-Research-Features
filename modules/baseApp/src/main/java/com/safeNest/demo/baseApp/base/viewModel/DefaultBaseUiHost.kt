@@ -9,15 +9,21 @@ import javax.inject.Inject
 
 @ViewModelScoped
 class DefaultBaseUiHost @Inject constructor() :
-    com.safeNest.demo.baseApp.base.viewModel.BaseUiHost {
+    BaseUiHost {
 
-    override val baseUiState = MutableStateFlow(_root_ide_package_.com.safeNest.demo.baseApp.base.viewModel.BaseUiState())
+    override val baseUiState =
+        MutableStateFlow(BaseUiState())
 
-    override val baseUiEvent = MutableSharedFlow<com.safeNest.demo.baseApp.base.viewModel.BaseUiEvent>()
+    override val baseUiEvent =
+        MutableSharedFlow<BaseUiEvent>()
 
     override fun showLoading(loading: Boolean) {
         baseUiState.update { it.copy(loading = loading) }
     }
 
-    override fun showErrorDialog(title: com.safeNest.demo.baseApp.base.model.UiText, message: com.safeNest.demo.baseApp.base.model.UiText) {}
+    override fun showErrorDialog(
+        title: UiText,
+        message: UiText
+    ) {
+    }
 }

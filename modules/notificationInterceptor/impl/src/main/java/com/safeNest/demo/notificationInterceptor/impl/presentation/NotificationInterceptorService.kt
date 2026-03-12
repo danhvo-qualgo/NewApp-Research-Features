@@ -25,8 +25,16 @@ class NotificationInterceptorService : NotificationListenerService() {
             hasRebound = true
             val pm = packageManager
             val component = ComponentName(this, NotificationInterceptorService::class.java)
-            pm.setComponentEnabledSetting(component, PackageManager.COMPONENT_ENABLED_STATE_DISABLED, PackageManager.DONT_KILL_APP)
-            pm.setComponentEnabledSetting(component, PackageManager.COMPONENT_ENABLED_STATE_ENABLED, PackageManager.DONT_KILL_APP)
+            pm.setComponentEnabledSetting(
+                component,
+                PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
+                PackageManager.DONT_KILL_APP
+            )
+            pm.setComponentEnabledSetting(
+                component,
+                PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
+                PackageManager.DONT_KILL_APP
+            )
         }
     }
 
@@ -49,6 +57,7 @@ class NotificationInterceptorService : NotificationListenerService() {
                 if (sbn.packageName == smsPackage) NotificationCategory.SMS
                 else NotificationCategory.CHAT
             }
+
             else -> NotificationCategory.OTHER
         }
 
@@ -70,7 +79,8 @@ class NotificationInterceptorService : NotificationListenerService() {
             messages = parsedMessages.mapNotNull { it.text?.toString() }
             senderName = parsedMessages.lastOrNull()?.senderPerson?.name?.toString()
                 ?: extras.getCharSequence(Notification.EXTRA_MESSAGING_PERSON)?.toString()
-            conversationTitle = extras.getCharSequence(Notification.EXTRA_CONVERSATION_TITLE)?.toString()
+            conversationTitle =
+                extras.getCharSequence(Notification.EXTRA_CONVERSATION_TITLE)?.toString()
         } else {
             messages = emptyList()
         }
@@ -115,7 +125,11 @@ class NotificationInterceptorService : NotificationListenerService() {
         NotificationStore.add(record)
     }
 
-    override fun onNotificationRemoved(sbn: StatusBarNotification, rankingMap: RankingMap, reason: Int) {
+    override fun onNotificationRemoved(
+        sbn: StatusBarNotification,
+        rankingMap: RankingMap,
+        reason: Int
+    ) {
         if (reason == REASON_CLICK) {
             val key = "${sbn.packageName}:${sbn.id}:${sbn.tag ?: ""}"
             NotificationStore.markClicked(key)

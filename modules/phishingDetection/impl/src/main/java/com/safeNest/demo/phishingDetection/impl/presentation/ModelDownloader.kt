@@ -60,7 +60,7 @@ object ModelDownloader {
                 val conn = URL("$BASE_URL/$name").openConnection() as HttpURLConnection
                 conn.requestMethod = "HEAD"
                 conn.connectTimeout = 15_000
-                conn.readTimeout    = 15_000
+                conn.readTimeout = 15_000
                 conn.connect()
                 val len = conn.contentLengthLong
                 conn.disconnect()
@@ -77,13 +77,13 @@ object ModelDownloader {
         // ── Phase 2: Download each missing file sequentially ─────────────────
         for (name in missing) {
             val dest = File(modelDir, name)
-            val tmp  = File(modelDir, "$name.tmp")
+            val tmp = File(modelDir, "$name.tmp")
 
             Log.i(TAG, "Downloading $name …")
 
             val conn = URL("$BASE_URL/$name").openConnection() as HttpURLConnection
             conn.connectTimeout = 30_000
-            conn.readTimeout    = 60_000
+            conn.readTimeout = 60_000
             conn.connect()
 
             val responseCode = conn.responseCode

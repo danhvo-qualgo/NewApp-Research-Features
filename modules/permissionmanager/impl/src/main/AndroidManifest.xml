@@ -11,7 +11,7 @@
         <activity
             android:name="com.safeNest.demo.permissionmanager.impl.presentation.PermissionManagerActivity"
             android:exported="false"
-            android:label="@string/title_activity_permission_manager"/>
+            android:label="@string/title_activity_permission_manager" />
     </application>
 
 </manifest>

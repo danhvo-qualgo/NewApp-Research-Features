@@ -48,10 +48,10 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import com.safeNest.demo.phishingDetection.impl.presentation.models.WebsiteMetadata
 import com.uney.core.router.RouterManager
 import com.uney.core.router.compose.LocalRouterManager
 import dagger.hilt.android.AndroidEntryPoint
-import com.safeNest.demo.phishingDetection.impl.presentation.models.WebsiteMetadata
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -132,7 +132,12 @@ fun PhishingDetectionScreen(viewModel: PhishingDetectionViewModel = hiltViewMode
                 value = urlInput,
                 onValueChange = { urlInput = it },
                 label = { Text("Enter URL") },
-                placeholder = { Text(text = "https://example.com", color = androidx.compose.ui.graphics.Color.Gray) },
+                placeholder = {
+                    Text(
+                        text = "https://example.com",
+                        color = androidx.compose.ui.graphics.Color.Gray
+                    )
+                },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(

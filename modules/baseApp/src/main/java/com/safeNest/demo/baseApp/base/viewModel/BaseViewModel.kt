@@ -1,16 +1,17 @@
 package com.safeNest.demo.baseApp.base.viewModel
 
 import androidx.lifecycle.ViewModel
-import com.safeNest.demo.baseApp.base.model.ApiError
-import com.safeNest.demo.baseApp.base.model.UiText
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 
-open class BaseViewModel(private val delegate: com.safeNest.demo.baseApp.base.viewModel.BaseUiHost) : ViewModel() {
+open class BaseViewModel(private val delegate: com.safeNest.demo.baseApp.base.viewModel.BaseUiHost) :
+    ViewModel() {
 
-    val baseUiState: StateFlow<com.safeNest.demo.baseApp.base.viewModel.BaseUiState> = delegate.baseUiState
+    val baseUiState: StateFlow<com.safeNest.demo.baseApp.base.viewModel.BaseUiState> =
+        delegate.baseUiState
 
-    val baseUiEvent: SharedFlow<com.safeNest.demo.baseApp.base.viewModel.BaseUiEvent> = delegate.baseUiEvent
+    val baseUiEvent: SharedFlow<com.safeNest.demo.baseApp.base.viewModel.BaseUiEvent> =
+        delegate.baseUiEvent
 
     fun showLoading(loading: Boolean) {
         delegate.showLoading(loading)

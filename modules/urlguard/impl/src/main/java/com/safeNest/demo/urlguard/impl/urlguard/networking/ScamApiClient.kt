@@ -1,7 +1,5 @@
 package com.safeNest.demo.urlguard.impl.urlguard.networking
 
-import android.R.attr.level
-import android.net.http.HttpResponseCache.install
 import android.util.Log
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
@@ -33,19 +31,19 @@ data class AnalyzeTextRequest(
 
 @Serializable
 data class AnalyzeTextResponse(
-    @SerialName("is_scam")          val isScam: Boolean           = false,
-    @SerialName("scam_categories")  val scamCategories: List<String> = emptyList(),
-    val confidence: Double                                         = 0.0,
-    @SerialName("risk_level")       val riskLevel: String         = "",
-    val evidence: List<String>                                     = emptyList(),
+    @SerialName("is_scam") val isScam: Boolean = false,
+    @SerialName("scam_categories") val scamCategories: List<String> = emptyList(),
+    val confidence: Double = 0.0,
+    @SerialName("risk_level") val riskLevel: String = "",
+    val evidence: List<String> = emptyList(),
     @SerialName("detected_entities") val detectedEntities: DetectedEntities? = null
 )
 
 @Serializable
 data class DetectedEntities(
-    val urls: List<String>                                         = emptyList(),
-    @SerialName("phone_numbers")       val phoneNumbers: List<String>      = emptyList(),
-    @SerialName("money_amounts")       val moneyAmounts: List<String>      = emptyList(),
+    val urls: List<String> = emptyList(),
+    @SerialName("phone_numbers") val phoneNumbers: List<String> = emptyList(),
+    @SerialName("money_amounts") val moneyAmounts: List<String> = emptyList(),
     @SerialName("suspicious_keywords") val suspiciousKeywords: List<String> = emptyList()
 )
 
@@ -68,12 +66,14 @@ object ScamApiClient {
             install(Logging) {
                 level = LogLevel.BODY
                 logger = object : Logger {
-                    override fun log(message: String) { Log.d(TAG, message) }
+                    override fun log(message: String) {
+                        Log.d(TAG, message)
+                    }
                 }
             }
             engine {
                 connectTimeout = 15_000
-                socketTimeout  = 15_000
+                socketTimeout = 15_000
             }
         }
     }

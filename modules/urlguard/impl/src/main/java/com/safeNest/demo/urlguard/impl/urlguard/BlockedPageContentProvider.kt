@@ -59,10 +59,22 @@ class BlockedPageContentProvider : ContentProvider() {
         return pfd
     }
 
-    override fun query(uri: Uri, projection: Array<out String>?, selection: String?, selectionArgs: Array<out String>?, sortOrder: String?): Cursor? = null
+    override fun query(
+        uri: Uri,
+        projection: Array<out String>?,
+        selection: String?,
+        selectionArgs: Array<out String>?,
+        sortOrder: String?
+    ): Cursor? = null
+
     override fun insert(uri: Uri, values: ContentValues?): Uri? = null
     override fun delete(uri: Uri, selection: String?, selectionArgs: Array<out String>?): Int = 0
-    override fun update(uri: Uri, values: ContentValues?, selection: String?, selectionArgs: Array<out String>?): Int = 0
+    override fun update(
+        uri: Uri,
+        values: ContentValues?,
+        selection: String?,
+        selectionArgs: Array<out String>?
+    ): Int = 0
 
     /**
      * Grant the calling app (e.g. Chrome) read permission for this URI so it can load content:// in its WebView.
@@ -81,7 +93,8 @@ class BlockedPageContentProvider : ContentProvider() {
         }
     }
 
-    private fun buildBlockedPageHtml(blockedUrl: String): String = buildBlockedPageHtmlStatic(blockedUrl)
+    private fun buildBlockedPageHtml(blockedUrl: String): String =
+        buildBlockedPageHtmlStatic(blockedUrl)
 
     companion object {
         /** Same block page HTML as a static function so the service can build a data: URL without using the ContentProvider. */

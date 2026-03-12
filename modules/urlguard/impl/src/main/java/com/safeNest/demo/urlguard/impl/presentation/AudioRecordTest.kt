@@ -8,7 +8,6 @@ import android.media.MediaPlayer
 import android.media.MediaRecorder
 import android.os.Bundle
 import android.util.Log
-import android.view.View.OnClickListener
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.LinearLayout
@@ -39,11 +38,12 @@ class AudioRecordTest : ComponentActivity() {
         grantResults: IntArray
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        permissionToRecordAccepted = if (requestCode == _root_ide_package_.com.safeNest.demo.urlguard.impl.presentation.REQUEST_RECORD_AUDIO_PERMISSION) {
-            grantResults[0] == PackageManager.PERMISSION_GRANTED
-        } else {
-            false
-        }
+        permissionToRecordAccepted =
+            if (requestCode == _root_ide_package_.com.safeNest.demo.urlguard.impl.presentation.REQUEST_RECORD_AUDIO_PERMISSION) {
+                grantResults[0] == PackageManager.PERMISSION_GRANTED
+            } else {
+                false
+            }
         if (!permissionToRecordAccepted) finish()
     }
 
@@ -148,16 +148,22 @@ class AudioRecordTest : ComponentActivity() {
         recordButton = RecordButton(this)
         playButton = PlayButton(this)
         val ll = LinearLayout(this).apply {
-            addView(recordButton,
+            addView(
+                recordButton,
                 LinearLayout.LayoutParams(
                     ViewGroup.LayoutParams.WRAP_CONTENT,
                     ViewGroup.LayoutParams.WRAP_CONTENT,
-                    0f))
-            addView(playButton,
+                    0f
+                )
+            )
+            addView(
+                playButton,
                 LinearLayout.LayoutParams(
                     ViewGroup.LayoutParams.WRAP_CONTENT,
                     ViewGroup.LayoutParams.WRAP_CONTENT,
-                    0f))
+                    0f
+                )
+            )
         }
         setContentView(ll)
     }

@@ -5,9 +5,11 @@ import kotlinx.serialization.Serializable
 @Serializable
 sealed interface Screen {
     @Serializable
-    object Home: Screen
+    object Home : Screen
+
     @Serializable
-    object Whitelist: Screen
+    object Whitelist : Screen
+
     @Serializable
-    object Blacklist: Screen
+    object Blacklist : Screen
 }

@@ -22,7 +22,10 @@ class FormInspectorWebView(
     private var isInspecting = false
 
     @SuppressLint("SetJavaScriptEnabled")
-    fun inspect(url: String, onResult: (hasSensitiveForm: Boolean, detectedFields: List<String>) -> Unit) {
+    fun inspect(
+        url: String,
+        onResult: (hasSensitiveForm: Boolean, detectedFields: List<String>) -> Unit
+    ) {
         if (isInspecting) return
         isInspecting = true
         val wv = WebView(context)
@@ -48,7 +51,11 @@ class FormInspectorWebView(
                 }
             }
 
-            override fun onReceivedError(view: WebView, request: WebResourceRequest, error: WebResourceError) {
+            override fun onReceivedError(
+                view: WebView,
+                request: WebResourceRequest,
+                error: WebResourceError
+            ) {
                 if (request.isForMainFrame) {
                     cancelTimeout()
                     mainHandler.post {
@@ -87,7 +94,10 @@ class FormInspectorWebView(
         isInspecting = false
         cancelTimeout()
         webView?.let { wv ->
-            try { windowManager.removeView(wv) } catch (_: Exception) {}
+            try {
+                windowManager.removeView(wv)
+            } catch (_: Exception) {
+            }
             wv.stopLoading()
             mainHandler.post { wv.destroy() }
         }

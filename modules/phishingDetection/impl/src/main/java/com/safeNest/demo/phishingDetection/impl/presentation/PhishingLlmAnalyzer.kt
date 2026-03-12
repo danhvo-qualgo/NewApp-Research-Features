@@ -57,6 +57,7 @@ class PhishingLlmAnalyzer {
                     onToken(token)
                     return true
                 }
+
                 override fun onFinish() = onDone()
             },
         )

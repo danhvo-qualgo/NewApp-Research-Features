@@ -79,7 +79,10 @@ class WebsiteInspectorWebView(
         isInspecting = false
         cancelTimeout()
         webView?.let { wv ->
-            try { container.removeView(wv) } catch (_: Exception) {}
+            try {
+                container.removeView(wv)
+            } catch (_: Exception) {
+            }
             wv.stopLoading()
             mainHandler.post { wv.destroy() }
         }

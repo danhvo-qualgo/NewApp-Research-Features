@@ -17,13 +17,19 @@ import javax.inject.Singleton
 internal class DataModule {
 
     @Provides
-    fun callDetectionRepository(impl: CallDetectionRepositoryImpl): CallDetectionRepository = impl
+    fun callDetectionRepository(
+        impl: CallDetectionRepositoryImpl
+    ): CallDetectionRepository = impl
 
     @Singleton
     @Provides
-    fun whitelistRepository(impl: WhitelistRepositoryImpl): WhitelistRepository = impl
+    fun whitelistRepository(
+        impl: WhitelistRepositoryImpl
+    ): WhitelistRepository = impl
 
     @Singleton
     @Provides
-    fun blacklistPatternRepository(impl: BlacklistPatternRepositoryImpl): BlacklistPatternRepository = impl
+    fun blacklistPatternRepository(
+        impl: BlacklistPatternRepositoryImpl
+    ): BlacklistPatternRepository = impl
 }
