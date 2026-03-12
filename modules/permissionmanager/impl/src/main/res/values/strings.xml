@@ -1,0 +1,10 @@
+<resources>
+    <string name="title_activity_permission_manager">Permission Manager</string>
+    <string name="permission_manager_title">App Permissions</string>
+    <string name="permission_manager_search_hint">Search apps…</string>
+    <string name="permission_manager_show_system">Show system apps</string>
+    <string name="permission_manager_app_count">%d apps</string>
+    <string name="permission_manager_no_apps">No apps found</string>
+    <string name="permission_manager_error">Failed to load apps</string>
+    <string name="permission_manager_retry">Retry</string>
+</resources>
