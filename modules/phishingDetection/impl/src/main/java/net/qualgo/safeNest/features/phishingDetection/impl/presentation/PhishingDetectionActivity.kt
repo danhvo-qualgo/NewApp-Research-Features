@@ -64,8 +64,7 @@ import com.uney.core.router.compose.LocalRouterManager
 import dagger.hilt.android.AndroidEntryPoint
 import net.qualgo.safeNest.features.phishingDetection.impl.presentation.models.ExtractedEntities
 import net.qualgo.safeNest.features.phishingDetection.impl.presentation.models.WebsiteMetadata
-import net.qualgo.safeNest.features.phishingDetection.impl.presentation.ModelState
-import net.qualgo.safeNest.features.phishingDetection.impl.presentation.OptionViewModel
+import net.qualgo.safeNest.features.phishingDetection.impl.presentation.asr.WhisperModelState
 import net.qualgo.safeNest.features.phishingDetection.impl.presentation.textPhisingDetection.ExtractionMethod
 import net.qualgo.safeNest.features.phishingDetection.impl.presentation.textPhisingDetection.TextImageUiState
 import net.qualgo.safeNest.features.phishingDetection.impl.presentation.textPhisingDetection.TextImageViewModel
@@ -107,6 +106,7 @@ class PhishingDetectionActivity : ComponentActivity() {
                         PhishingTextDetectionScreen()
                     }
                 }
+//                ScamAnalyzerScreen()
             }
         }
     }
@@ -119,6 +119,7 @@ fun PhishingDetectionOptionScreen(
     onTextImageCheckerClick: () -> Unit = {}
 ) {
     val modelState by viewModel.modelState.collectAsState()
+    val whisperState by viewModel.whisperState.collectAsState()
 
     Box(
         modifier = Modifier
@@ -142,7 +143,7 @@ fun PhishingDetectionOptionScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // ── Model status ─────────────────────────────────────────────────
+            // ── Qwen model status ─────────────────────────────────────────────
             when (val state = modelState) {
                 is ModelState.Idle -> {
                     Row(
@@ -198,6 +199,64 @@ fun PhishingDetectionOptionScreen(
                 }
             }
 
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // ── Whisper model status ──────────────────────────────────────────
+            when (val state = whisperState) {
+                is WhisperModelState.Idle -> {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                        Text(
+                            text = "Preparing Whisper (audio)…",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+                is WhisperModelState.Downloading -> {
+                    Text(
+                        text = "Downloading Whisper model… ${state.progressPercent}%",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    LinearProgressIndicator(
+                        progress = { state.progressPercent / 100f },
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+                is WhisperModelState.Loading -> {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                        Text(
+                            text = "Loading Whisper into memory…",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+                is WhisperModelState.Ready -> {
+                    Text(
+                        text = "Whisper ready",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                }
+                is WhisperModelState.Error -> {
+                    Text(
+                        text = "Whisper error: ${state.message}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                }
+            }
+
             Spacer(modifier = Modifier.height(16.dp))
 
             val modelReady = modelState is ModelState.Ready
@@ -241,7 +300,17 @@ fun PhishingTextDetectionScreen(
         }
     }
 
+    val audioPicker = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        if (uri != null) {
+            focusManager.clearFocus()
+            viewModel.onAudioSelected(uri, selectedMethod)
+        }
+    }
+
     val isBusy = uiState is TextImageUiState.OcrRunning ||
+        uiState is TextImageUiState.TranscribingAudio ||
         uiState is TextImageUiState.Extracting ||
         uiState is TextImageUiState.DeepAnalyzing
 
@@ -284,7 +353,7 @@ fun PhishingTextDetectionScreen(
                             Text(
                                 text = when (method) {
                                     ExtractionMethod.REGEX -> "Regex"
-                                    ExtractionMethod.LLM -> "LLM (Qwen3-0.6B)"
+                                    ExtractionMethod.LLM -> "LLM (Qwen3.5-2B)"
                                 }
                             )
                         },
@@ -343,6 +412,19 @@ fun PhishingTextDetectionScreen(
                 }
             }
 
+            Spacer(modifier = Modifier.height(8.dp))
+
+            OutlinedButton(
+                onClick = {
+                    focusManager.clearFocus()
+                    audioPicker.launch("audio/*")
+                },
+                modifier = Modifier.fillMaxWidth(),
+                enabled = !isBusy,
+            ) {
+                Text("Upload Audio")
+            }
+
             Spacer(modifier = Modifier.height(24.dp))
 
             // ── State feedback ────────────────────────────────────────────────
@@ -357,6 +439,20 @@ fun PhishingTextDetectionScreen(
                         CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
                         Text(
                             text = "Reading image…",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+
+                is TextImageUiState.TranscribingAudio -> {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                        Text(
+                            text = "Transcribing audio…",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )

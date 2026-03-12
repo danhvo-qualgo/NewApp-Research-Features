@@ -7,6 +7,7 @@ enum class ExtractionMethod { REGEX, LLM }
 sealed class TextImageUiState {
     object Idle : TextImageUiState()
     object OcrRunning : TextImageUiState()
+    object TranscribingAudio : TextImageUiState()
     data class Extracting(
         val method: ExtractionMethod,
         val sourceText: String,

@@ -212,9 +212,9 @@ Java_net_qualgo_safeNest_features_phishingDetection_impl_presentation_PhishingLl
             LOGE("nativeCreate: Llm::createLLM returned null");
             return 0L;
         }
-        llm->set_config("{\"backend_type\": \"opencl\", \"thread_num\": 68}");
+        llm->set_config("{\"backend_type\": \"vulkan\"}");
         llm->load();
-        LOGI("nativeCreate: model loaded successfully on GPU (OpenCL)");
+        LOGI("nativeCreate: model loaded successfully on GPU (vulkan)");
         return reinterpret_cast<jlong>(llm);
     } catch (const std::exception& e) {
         LOGI("nativeCreate: GPU load failed (%s), retrying on CPU", e.what());
@@ -291,7 +291,7 @@ Java_net_qualgo_safeNest_features_phishingDetection_impl_presentation_PhishingLl
     std::ostream tokenStream(&streamBuf);
 
     try {
-        llm->response(promptStr, &tokenStream, "<|im_end|>", 200);
+        llm->response(promptStr, &tokenStream, "<|im_end|>", 512);
         tokenStream.flush(); // flush any remaining partial chunk
     } catch (const std::exception& e) {
         LOGE("nativeGenerate: exception: %s", e.what());

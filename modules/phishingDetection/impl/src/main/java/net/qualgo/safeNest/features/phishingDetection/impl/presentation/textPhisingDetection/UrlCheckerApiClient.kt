@@ -29,7 +29,7 @@ private data class UrlAnalyzeRequest(val url: String)
 object UrlCheckerApiClient {
 
     private const val TAG = "UrlCheckerApiClient"
-    private const val ENDPOINT = "http://192.168.2.220:8000/api/v1.0/urls/analyze" //update later
+    private const val ENDPOINT = "http://192.168.122.230:8000/api/v1.0/urls/analyze" //update later
 
     private val json = Json {
         ignoreUnknownKeys = true

@@ -14,50 +14,46 @@ object DeepResearchSummarizer {
         if (result.urlCheckerResponses.isNotEmpty()) {
             result.urlCheckerResponses.forEach { response ->
                 appendLine("- The analysis result of URL Checker for ${response.url}:")
-                appendLine(response.toSummaryJson())
+                appendLine(response.toSignalSummary())
             }
         }
     }.trimEnd()
 
-    private fun UrlCheckerResponse.toSummaryJson(): String {
-        return buildString {
-            appendLine("{")
-            appendLine("  \"url\": \"$url\",")
-            appendLine("  \"ssl\": {")
-            appendLine("    \"valid\": ${ssl.valid},")
-            appendLine("    \"issuer\": \"${ssl.issuer}\",")
-            appendLine("    \"protocol\": \"${ssl.protocol}\",")
-            appendLine("    \"expiresAt\": \"${ssl.expiresAt}\",")
-            appendLine("    \"daysUntilExpiry\": ${ssl.daysUntilExpiry},")
-            appendLine("    \"subjectAltNames\": [${ssl.subjectAltNames.joinToString { "\"$it\"" }}]")
-            appendLine("  },")
-            appendLine("  \"homograph\": {")
-            appendLine("    \"isHomograph\": ${homograph.isHomograph},")
-            appendLine("    \"isIDN\": ${homograph.isIDN},")
-            appendLine("    \"hasMixedScripts\": ${homograph.hasMixedScripts},")
-            appendLine("    \"punycode\": \"${homograph.punycode}\",")
-            appendLine("    \"score\": ${homograph.score},")
-            appendLine("    \"confusableChars\": [")
-            homograph.confusableChars.forEachIndexed { i, c ->
-                val comma = if (i < homograph.confusableChars.size - 1) "," else ""
-                appendLine("      { \"char\": \"${c.char}\", \"looksLike\": \"${c.looksLike}\", \"script\": \"${c.script}\", \"unicode\": \"${c.unicode}\" }$comma")
-            }
-            appendLine("    ]")
-            appendLine("  },")
-            appendLine("  \"typosquat\": {")
-            appendLine("    \"isTyposquat\": ${typosquat.isTyposquat},")
-            appendLine("    \"matchedDomain\": \"${typosquat.matchedDomain}\",")
-            appendLine("    \"distance\": ${typosquat.distance},")
-            appendLine("    \"score\": ${typosquat.score}")
-            appendLine("  },")
-            appendLine("  \"pageInfo\": {")
-            appendLine("    \"reachable\": ${pageInfo.reachable},")
-            appendLine("    \"statusCode\": ${pageInfo.statusCode},")
-            appendLine("    \"title\": \"${pageInfo.title}\",")
-            appendLine("    \"description\": \"${pageInfo.description}\",")
-            appendLine("    \"finalUrl\": \"${pageInfo.finalUrl}\"")
-            append("  }")
-            append("\n}")
+    private fun UrlCheckerResponse.toSignalSummary(): String = buildString {
+        appendLine(
+            "homograph: is_homograph=${homograph.isHomograph}, score=${"%.3f".format(homograph.score)}"
+        )
+        appendLine(
+            "typosquat: is_typosquat=${typosquat.isTyposquat}, matched_domain=${typosquat.matchedDomain}, score=${"%.3f".format(typosquat.score)}"
+        )
+        appendLine(
+            "ssl: valid=${ssl.valid}, issuer=${ssl.issuer}, days_until_expiry=${ssl.daysUntilExpiry}"
+        )
+        appendLine(
+            "page_info: reachable=${pageInfo.reachable}, final_url=${pageInfo.finalUrl}, title=${pageInfo.title}"
+        )
+    }.trimEnd()
+
+    fun buildSmsSignalSummary(text: String): String {
+        val signals = mutableListOf<String>()
+        val lower = text.lowercase()
+
+        val urgencyWords = listOf(
+            "khẩn cấp", "ngay lập tức", "nhanh chóng", "hết hạn", "trúng thưởng", "miễn phí",
+            "nhận ngay", "click", "xác nhận", "đăng nhập", "mật khẩu", "tài khoản bị khóa"
+        )
+        urgencyWords.firstOrNull { lower.contains(it.lowercase()) }?.let { matched ->
+            signals += "urgency_keyword: \"$matched\""
         }
+
+        if (text.contains("http://") || text.contains("https://")) {
+            signals += "contains_url: true"
+        }
+
+        if (text.isNotEmpty() && (text.contains("0") || text.contains("+84"))) {
+            signals += "possible_phone: true"
+        }
+
+        return if (signals.isEmpty()) "(no signals detected)" else signals.joinToString("\n")
     }
 }

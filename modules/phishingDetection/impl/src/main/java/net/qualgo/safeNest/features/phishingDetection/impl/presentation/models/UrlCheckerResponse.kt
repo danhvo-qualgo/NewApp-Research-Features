@@ -19,7 +19,7 @@ data class SslInfo(
     val protocol: String,
     val expiresAt: String,
     val daysUntilExpiry: Int,
-    val subjectAltNames: List<String>,
+    val subjectAltNames: List<String>?,
 )
 
 @Serializable

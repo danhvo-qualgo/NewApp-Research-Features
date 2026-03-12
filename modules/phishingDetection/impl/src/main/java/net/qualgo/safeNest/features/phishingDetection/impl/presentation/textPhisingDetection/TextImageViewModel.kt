@@ -15,6 +15,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import net.qualgo.safeNest.features.phishingDetection.impl.presentation.ModelManager
+import net.qualgo.safeNest.features.phishingDetection.impl.presentation.asr.WhisperModelManager
+import net.qualgo.safeNest.features.phishingDetection.impl.presentation.asr.WhisperTranscriber
 import net.qualgo.safeNest.features.phishingDetection.impl.presentation.models.ExtractedEntities
 import javax.inject.Inject
 
@@ -22,6 +24,7 @@ import javax.inject.Inject
 class TextImageViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
     private val modelManager: ModelManager,
+    private val whisperModelManager: WhisperModelManager,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<TextImageUiState>(TextImageUiState.Idle)
@@ -58,6 +61,43 @@ class TextImageViewModel @Inject constructor(
         }
     }
 
+    fun onAudioSelected(uri: Uri, method: ExtractionMethod) {
+        viewModelScope.launch {
+            // File size check — reject files larger than 10 MB
+            val fileSizeBytes = runCatching {
+                context.contentResolver.openFileDescriptor(uri, "r")?.use { it.statSize } ?: 0L
+            }.getOrDefault(0L)
+            if (fileSizeBytes > 10 * 1024 * 1024) {
+                _uiState.value = TextImageUiState.Error("Audio file too large (max 10 MB)")
+                return@launch
+            }
+
+            _uiState.value = TextImageUiState.TranscribingAudio
+
+            try {
+                whisperModelManager.ensureReady()
+
+                val transcribed = WhisperTranscriber.transcribe(
+                    uri = uri,
+                    context = context,
+                    interpreter = whisperModelManager.interpreter,
+                    modelDir = whisperModelManager.modelDir,
+                )
+
+                if (transcribed.isBlank()) {
+                    _uiState.value = TextImageUiState.Error("Could not transcribe audio — no speech detected")
+                } else {
+                    runExtraction(transcribed, method)
+                }
+            } catch (e: Exception) {
+                Log.e("TextImageViewModel", "Audio transcription failed", e)
+                _uiState.value = TextImageUiState.Error(
+                    "Transcription failed: ${e.message ?: "Unknown error"}"
+                )
+            }
+        }
+    }
+
     private fun runExtraction(text: String, method: ExtractionMethod) {
         viewModelScope.launch {
             when (method) {
@@ -73,8 +113,6 @@ class TextImageViewModel @Inject constructor(
                     Log.d("LLM extraction", text)
                     _uiState.value = TextImageUiState.Extracting(method, text)
                     try {
-                        // Model is guaranteed loaded by the option screen; ensureReady()
-                        // is a no-op if already Ready, so this is safe as a fallback.
                         modelManager.ensureReady()
                         val entities = LlmEntityExtractor.extract(
                             text = text,
@@ -110,7 +148,6 @@ class TextImageViewModel @Inject constructor(
             val summary = DeepResearchSummarizer.summarize(researchResult)
             val analysisPrompt = buildAnalysisPrompt(redactedText, summary)
 
-            // Model is already loaded; ensureReady() is a no-op here.
             modelManager.ensureReady()
 
             val tokens = StringBuilder()
@@ -145,6 +182,7 @@ class TextImageViewModel @Inject constructor(
 
     private fun buildAnalysisPrompt(redactedText: String, summary: String): String = buildString {
         append("<|im_start|>system\n")
+        append("</no_think>")
         append("You are a cybersecurity expert specializing in phishing and scam detection. ")
         append("Analyze the following message for phishing risk based on the redacted content and research findings.")
         append("<|im_end|>\n")
