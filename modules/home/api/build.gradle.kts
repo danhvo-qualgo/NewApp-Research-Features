@@ -6,7 +6,7 @@ androidModule {
 }
 
 android {
-    namespace = "com.safeNest.demo.home.api"
+    namespace = "com.safeNest.demo.features.home.api"
 }
 
 uneyPublishing {

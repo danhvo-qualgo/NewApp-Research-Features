@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.safeNest.demo.features.call.impl">
 
     <uses-feature
         android:name="android.hardware.telephony"
@@ -16,15 +17,15 @@
     <uses-permission android:name="android.permission.CALL_PHONE" />
     <application>
         <service
-            android:name="com.safeNest.demo.call.main.impl.presentation.service.recorder.RecorderService"
+            android:name=".presentation.service.recorder.RecorderService"
             android:exported="false"
             android:foregroundServiceType="microphone" />
 
         <activity
-            android:name="com.safeNest.demo.call.main.impl.presentation.CallDetectionActivity"
+            android:name=".presentation.CallDetectionActivity"
             android:exported="false" />
         <activity
-            android:name="com.safeNest.demo.call.main.impl.presentation.ui.incall.InCallActivity"
+            android:name=".presentation.ui.incall.InCallActivity"
             android:exported="true">
 
             <intent-filter>
@@ -40,7 +41,7 @@
         </activity>
 
         <service
-            android:name="com.safeNest.demo.call.main.impl.presentation.service.call.CallDetectionService"
+            android:name=".presentation.service.call.CallDetectionService"
             android:exported="true"
             android:permission="android.permission.BIND_SCREENING_SERVICE">
             <intent-filter>
@@ -48,14 +49,14 @@
             </intent-filter>
         </service>
         <service
-            android:name="com.safeNest.demo.call.main.impl.presentation.service.call.MyConnectionService"
+            android:name=".presentation.service.call.MyConnectionService"
             android:permission="android.permission.BIND_TELECOM_CONNECTION_SERVICE">
             <intent-filter>
                 <action android:name="android.telecom.ConnectionService" />
             </intent-filter>
         </service>
         <service
-            android:name="com.safeNest.demo.call.main.impl.presentation.service.call.MyInCallService"
+            android:name=".presentation.service.call.MyInCallService"
             android:exported="true"
             android:permission="android.permission.BIND_INCALL_SERVICE">
             <meta-data
@@ -70,7 +71,7 @@
             </intent-filter>
         </service>
         <service
-            android:name="com.safeNest.demo.call.main.impl.presentation.service.call.MyCallRedirectionService"
+            android:name=".presentation.service.call.MyCallRedirectionService"
             android:exported="true"
             android:permission="android.permission.BIND_CALL_REDIRECTION_SERVICE">
 

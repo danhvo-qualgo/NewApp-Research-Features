@@ -10,7 +10,7 @@ androidModule {
 }
 
 android {
-    namespace = "com.safeNest.demo.phishingDetection.impl"
+    namespace = "com.safeNest.demo.features.phishingDetection.impl"
 
     ndkVersion = "27.2.12479018"
 

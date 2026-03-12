@@ -6,7 +6,7 @@ androidModule {
 }
 
 android {
-    namespace = "com.safeNest.demo.phishingDetection.api"
+    namespace = "com.safeNest.demo.features.phishingDetection.api"
 }
 
 uneyPublishing {

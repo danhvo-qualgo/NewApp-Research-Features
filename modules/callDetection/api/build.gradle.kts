@@ -6,12 +6,12 @@ androidModule {
 }
 
 android {
-    namespace = "com.safeNest.demo.call.main.api"
+    namespace = "com.safeNest.demo.features.call.api"
 }
 
 uneyPublishing {
-    groupId = "com.safeNest.demo.call"
-    artifactId = "main-api"
+    groupId = "com.safeNest.demo.features"
+    artifactId = "call-api"
 }
 
 dependencies {

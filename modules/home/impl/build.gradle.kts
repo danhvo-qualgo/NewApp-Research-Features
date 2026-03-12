@@ -10,7 +10,7 @@ androidModule {
 }
 
 android {
-    namespace = "com.safeNest.demo.home.impl"
+    namespace = "com.safeNest.demo.features.home.impl"
 }
 
 dependencies {

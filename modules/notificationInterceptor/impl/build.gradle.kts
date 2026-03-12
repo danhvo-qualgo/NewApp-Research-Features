@@ -10,7 +10,7 @@ androidModule {
 }
 
 android {
-    namespace = "com.safeNest.demo.notificationInterceptor.impl"
+    namespace = "com.safeNest.demo.features.notificationInterceptor.impl"
 }
 
 dependencies {

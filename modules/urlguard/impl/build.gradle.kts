@@ -10,7 +10,7 @@ androidModule {
 }
 
 android {
-    namespace = "com.safeNest.demo.urlguard.impl"
+    namespace = "com.safeNest.demo.features.urlguard.impl"
 }
 
 dependencies {

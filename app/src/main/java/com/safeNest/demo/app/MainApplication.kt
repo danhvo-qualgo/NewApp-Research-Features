@@ -7,7 +7,7 @@ import dagger.hilt.android.HiltAndroidApp
 import javax.inject.Inject
 
 @HiltAndroidApp
-class MainApplication : com.safeNest.demo.baseApp.base.app.BaseApplication() {
+class MainApplication : com.safeNest.demo.features.baseApp.base.app.BaseApplication() {
     @Inject
     internal lateinit var remoteConfig: Lazy<RemoteConfig>
 

@@ -6,7 +6,7 @@ androidModule {
 }
 
 android {
-    namespace = "com.safeNest.demo.notificationInterceptor.api"
+    namespace = "com.safeNest.demo.features.notificationInterceptor.api"
 }
 
 uneyPublishing {

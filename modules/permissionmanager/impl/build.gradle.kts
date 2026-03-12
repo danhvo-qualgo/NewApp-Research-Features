@@ -10,7 +10,7 @@ androidModule {
 }
 
 android {
-    namespace = "com.safeNest.demo.permissionmanager.impl"
+    namespace = "com.safeNest.demo.features.permissionmanager.impl"
 }
 
 dependencies {

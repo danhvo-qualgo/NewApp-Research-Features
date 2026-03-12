@@ -6,7 +6,7 @@ androidModule {
 }
 
 android {
-    namespace = "com.safeNest.demo.permissionmanager.api"
+    namespace = "com.safeNest.demo.features.permissionmanager.api"
 }
 
 uneyPublishing {

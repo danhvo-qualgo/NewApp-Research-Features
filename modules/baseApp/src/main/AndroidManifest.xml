@@ -3,7 +3,7 @@
 
     <application>
         <activity
-            android:name="com.safeNest.demo.baseApp.splash.SplashActivity"
+            android:name="com.safeNest.demo.features.baseApp.splash.SplashActivity"
             android:exported="true"
             android:theme="@style/Theme.Splash">
             <intent-filter>

@@ -6,7 +6,7 @@ androidModule {
 }
 
 android {
-    namespace = "com.safeNest.demo.urlguard.api"
+    namespace = "com.safeNest.demo.features.urlguard.api"
 }
 
 uneyPublishing {

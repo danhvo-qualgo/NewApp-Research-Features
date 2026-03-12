@@ -3,7 +3,7 @@
 
     <application>
         <activity
-            android:name="com.safeNest.demo.home.impl.domain.presentation.HomeActivity"
+            android:name="com.safeNest.demo.features.home.impl.domain.presentation.HomeActivity"
             android:exported="false" />
     </application>
 
