@@ -27,6 +27,6 @@ dependencies {
 }
 
 uneyPublishing {
-    groupId = "com.safeNest.demo.urlguard"
+    groupId = "com.safeNest.demo.features"
     artifactId = "urlguard-impl"
 }

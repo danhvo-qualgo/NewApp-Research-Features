@@ -1,0 +1,12 @@
+package com.safeNest.demo.features.call.impl.presentation.service.handler
+
+interface CallDetectionHandler {
+    suspend fun onCallRing(phoneNumber: String): CallResult
+    fun onCallAnswer()
+    fun onCallEnd()
+}
+
+sealed interface CallResult {
+    object Reject : CallResult
+    data class Allow(val isSilent: Boolean = false) : CallResult
+}

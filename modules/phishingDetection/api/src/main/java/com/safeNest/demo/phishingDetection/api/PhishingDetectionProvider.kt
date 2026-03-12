@@ -1,3 +1,0 @@
-package com.safeNest.demo.phishingDetection.api
-
-interface PhishingDetectionProvider

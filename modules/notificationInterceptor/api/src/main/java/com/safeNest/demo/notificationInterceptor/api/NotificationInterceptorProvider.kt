@@ -1,3 +1,0 @@
-package com.safeNest.demo.notificationInterceptor.api
-
-interface NotificationInterceptorProvider
