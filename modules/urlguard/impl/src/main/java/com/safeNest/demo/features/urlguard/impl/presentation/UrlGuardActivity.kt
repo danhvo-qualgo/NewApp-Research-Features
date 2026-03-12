@@ -1,4 +1,4 @@
-package com.safeNest.demo.features.urlguard.impl.presentation
+package com.safeNest.demo.features.urlGuard.impl.presentation
 
 import android.Manifest
 import android.content.Intent
@@ -37,7 +37,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
-import com.safenest.urlguard.UrlGuardTheme
+import com.safenest.urlGuard.UrlGuardTheme
 import com.uney.core.router.RouterManager
 import com.uney.core.router.compose.LocalRouterManager
 import dagger.hilt.android.AndroidEntryPoint

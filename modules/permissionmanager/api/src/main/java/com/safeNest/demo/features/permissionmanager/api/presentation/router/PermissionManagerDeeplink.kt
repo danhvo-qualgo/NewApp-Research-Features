@@ -1,4 +1,4 @@
-package com.safeNest.demo.features.permissionmanager.api.presentation.router
+package com.safeNest.demo.features.permissionManager.api.presentation.router
 
 import android.net.Uri
 import com.uney.core.router.InternalRouter

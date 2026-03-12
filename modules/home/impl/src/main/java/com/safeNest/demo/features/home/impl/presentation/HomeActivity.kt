@@ -25,9 +25,9 @@ import com.safeNest.demo.features.designSystem.theme.DSTheme
 import com.safeNest.demo.features.designSystem.theme.DSTypography
 import com.safeNest.demo.features.designSystem.theme.color.DSColors
 import com.safeNest.demo.features.notificationInterceptor.api.presentation.router.NotificationInterceptorDeeplink
-import com.safeNest.demo.features.permissionmanager.api.presentation.router.PermissionManagerDeeplink
+import com.safeNest.demo.features.permissionManager.api.presentation.router.PermissionManagerDeeplink
 import com.safeNest.demo.features.phishingDetection.api.presentation.router.PhishingDetectionDeeplink
-import com.safeNest.demo.features.urlguard.api.presentation.router.UrlGuardDeeplink
+import com.safeNest.demo.features.urlGuard.api.presentation.router.UrlGuardDeeplink
 import com.uney.core.router.RouterManager
 import com.uney.core.router.compose.LocalRouterManager
 import dagger.hilt.android.AndroidEntryPoint

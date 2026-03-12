@@ -1,4 +1,4 @@
-package com.safeNest.demo.features.urlguard.impl.urlguard
+package com.safeNest.demo.features.urlGuard.impl.urlGuard
 
 import android.app.Activity
 import android.media.projection.MediaProjectionManager

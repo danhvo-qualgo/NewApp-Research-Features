@@ -1,3 +1,3 @@
-package com.safeNest.demo.features.permissionmanager.api
+package com.safeNest.demo.features.permissionManager.api
 
 interface PermissionManagerProvider

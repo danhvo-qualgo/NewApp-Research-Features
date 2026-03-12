@@ -1,4 +1,4 @@
-package com.safeNest.demo.features.permissionmanager.api
+package com.safeNest.demo.features.permissionManager.api
 
 import org.junit.Assert
 import org.junit.Test

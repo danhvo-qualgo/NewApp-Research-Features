@@ -1,4 +1,4 @@
-package com.safeNest.demo.features.urlguard.impl
+package com.safeNest.demo.features.urlGuard.impl
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -17,6 +17,6 @@ class ExampleInstrumentedTest {
     fun useAppContext() {
         // Context of the app under test.
         val appContext = InstrumentationRegistry.getInstrumentation().targetContext
-        Assert.assertEquals("com.safeNest.demo.features.urlguard.impl.test", appContext.packageName)
+        Assert.assertEquals("com.safeNest.demo.features.urlGuard.impl.test", appContext.packageName)
     }
 }

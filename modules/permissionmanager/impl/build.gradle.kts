@@ -10,11 +10,11 @@ androidModule {
 }
 
 android {
-    namespace = "com.safeNest.demo.features.permissionmanager.impl"
+    namespace = "com.safeNest.demo.features.permissionManager.impl"
 }
 
 dependencies {
-    implementation(project(":modules:permissionmanager:api"))
+    implementation(project(":modules:permissionManager:api"))
     implementation(libs.core.router)
     implementation(libs.hilt.navigation)
     implementation(libs.androidx.compose.material.icons.core)
@@ -23,5 +23,5 @@ dependencies {
 
 uneyPublishing {
     groupId = "com.safeNest.demo.features"
-    artifactId = "permissionmanager-impl"
+    artifactId = "permissionManager-impl"
 }

@@ -1,4 +1,4 @@
-package com.safeNest.demo.features.permissionmanager.impl.presentation.ui
+package com.safeNest.demo.features.permissionManager.impl.presentation.ui
 
 import android.app.Activity
 import androidx.compose.foundation.isSystemInDarkTheme

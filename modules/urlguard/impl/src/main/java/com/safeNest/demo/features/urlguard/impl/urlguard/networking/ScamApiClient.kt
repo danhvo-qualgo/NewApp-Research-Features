@@ -1,4 +1,4 @@
-package com.safeNest.demo.features.urlguard.impl.urlguard.networking
+package com.safeNest.demo.features.urlGuard.impl.urlGuard.networking
 
 import android.util.Log
 import io.ktor.client.HttpClient

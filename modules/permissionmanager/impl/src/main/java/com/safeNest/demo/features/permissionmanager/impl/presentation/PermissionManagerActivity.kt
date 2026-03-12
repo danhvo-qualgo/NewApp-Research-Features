@@ -1,4 +1,4 @@
-package com.safeNest.demo.features.permissionmanager.impl.presentation
+package com.safeNest.demo.features.permissionManager.impl.presentation
 
 import android.graphics.Color
 import android.os.Bundle
@@ -7,8 +7,8 @@ import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.CompositionLocalProvider
-import com.safeNest.demo.features.permissionmanager.impl.presentation.screen.PermissionManagerScreen
-import com.safeNest.demo.features.permissionmanager.impl.presentation.ui.PermissionManagerTheme
+import com.safeNest.demo.features.permissionManager.impl.presentation.screen.PermissionManagerScreen
+import com.safeNest.demo.features.permissionManager.impl.presentation.ui.PermissionManagerTheme
 import com.uney.core.router.RouterManager
 import com.uney.core.router.compose.LocalRouterManager
 import dagger.hilt.android.AndroidEntryPoint

@@ -1,4 +1,4 @@
-package com.safenest.urlguard
+package com.safenest.urlGuard
 
 import android.app.Activity
 import androidx.compose.foundation.isSystemInDarkTheme

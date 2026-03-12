@@ -1,6 +1,6 @@
-package com.safeNest.demo.features.urlguard.impl.presentation
+package com.safeNest.demo.features.urlGuard.impl.presentation
 
-import com.safeNest.demo.features.urlguard.api.UrlGuardProvider
+import com.safeNest.demo.features.urlGuard.api.UrlGuardProvider
 import javax.inject.Inject
 
 class UrlGuardProviderImpl @Inject constructor() : UrlGuardProvider

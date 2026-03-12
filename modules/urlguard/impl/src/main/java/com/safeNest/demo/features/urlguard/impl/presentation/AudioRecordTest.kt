@@ -1,4 +1,4 @@
-package com.safeNest.demo.features.urlguard.impl.presentation
+package com.safeNest.demo.features.urlGuard.impl.presentation
 
 
 import android.Manifest
@@ -39,7 +39,7 @@ class AudioRecordTest : ComponentActivity() {
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         permissionToRecordAccepted =
-            if (requestCode == _root_ide_package_.com.safeNest.demo.features.urlguard.impl.presentation.REQUEST_RECORD_AUDIO_PERMISSION) {
+            if (requestCode == _root_ide_package_.com.safeNest.demo.features.urlGuard.impl.presentation.REQUEST_RECORD_AUDIO_PERMISSION) {
                 grantResults[0] == PackageManager.PERMISSION_GRANTED
             } else {
                 false

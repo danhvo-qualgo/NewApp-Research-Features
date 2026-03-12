@@ -1,4 +1,4 @@
-package com.safeNest.demo.features.permissionmanager.impl.domain.model
+package com.safeNest.demo.features.permissionManager.impl.domain.model
 
 /**
  * Represents where an application was installed from.

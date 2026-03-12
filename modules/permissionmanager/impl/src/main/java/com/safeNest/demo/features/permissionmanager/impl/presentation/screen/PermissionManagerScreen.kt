@@ -1,4 +1,4 @@
-package com.safeNest.demo.features.permissionmanager.impl.presentation.screen
+package com.safeNest.demo.features.permissionManager.impl.presentation.screen
 
 import android.graphics.Bitmap
 import android.graphics.Canvas
@@ -60,12 +60,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.safeNest.demo.features.permissionmanager.impl.R
-import com.safeNest.demo.features.permissionmanager.impl.domain.model.AppCategory
-import com.safeNest.demo.features.permissionmanager.impl.domain.model.AppInfo
-import com.safeNest.demo.features.permissionmanager.impl.domain.model.InstallSource
-import com.safeNest.demo.features.permissionmanager.impl.domain.model.PermissionInfo
-import com.safeNest.demo.features.permissionmanager.impl.domain.model.PermissionProtectionLevel
+import com.safeNest.demo.features.permissionManager.impl.R
+import com.safeNest.demo.features.permissionManager.impl.domain.model.AppCategory
+import com.safeNest.demo.features.permissionManager.impl.domain.model.AppInfo
+import com.safeNest.demo.features.permissionManager.impl.domain.model.InstallSource
+import com.safeNest.demo.features.permissionManager.impl.domain.model.PermissionInfo
+import com.safeNest.demo.features.permissionManager.impl.domain.model.PermissionProtectionLevel
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Entry point

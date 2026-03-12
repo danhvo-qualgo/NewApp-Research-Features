@@ -1,4 +1,4 @@
-package com.safeNest.demo.features.urlguard.impl.urlguard
+package com.safeNest.demo.features.urlGuard.impl.urlGuard
 
 import android.graphics.Bitmap
 import android.util.Log

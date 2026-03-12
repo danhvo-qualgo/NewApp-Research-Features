@@ -1,4 +1,4 @@
-package com.safeNest.demo.features.permissionmanager.impl.domain
+package com.safeNest.demo.features.permissionManager.impl.domain
 
 import android.content.Context
 import android.content.pm.ApplicationInfo
@@ -6,11 +6,11 @@ import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
 import android.os.Build
 import android.util.Log
-import com.safeNest.demo.features.permissionmanager.impl.domain.model.AppCategory
-import com.safeNest.demo.features.permissionmanager.impl.domain.model.AppInfo
-import com.safeNest.demo.features.permissionmanager.impl.domain.model.InstallSource
-import com.safeNest.demo.features.permissionmanager.impl.domain.model.PermissionInfo
-import com.safeNest.demo.features.permissionmanager.impl.domain.model.PermissionProtectionLevel
+import com.safeNest.demo.features.permissionManager.impl.domain.model.AppCategory
+import com.safeNest.demo.features.permissionManager.impl.domain.model.AppInfo
+import com.safeNest.demo.features.permissionManager.impl.domain.model.InstallSource
+import com.safeNest.demo.features.permissionManager.impl.domain.model.PermissionInfo
+import com.safeNest.demo.features.permissionManager.impl.domain.model.PermissionProtectionLevel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext

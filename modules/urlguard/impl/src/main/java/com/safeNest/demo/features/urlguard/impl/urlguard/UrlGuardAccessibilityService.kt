@@ -1,4 +1,4 @@
-package com.safeNest.demo.features.urlguard.impl.urlguard
+package com.safeNest.demo.features.urlGuard.impl.urlGuard
 
 import android.accessibilityservice.AccessibilityService
 import android.annotation.SuppressLint
@@ -42,9 +42,9 @@ import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.graphics.createBitmap
-import com.safeNest.demo.features.urlguard.impl.R
-import com.safeNest.demo.features.urlguard.impl.urlguard.UrlGuardAccessibilityService.Companion.URL_CACHE_TTL_MS
-import com.safeNest.demo.features.urlguard.impl.urlguard.networking.ScamApiClient
+import com.safeNest.demo.features.urlGuard.impl.R
+import com.safeNest.demo.features.urlGuard.impl.urlGuard.UrlGuardAccessibilityService.Companion.URL_CACHE_TTL_MS
+import com.safeNest.demo.features.urlGuard.impl.urlGuard.networking.ScamApiClient
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob

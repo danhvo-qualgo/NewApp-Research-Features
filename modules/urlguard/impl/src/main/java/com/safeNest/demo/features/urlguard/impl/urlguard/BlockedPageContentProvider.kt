@@ -1,4 +1,4 @@
-package com.safeNest.demo.features.urlguard.impl.urlguard
+package com.safeNest.demo.features.urlGuard.impl.urlGuard
 
 import android.content.ContentProvider
 import android.content.ContentValues
@@ -16,7 +16,7 @@ import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
 
 /**
- * Serves the "blocked" page as HTML at content://com.safenest.urlguard/blocked.
+ * Serves the "blocked" page as HTML at content://com.safenest.urlGuard/blocked.
  * The browser loads this URL in its own view, so the block UI appears inside the browser.
  */
 class BlockedPageContentProvider : ContentProvider() {
@@ -144,7 +144,7 @@ class BlockedPageContentProvider : ContentProvider() {
         }
 
         private const val TAG = "BlockedPageProvider"
-        private const val AUTHORITY = "com.safenest.urlguard"
+        private const val AUTHORITY = "com.safenest.urlGuard"
         private const val PATH_BLOCKED = "blocked"
         private const val CODE_BLOCKED = 1
         private const val QUERY_BLOCKED_URL = "url"

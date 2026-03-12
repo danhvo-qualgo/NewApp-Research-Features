@@ -1,4 +1,4 @@
-package com.safeNest.demo.features.urlguard.api
+package com.safeNest.demo.features.urlGuard.api
 
 import org.junit.Assert
 import org.junit.Test

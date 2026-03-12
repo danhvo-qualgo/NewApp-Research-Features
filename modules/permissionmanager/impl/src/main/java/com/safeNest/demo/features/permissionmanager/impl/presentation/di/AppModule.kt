@@ -1,8 +1,8 @@
-package com.safeNest.demo.features.permissionmanager.impl.presentation.di
+package com.safeNest.demo.features.permissionManager.impl.presentation.di
 
-import com.safeNest.demo.features.permissionmanager.api.PermissionManagerProvider
-import com.safeNest.demo.features.permissionmanager.impl.presentation.PermissionManagerProviderImpl
-import com.safeNest.demo.features.permissionmanager.impl.presentation.router.PermissionManagerRouter
+import com.safeNest.demo.features.permissionManager.api.PermissionManagerProvider
+import com.safeNest.demo.features.permissionManager.impl.presentation.PermissionManagerProviderImpl
+import com.safeNest.demo.features.permissionManager.impl.presentation.router.PermissionManagerRouter
 import com.uney.core.router.Router
 import dagger.Module
 import dagger.Provides

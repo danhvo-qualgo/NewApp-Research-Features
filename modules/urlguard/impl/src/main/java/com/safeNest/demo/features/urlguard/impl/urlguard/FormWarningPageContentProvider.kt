@@ -1,4 +1,4 @@
-package com.safeNest.demo.features.urlguard.impl.urlguard
+package com.safeNest.demo.features.urlGuard.impl.urlGuard
 
 import android.content.ContentProvider
 import android.content.ContentValues
@@ -74,7 +74,7 @@ class FormWarningPageContentProvider : ContentProvider() {
 
     companion object {
         private const val TAG = "FormWarningProvider"
-        private const val AUTHORITY = "com.safenest.urlguard.warning"
+        private const val AUTHORITY = "com.safenest.urlGuard.warning"
         private const val PATH = "form-warning"
         private const val CODE_FORM_WARNING = 1
         const val QUERY_URL = "url"

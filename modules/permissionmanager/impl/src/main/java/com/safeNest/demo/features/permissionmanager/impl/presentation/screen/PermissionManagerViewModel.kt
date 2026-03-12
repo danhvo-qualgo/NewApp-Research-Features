@@ -1,8 +1,8 @@
-package com.safeNest.demo.features.permissionmanager.impl.presentation.screen
+package com.safeNest.demo.features.permissionManager.impl.presentation.screen
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.safeNest.demo.features.permissionmanager.impl.domain.AppPermissionManager
+import com.safeNest.demo.features.permissionManager.impl.domain.AppPermissionManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow

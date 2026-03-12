@@ -1,3 +1,3 @@
-package com.safeNest.demo.features.urlguard.api
+package com.safeNest.demo.features.urlGuard.api
 
 interface UrlGuardProvider

@@ -6,12 +6,12 @@ androidModule {
 }
 
 android {
-    namespace = "com.safeNest.demo.features.permissionmanager.api"
+    namespace = "com.safeNest.demo.features.permissionManager.api"
 }
 
 uneyPublishing {
     groupId = "com.safeNest.demo.features"
-    artifactId = "permissionmanager-api"
+    artifactId = "permissionManager-api"
 }
 
 dependencies {
