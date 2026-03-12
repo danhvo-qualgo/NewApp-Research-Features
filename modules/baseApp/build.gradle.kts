@@ -13,10 +13,7 @@ android {
 }
 
 dependencies {
-    implementation(libs.splashscreen)
-
     implementation(libs.core.utils.android)
-    implementation(libs.core.resources)
     implementation(libs.core.router)
     implementation(libs.core.logger)
     implementation(libs.core.remote.config.api)
