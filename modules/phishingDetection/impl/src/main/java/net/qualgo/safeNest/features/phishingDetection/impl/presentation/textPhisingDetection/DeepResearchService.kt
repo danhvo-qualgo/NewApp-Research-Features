@@ -8,8 +8,8 @@ import net.qualgo.safeNest.features.phishingDetection.impl.presentation.models.E
 import net.qualgo.safeNest.features.phishingDetection.impl.presentation.models.UrlCheckerResponse
 
 data class DeepResearchResult(
-    val scamPhoneCount: Int,
-    val scamDomainCount: Int,
+    val phoneMap: Map<String, String>,
+    val domainMap: Map<String, String>,
     val urlCheckerResponses: List<UrlCheckerResponse>,
 )
 
@@ -42,28 +42,33 @@ object DeepResearchService {
         val domainDeferred = async { checkDomains(entities.domains) }
         val urlDeferred = async { fetchUrlCheckerResults(entities.urls) }
 
-        val scamPhoneCount = phoneDeferred.await()
-        val scamDomainCount = domainDeferred.await()
+        val phoneMap = phoneDeferred.await()
+        val domainMap = domainDeferred.await()
         val urlCheckerResponses = urlDeferred.await()
 
         DeepResearchResult(
-            scamPhoneCount = scamPhoneCount,
-            scamDomainCount = scamDomainCount,
+            phoneMap = phoneMap,
+            domainMap = domainMap,
             urlCheckerResponses = urlCheckerResponses,
         )
     }
 
-    private fun checkPhones(phones: List<String>): Int {
-        return phones.count { phone ->
-            val digitsOnly = phone.filter { it.isDigit() }
-            SCAM_PHONES.any { scam -> digitsOnly.endsWith(scam.filter { it.isDigit() }) }
-        }
+    private fun checkPhones(phones: List<String>): Map<String, String> {
+        return phones.mapIndexed { idx, phone ->
+            "PHONE_$idx" to if (phone in SCAM_PHONES)
+                "Found in phone scam database"
+            else
+                "Not found in phone scam database"
+        }.toMap()
     }
 
-    private fun checkDomains(domains: List<String>): Int {
-        return domains.count { domain ->
-            SCAM_DOMAINS.contains(domain.lowercase().removePrefix("www."))
-        }
+    private fun checkDomains(domains: List<String>): Map<String, String> {
+        return domains.mapIndexed { idx, phone ->
+            "DOMAIN_$idx" to if (phone in SCAM_DOMAINS)
+                "Found in phone scam database"
+            else
+                "Not found in phone scam database"
+        }.toMap()
     }
 
     private suspend fun fetchUrlCheckerResults(urls: List<String>): List<UrlCheckerResponse> {

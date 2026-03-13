@@ -4,19 +4,14 @@ import net.qualgo.safeNest.features.phishingDetection.impl.presentation.models.U
 
 object DeepResearchSummarizer {
 
-    fun summarize(result: DeepResearchResult): String = buildString {
-        if (result.scamPhoneCount > 0) {
-            appendLine("- ${result.scamPhoneCount} phone number(s) were found in phone scam database")
-        }
-        if (result.scamDomainCount > 0) {
-            appendLine("- ${result.scamDomainCount} domain(s) were found in domain scam database")
-        }
-        if (result.urlCheckerResponses.isNotEmpty()) {
-            result.urlCheckerResponses.forEach { response ->
-                appendLine("- The analysis result of URL Checker for ${response.url}:")
-                appendLine(response.toSignalSummary())
-            }
-        }
+    fun summarize(text: String ,result: DeepResearchResult): String = buildString {
+        val urlMap = result.urlCheckerResponses.mapIndexed { idx, response ->
+                "URL_$idx" to response.toSignalSummary()
+            }.toMap()
+        val combinedMap = urlMap + result.phoneMap + result.domainMap
+
+        buildSmsSignalSummary(text, combinedMap)
+
     }.trimEnd()
 
     private fun UrlCheckerResponse.toSignalSummary(): String = buildString {
@@ -34,24 +29,23 @@ object DeepResearchSummarizer {
         )
     }.trimEnd()
 
-    fun buildSmsSignalSummary(text: String): String {
+    fun buildSmsSignalSummary(text: String, entities: Map<String, String>): String {
         val signals = mutableListOf<String>()
-        val lower = text.lowercase()
+
+        for ((placeholder, value) in entities) {
+            when {
+                placeholder.startsWith("[DOMAIN_") -> signals += "extracted_url $placeholder: $value"
+                placeholder.startsWith("[EMAIL_") -> signals += "extracted_email $placeholder: $value"
+                placeholder.startsWith("[PHONE_") -> signals += "extracted_phone $placeholder: $value"
+            }
+        }
 
         val urgencyWords = listOf(
             "khẩn cấp", "ngay lập tức", "nhanh chóng", "hết hạn", "trúng thưởng", "miễn phí",
             "nhận ngay", "click", "xác nhận", "đăng nhập", "mật khẩu", "tài khoản bị khóa"
         )
-        urgencyWords.firstOrNull { lower.contains(it.lowercase()) }?.let { matched ->
+        urgencyWords.firstOrNull { text.lowercase().contains(it.lowercase()) }?.let { matched ->
             signals += "urgency_keyword: \"$matched\""
-        }
-
-        if (text.contains("http://") || text.contains("https://")) {
-            signals += "contains_url: true"
-        }
-
-        if (text.isNotEmpty() && (text.contains("0") || text.contains("+84"))) {
-            signals += "possible_phone: true"
         }
 
         return if (signals.isEmpty()) "(no signals detected)" else signals.joinToString("\n")

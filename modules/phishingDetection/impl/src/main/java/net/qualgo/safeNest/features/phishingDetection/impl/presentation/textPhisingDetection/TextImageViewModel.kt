@@ -145,7 +145,7 @@ class TextImageViewModel @Inject constructor(
                 Pair(redactedDeferred.await(), researchDeferred.await())
             }
 
-            val summary = DeepResearchSummarizer.summarize(researchResult)
+            val summary = DeepResearchSummarizer.summarize(redactedText, researchResult)
             val analysisPrompt = buildAnalysisPrompt(redactedText, summary)
 
             modelManager.ensureReady()
@@ -180,19 +180,40 @@ class TextImageViewModel @Inject constructor(
         }
     }
 
-    private fun buildAnalysisPrompt(redactedText: String, summary: String): String = buildString {
-        append("<|im_start|>system\n")
-        append("</no_think>")
-        append("You are a cybersecurity expert specializing in phishing and scam detection. ")
-        append("Analyze the following message for phishing risk based on the redacted content and research findings.")
-        append("<|im_end|>\n")
-        append("<|im_start|>user\n")
-        append("Message (sensitive data redacted):\n$redactedText\n\n")
-        if (summary.isNotBlank()) {
-            append("Research findings:\n$summary\n\n")
-        }
-        append("Assess the phishing risk. Respond text only with: Risk level (Likely Scam | Suspicious | Likely Legit | Unknown), Confidence (0% to 100%), and 2-3 key signals.")
-        append("<|im_end|>\n")
-        append("<|im_start|>assistant\n")
+    private fun buildAnalysisPrompt(text: String, summary: String): String {
+        val prompt = """
+            <|im_start|>system
+            </no_think>
+            You are a scam detection system analyzing Vietnamese SMS messages.
+            Your task: classify the message and explain your reasoning.
+            <|im_end|>
+            
+            <|im_start|>user
+            == MESSAGE (PII redacted) ==
+            $text
+            
+            == SECURITY SIGNALS ==
+            $summary
+            
+            == INSTRUCTIONS ==
+            Based on the message content and security signals above, classify this message into exactly one category:
+            - SAFE: Legitimate message — OTP codes from banks/services, delivery notifications, genuine service alerts, promotional marketing from known brands
+            - SCAM: Harmful or deceptive message — phishing, credential theft, fake prizes, loan fraud, impersonation, urgent account warnings with suspicious links
+            - UNSURE: Cannot determine with reasonable confidence
+            
+            Key guidance:
+            - An OTP message that says "do not share this code" is SAFE — it is a bank delivering a code to YOU, not asking you to reveal it.
+            - Delivery notifications with tracking numbers and shipper info are SAFE.
+            - Marketing messages with promotional discounts from known brands (e.g., thegioididong.com) are SAFE.
+            
+            Respond in this exact format:
+            VERDICT: [SAFE|SCAM|UNSURE]
+            CONFIDENCE: [HIGH|MEDIUM|LOW]
+            REASONING: [1-3 sentences explaining why]
+            <|im_end|>
+            
+            <|im_start|>assistant
+            """.trimIndent()
+        return prompt
     }
 }

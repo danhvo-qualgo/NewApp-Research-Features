@@ -20,6 +20,7 @@ dependencies {
     implementation(project(":modules:urlguard:api"))
     implementation(project(":modules:phishingDetection:api"))
     implementation(project(":modules:notificationInterceptor:api"))
+    implementation("androidx.compose.material:material-icons-extended:1.6.3")
 }
 
 uneyPublishing {

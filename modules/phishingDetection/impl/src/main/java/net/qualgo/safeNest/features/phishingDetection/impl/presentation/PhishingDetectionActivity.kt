@@ -106,7 +106,6 @@ class PhishingDetectionActivity : ComponentActivity() {
                         PhishingTextDetectionScreen()
                     }
                 }
-//                ScamAnalyzerScreen()
             }
         }
     }

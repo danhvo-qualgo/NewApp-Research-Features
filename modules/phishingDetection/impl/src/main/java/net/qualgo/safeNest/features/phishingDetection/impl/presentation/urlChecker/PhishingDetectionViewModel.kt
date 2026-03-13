@@ -94,22 +94,23 @@ class PhishingDetectionViewModel @Inject constructor(
 
     private fun buildPrompt(url: String, metadata: WebsiteMetadata): String {
         val body = metadata.bodyText.take(400)
-        val description = metadata.ogDescription.ifBlank { metadata.description }.take(200)
-        // Qwen3.5-2B uses ChatML format: <|im_start|>role\ncontent<|im_end|>
-        return buildString {
-            append("<|im_start|>system\n")
-            append("You are a cybersecurity expert specializing in phishing detection. ")
-            append("Analyze the website information and its body text and give a concise risk assessment.")
-            append("<|im_end|>\n")
-            append("<|im_start|>user\n")
-            append("Analyze this website for phishing risk:\n\n")
-            append("URL: $url\n")
-            if (metadata.title.isNotBlank()) append("Title: ${metadata.title}\n")
-            if (description.isNotBlank()) append("Description: $description\n")
-            if (body.isNotBlank()) append("Body text (take 400 first): $body\n")
-            append("\nRespond text only with: Risk level (Likely Scam | Suspicious | Likely Legit | Unknown), Confidence (0% to 100%), and 2-3 key signals.")
-            append("<|im_end|>\n")
-            append("<|im_start|>assistant\n")
-        }
+        val description = metadata.ogDescription.ifBlank { metadata.description }
+
+        return """
+            <|im_start|>system
+            You are a cybersecurity expert specializing in phishing detection. Analyze the website information and its body text and give a concise risk assessment.
+            <|im_end|>
+            <|im_start|>user
+            Analyze this website for phishing risk:
+            
+            URL: $url
+            ${metadata.title.takeIf { it.isNotBlank() }?.let { "Title: $it" } ?: ""}
+            ${description.takeIf { it.isNotBlank() }?.let { "Description: $it" } ?: ""}
+            ${body.takeIf { it.isNotBlank() }?.let { "Body text (take 400 first): $it" } ?: ""}
+            
+            Respond text only with: Risk level (Likely Scam | Suspicious | Likely Legit | Unknown), Confidence (0% to 100%), and 2-3 key signals.
+            <|im_end|>
+            <|im_start|>assistant
+            """.trimIndent()
     }
 }
