@@ -1,1 +1,0 @@
--keep,allowobfuscation,allowshrinking class com.safeNest.demo.features.callProtection.impl.presentation.ui.home.HomeViewModel

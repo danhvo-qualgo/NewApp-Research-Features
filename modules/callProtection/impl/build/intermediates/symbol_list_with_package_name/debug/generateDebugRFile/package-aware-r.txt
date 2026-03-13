@@ -1,3 +1,0 @@
-com.safeNest.demo.features.callProtection.impl
-drawable ic_back
-raw auto_reply
