@@ -23,7 +23,7 @@ dependencies {
     implementation(project(":modules:home:impl"))
     implementation(project(":modules:callProtection:api"))
     implementation(project(":modules:callProtection:impl"))
-    implementation(project(":modules:urlGuard:impl"))
+    implementation(project(":modules:urlGuard1:impl"))
     implementation(project(":modules:permissionManager1:impl"))
     implementation(project(":modules:phishingDetection:impl"))
     implementation(project(":modules:notificationInterceptor:impl"))
