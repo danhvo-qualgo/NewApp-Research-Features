@@ -1,0 +1,6 @@
+com.safeNest.demo.features.designSystem
+font mulish_bold
+font mulish_light
+font mulish_medium
+font mulish_regular
+font mulish_semi_bold

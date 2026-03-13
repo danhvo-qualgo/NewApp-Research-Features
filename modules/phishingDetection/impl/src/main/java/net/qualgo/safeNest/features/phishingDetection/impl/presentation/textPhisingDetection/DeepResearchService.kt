@@ -65,9 +65,9 @@ object DeepResearchService {
     private fun checkDomains(domains: List<String>): Map<String, String> {
         return domains.mapIndexed { idx, phone ->
             "DOMAIN_$idx" to if (phone in SCAM_DOMAINS)
-                "Found in phone scam database"
+                "Found in domain scam database"
             else
-                "Not found in phone scam database"
+                "Not found in domain scam database"
         }.toMap()
     }
 

@@ -4,15 +4,13 @@ import net.qualgo.safeNest.features.phishingDetection.impl.presentation.models.U
 
 object DeepResearchSummarizer {
 
-    fun summarize(text: String ,result: DeepResearchResult): String = buildString {
+    fun summarize(text: String, result: DeepResearchResult): String {
         val urlMap = result.urlCheckerResponses.mapIndexed { idx, response ->
-                "URL_$idx" to response.toSignalSummary()
-            }.toMap()
+            "URL_$idx" to response.toSignalSummary()
+        }.toMap()
         val combinedMap = urlMap + result.phoneMap + result.domainMap
-
-        buildSmsSignalSummary(text, combinedMap)
-
-    }.trimEnd()
+        return buildSmsSignalSummary(text, combinedMap)
+    }
 
     private fun UrlCheckerResponse.toSignalSummary(): String = buildString {
         appendLine(
@@ -34,9 +32,10 @@ object DeepResearchSummarizer {
 
         for ((placeholder, value) in entities) {
             when {
-                placeholder.startsWith("[DOMAIN_") -> signals += "extracted_url $placeholder: $value"
-                placeholder.startsWith("[EMAIL_") -> signals += "extracted_email $placeholder: $value"
-                placeholder.startsWith("[PHONE_") -> signals += "extracted_phone $placeholder: $value"
+                placeholder.startsWith("URL_") -> signals += "extracted_url $placeholder: $value"
+                placeholder.startsWith("EMAIL_") -> signals += "extracted_email $placeholder: $value"
+                placeholder.startsWith("PHONE_") -> signals += "extracted_phone $placeholder: $value"
+                placeholder.startsWith("DOMAIN_") -> signals += "extracted_domain $placeholder: $value"
             }
         }
 

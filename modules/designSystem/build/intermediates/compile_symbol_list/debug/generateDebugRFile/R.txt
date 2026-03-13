@@ -1,0 +1,5 @@
+int font mulish_bold 0x0
+int font mulish_light 0x0
+int font mulish_medium 0x0
+int font mulish_regular 0x0
+int font mulish_semi_bold 0x0

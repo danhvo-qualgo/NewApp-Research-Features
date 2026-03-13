@@ -1,0 +1,2 @@
+int drawable ic_back 0x0
+int raw auto_reply 0x0
