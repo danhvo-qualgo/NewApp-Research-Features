@@ -4,7 +4,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -67,14 +66,24 @@ internal fun PermissionsScreen(
     var permissionTypeRequesting by remember { mutableStateOf<PermissionType?>(null) }
     val launcherRequestPermission = rememberRuntimePermissionLauncher { granted ->
         permissionTypeRequesting?.let { permissionType ->
-            viewModel.onAction(PermissionAction.UpdatePermissionGrantedState(permissionType, granted))
+            viewModel.onAction(
+                PermissionAction.UpdatePermissionGrantedState(
+                    permissionType,
+                    granted
+                )
+            )
         }
     }
 
     val launcherRequestPermissions = rememberMultiplePermissionsLauncher { permissionsResult ->
         permissionTypeRequesting?.let { permissionType ->
             val granted = permissionsResult.all { it.value }
-            viewModel.onAction(PermissionAction.UpdatePermissionGrantedState(permissionType, granted))
+            viewModel.onAction(
+                PermissionAction.UpdatePermissionGrantedState(
+                    permissionType,
+                    granted
+                )
+            )
         }
     }
 
@@ -91,10 +100,10 @@ internal fun PermissionsScreen(
     LaunchedEffect(viewModel.event, lifecycleOwner) {
         lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
             viewModel.event.collect { event ->
-                when(event) {
+                when (event) {
                     is PermissionEvent.RequestPermissionEvent -> {
                         permissionTypeRequesting = event.permissionType
-                        when(event.permissionType.requestType) {
+                        when (event.permissionType.requestType) {
                             is PermissionRequestType.RunTime -> {
                                 launcherRequestPermission.launch(event.permissionType.requestType.permission)
                             }
@@ -102,7 +111,8 @@ internal fun PermissionsScreen(
                             is PermissionRequestType.RunTimes -> {
                                 launcherRequestPermissions.launch(event.permissionType.requestType.permissions.toTypedArray())
                             }
-                            else ->{}
+
+                            else -> {}
                         }
 
                     }
@@ -114,64 +124,86 @@ internal fun PermissionsScreen(
     }
 
     // ── Scrollable content ───────────────────────────────────────────
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(gradientBackground),
-        contentPadding = PaddingValues(
-            top    = DSSpacing.s6,
-            start  = DSSpacing.s6,
-            end    = DSSpacing.s6,
-            bottom = 112.dp, // dock bar (88dp) + 24dp breathing room
-        ),
-        verticalArrangement = Arrangement.spacedBy(DSSpacing.s2),
+
+    PermissionContent(
+        onStartClick = onStartClick,
+        uiState = uiState,
+        onAction = viewModel::onAction
+    )
+}
+
+@Composable
+fun PermissionContent(
+    onStartClick: () -> Unit,
+    uiState: PermissionUiState,
+    onAction: (PermissionAction) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier.fillMaxSize()
+            .background(gradientBackground)
+            .padding(horizontal = DSSpacing.s6)
+            .padding(top = DSSpacing.s6)
+            .navigationBarsPadding(),
+        verticalArrangement = Arrangement.Top,
     ) {
-        // Header
-        item {
-            Spacer(Modifier.statusBarsPadding())
-            Spacer(modifier = Modifier.height(DSSpacing.s6))
-            PermissionsHeader()
-            Spacer(modifier = Modifier.height(DSSpacing.s8))
-        }
+        Spacer(Modifier.statusBarsPadding())
+        Spacer(modifier = Modifier.height(DSSpacing.s6))
+        PermissionsHeader()
+        Spacer(modifier = Modifier.height(DSSpacing.s8))
 
-        // Permission rows
-        items(PermissionType.entries) { type ->
-            PermissionItem(
-                data = PermissionItemData(
-                    iconRes              = type.iconRes,
-                    titleRes             = type.nameRes,
-                    descriptionRes       = type.descriptionRes,
-                    isGranted            = uiState.permissionStates[type] == true,
-                    onToggle             = {
-                        viewModel.onAction(PermissionAction.TogglePermission(type))
-                    },
-                ),
-            )
-        }
-
-        item {
-            Button(
-                onClick  = onStartClick,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-                shape  = RoundedCornerShape(DSRadius.round),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = DSColors.current.primaryLighter,
-                    contentColor   = DSColors.textOnAction,
-                ),
-                elevation = ButtonDefaults.buttonElevation(defaultElevation = DSSpacing.none),
-                enabled = uiState.allPermissionsGranted
-            ) {
-                Text(
-                    text  = stringResource(R.string.permission_start_button),
-                    style = DSTypography.body2.bold,
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f),
+            overscrollEffect = null,
+            verticalArrangement = Arrangement.spacedBy(DSSpacing.s2),
+        ) {
+            // Permission rows
+            items(PermissionType.entries) { type ->
+                PermissionItem(
+                    data = PermissionItemData(
+                        iconRes = type.iconRes,
+                        titleRes = type.nameRes,
+                        descriptionRes = type.descriptionRes,
+                        isGranted = uiState.permissionStates[type] == true,
+                        onToggle = {
+                            onAction(PermissionAction.TogglePermission(type))
+                        },
+                    ),
                 )
             }
+
+            item {
+                Spacer(modifier = Modifier.height(DSSpacing.s2))
+            }
+            item {
+                Button(
+                    onClick = onStartClick,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp),
+                    shape = RoundedCornerShape(DSRadius.round),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = DSColors.current.primary,
+                        contentColor = DSColors.textOnAction,
+                        disabledContainerColor = DSColors.current.primaryLighter
+                    ),
+                    elevation = ButtonDefaults.buttonElevation(defaultElevation = DSSpacing.none),
+                    enabled = uiState.allPermissionsGranted
+                ) {
+                    Text(
+                        text = stringResource(R.string.permission_start_button),
+                        style = DSTypography.body2.bold,
+                    )
+                }
+            }
         }
+
     }
 
 }
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Header
@@ -180,9 +212,9 @@ internal fun PermissionsScreen(
 @Composable
 private fun PermissionsHeader() {
     Column(
-        modifier              = Modifier.fillMaxWidth(),
-        horizontalAlignment   = Alignment.CenterHorizontally,
-        verticalArrangement   = Arrangement.spacedBy(DSSpacing.s6),
+        modifier = Modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(DSSpacing.s6),
     ) {
         // White circle + shield icon (64 × 64 per Figma)
         Box(
@@ -195,10 +227,10 @@ private fun PermissionsHeader() {
             contentAlignment = Alignment.Center,
         ) {
             Icon(
-                painter     = painterResource(R.drawable.ic_shield),
+                painter = painterResource(R.drawable.ic_shield),
                 contentDescription = null,
-                tint            = DSColors.iconAction,
-                modifier        = Modifier.size(DSSpacing.s8 /* 32dp */),
+                tint = DSColors.iconAction,
+                modifier = Modifier.size(DSSpacing.s8 /* 32dp */),
             )
         }
 
@@ -208,54 +240,16 @@ private fun PermissionsHeader() {
             verticalArrangement = Arrangement.spacedBy(DSSpacing.s1),
         ) {
             Text(
-                text      = stringResource(R.string.permissions_screen_title),
-                style     = DSTypography.h3.bold,
-                color     = DSColors.textActionActive,
+                text = stringResource(R.string.permissions_screen_title),
+                style = DSTypography.h3.bold,
+                color = DSColors.textActionActive,
                 textAlign = TextAlign.Center,
             )
             Text(
-                text      = stringResource(R.string.permissions_screen_subtitle),
-                style     = DSTypography.body2.regular,
-                color     = DSColors.textAction,
+                text = stringResource(R.string.permissions_screen_subtitle),
+                style = DSTypography.body2.regular,
+                color = DSColors.textAction,
                 textAlign = TextAlign.Center,
-            )
-        }
-    }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Dock bar
-// ─────────────────────────────────────────────────────────────────────────────
-
-@Composable
-private fun DockBar(
-    onStartClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val dockBarBg = DSColors.surfacePrimary.copy(alpha = 0.85f)
-
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .background(dockBarBg)
-            .navigationBarsPadding()
-            .padding(horizontal = DSSpacing.s6, vertical = DSSpacing.s4),
-    ) {
-        Button(
-            onClick  = onStartClick,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(DSSpacing.s9 /* 48dp */ + DSSpacing.s2 /* +8dp = 56dp */),
-            shape  = RoundedCornerShape(DSRadius.round),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = DSColors.current.primaryLighter,
-                contentColor   = DSColors.textOnAction,
-            ),
-            elevation = ButtonDefaults.buttonElevation(defaultElevation = DSSpacing.none),
-        ) {
-            Text(
-                text  = stringResource(R.string.permission_start_button),
-                style = DSTypography.body2.bold,
             )
         }
     }
@@ -266,9 +260,9 @@ private fun DockBar(
 // ─────────────────────────────────────────────────────────────────────────────
 
 @Preview(
-    name          = "PermissionsScreen – Pixel 5",
-    device        = Devices.PIXEL_5,
-    showSystemUi  = true,
+    name = "PermissionsScreen – Pixel 5",
+    device = Devices.PIXEL_5,
+    showSystemUi = true,
 )
 @Composable
 private fun PreviewPermissionsScreenPixel5() {
@@ -276,9 +270,9 @@ private fun PreviewPermissionsScreenPixel5() {
 }
 
 @Preview(
-    name           = "PermissionsScreen – Compact",
-    widthDp        = 360,
-    heightDp       = 800,
+    name = "PermissionsScreen – Compact",
+    widthDp = 360,
+    heightDp = 800,
     showBackground = true,
 )
 @Composable

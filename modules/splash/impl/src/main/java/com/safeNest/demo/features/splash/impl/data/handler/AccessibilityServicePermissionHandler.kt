@@ -6,7 +6,7 @@ import com.safeNest.demo.features.commonAndroid.isAccessibilityServiceEnabled
 import com.safeNest.demo.features.commonAndroid.openPermissionSettings
 import com.safeNest.demo.features.splash.impl.domain.handler.PermissionHandler
 import com.safeNest.demo.features.splash.impl.domain.model.PermissionType
-import com.safeNest.demo.features.urlguard.api.UrlGuardProvider
+import com.safeNest.demo.features.urlGuard.api.UrlGuardProvider
 import jakarta.inject.Inject
 
 class AccessibilityServicePermissionHandler @Inject constructor(

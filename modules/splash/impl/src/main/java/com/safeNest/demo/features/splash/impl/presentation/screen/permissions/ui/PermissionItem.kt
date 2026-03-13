@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
@@ -22,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import com.safeNest.demo.features.designSystem.theme.DSRadius
 import com.safeNest.demo.features.designSystem.theme.DSSpacing
 import com.safeNest.demo.features.designSystem.theme.DSTypography
@@ -64,7 +66,8 @@ internal fun PermissionItem(
     modifier: Modifier = Modifier,
 ) {
     Card(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth()
+            .sizeIn(minHeight = 60.dp),
         shape = RoundedCornerShape(DSRadius.xLarge),
         colors = CardDefaults.cardColors(containerColor = DSColors.surfacePrimary),
         elevation = CardDefaults.cardElevation(defaultElevation = DSSpacing.none),
@@ -107,6 +110,8 @@ internal fun PermissionItem(
                     style = DSTypography.caption2.regular,
                     color = DSColors.textNeutral,
                     modifier = Modifier.padding(top = DSSpacing.s1),
+                    maxLines = 2,
+                    minLines = 2
                 )
             }
 

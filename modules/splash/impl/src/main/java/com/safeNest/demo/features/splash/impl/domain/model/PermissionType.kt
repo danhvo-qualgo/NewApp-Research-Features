@@ -32,10 +32,10 @@ enum class PermissionType(
         iconRes = R.drawable.ic_phone_call,
         descriptionRes = R.string.permission_phone_contacts_desc,
         requestType = PermissionRequestType.RunTimes(listOf(
-            Manifest.permission.READ_CONTACTS,
-            Manifest.permission.READ_PHONE_NUMBERS,
             Manifest.permission.READ_PHONE_STATE,
+            Manifest.permission.READ_CONTACTS,
         ))
+
     ),
     MICROPHONE(
         nameRes = R.string.permission_microphone_title,

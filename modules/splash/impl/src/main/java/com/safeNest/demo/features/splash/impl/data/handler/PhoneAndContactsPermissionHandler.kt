@@ -16,7 +16,6 @@ internal class PhoneAndContactsPermissionHandler @Inject constructor() : Permiss
     private val requiredPermissions = arrayOf(
         Manifest.permission.READ_PHONE_STATE,
         Manifest.permission.READ_CONTACTS,
-        Manifest.permission.READ_CALL_LOG,
     )
 
     override fun isGranted(context: Context): Boolean =
