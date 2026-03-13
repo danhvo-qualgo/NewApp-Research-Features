@@ -352,7 +352,7 @@ fun PhishingTextDetectionScreen(
                             Text(
                                 text = when (method) {
                                     ExtractionMethod.REGEX -> "Regex"
-                                    ExtractionMethod.LLM -> "LLM (Qwen3.5-2B)"
+                                    ExtractionMethod.LLM -> "LLM (Qwen3-0.6B)"
                                 }
                             )
                         },
