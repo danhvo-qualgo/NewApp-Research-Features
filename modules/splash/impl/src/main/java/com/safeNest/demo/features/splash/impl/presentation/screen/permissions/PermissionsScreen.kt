@@ -1,7 +1,240 @@
-package com.safeNest.demo.features.splash.impl.presentation.screen.permissions
+package net.qualgo.safeNest.onboarding.impl.permission.presentation
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Security
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Devices
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.repeatOnLifecycle
+import com.safeNest.demo.features.designSystem.theme.DSRadius
+import com.safeNest.demo.features.designSystem.theme.DSSpacing
+import com.safeNest.demo.features.designSystem.theme.DSTheme
+import com.safeNest.demo.features.designSystem.theme.DSTypography
+import com.safeNest.demo.features.designSystem.theme.color.DSColors
+import net.qualgo.safeNest.onboarding.api.permission.PermissionType
+import net.qualgo.safeNest.onboarding.impl.R
+import net.qualgo.safeNest.onboarding.impl.permission.presentation.ui.PermissionItem
+import net.qualgo.safeNest.onboarding.impl.permission.presentation.ui.PermissionItemData
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Screen
+// ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
-fun PermissionScreen() {
+internal fun PermissionsScreen(
+    onStartClick: () -> Unit = {},
+    viewModel: PermissionViewModel = hiltViewModel(),
+) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    // Refresh permission states every time the screen comes back to foreground
+    // (the user may have granted a permission in the system settings).
+    val lifecycleOwner = LocalLifecycleOwner.current
+    androidx.compose.runtime.LaunchedEffect(lifecycleOwner) {
+        lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
+            viewModel.refreshPermissionStates()
+        }
+    }
+
+    DSTheme {
+        val bgGradientTop    = DSColors.current.primaryLighter
+        val bgGradientBottom = DSColors.current.neutralLightest
+
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(bgGradientTop, bgGradientBottom),
+                    ),
+                ),
+        ) {
+            // ── Scrollable content ───────────────────────────────────────────
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(
+                    top    = DSSpacing.s6,
+                    start  = DSSpacing.s6,
+                    end    = DSSpacing.s6,
+                    bottom = 112.dp, // dock bar (88dp) + 24dp breathing room
+                ),
+                verticalArrangement = Arrangement.spacedBy(DSSpacing.s2),
+            ) {
+                // Header
+                item {
+                    Spacer(Modifier.statusBarsPadding())
+                    Spacer(modifier = Modifier.height(DSSpacing.s6))
+                    PermissionsHeader()
+                    Spacer(modifier = Modifier.height(DSSpacing.s8))
+                }
+
+                // Permission rows
+                items(PermissionType.entries) { type ->
+                    PermissionItem(
+                        data = PermissionItemData(
+                            iconRes              = type.iconRes,
+                            titleRes             = type.nameRes,
+                            descriptionRes       = type.descriptionRes,
+                            isGranted            = uiState.permissionStates[type] == true,
+                            isSubscriptionRequired = type.isSubscriptionRequired,
+                            onToggle             = {
+                                viewModel.onAction(PermissionAction.TogglePermission(type))
+                            },
+                        ),
+                    )
+                }
+            }
+
+            // ── Dock bar — pinned at the bottom ──────────────────────────────
+            DockBar(
+                modifier     = Modifier.align(Alignment.BottomCenter),
+                onStartClick = onStartClick,
+            )
+        }
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Header
+// ─────────────────────────────────────────────────────────────────────────────
+
+@Composable
+private fun PermissionsHeader() {
+    Column(
+        modifier              = Modifier.fillMaxWidth(),
+        horizontalAlignment   = Alignment.CenterHorizontally,
+        verticalArrangement   = Arrangement.spacedBy(DSSpacing.s6),
+    ) {
+        // White circle + shield icon (64 × 64 per Figma)
+        Box(
+            modifier = Modifier
+                .size(DSSpacing.s10)
+                .background(
+                    color = DSColors.surfacePrimary,
+                    shape = CircleShape,
+                ),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                imageVector     = Icons.Filled.Security,
+                contentDescription = null,
+                tint            = DSColors.iconAction,
+                modifier        = Modifier.size(DSSpacing.s8 /* 32dp */),
+            )
+        }
+
+        // Title + subtitle block (4dp gap between them)
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(DSSpacing.s1),
+        ) {
+            Text(
+                text      = stringResource(R.string.permissions_screen_title),
+                style     = DSTypography.h3.bold,
+                color     = DSColors.textActionActive,
+                textAlign = TextAlign.Center,
+            )
+            Text(
+                text      = stringResource(R.string.permissions_screen_subtitle),
+                style     = DSTypography.body2.regular,
+                color     = DSColors.textAction,
+                textAlign = TextAlign.Center,
+            )
+        }
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Dock bar
+// ─────────────────────────────────────────────────────────────────────────────
+
+@Composable
+private fun DockBar(
+    onStartClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val dockBarBg = DSColors.surfacePrimary.copy(alpha = 0.85f)
+
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .background(dockBarBg)
+            .navigationBarsPadding()
+            .padding(horizontal = DSSpacing.s6, vertical = DSSpacing.s4),
+    ) {
+        Button(
+            onClick  = onStartClick,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(DSSpacing.s9 /* 48dp */ + DSSpacing.s2 /* +8dp = 56dp */),
+            shape  = RoundedCornerShape(DSRadius.round),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = DSColors.current.primaryLighter,
+                contentColor   = DSColors.textOnAction,
+            ),
+            elevation = ButtonDefaults.buttonElevation(defaultElevation = DSSpacing.none),
+        ) {
+            Text(
+                text  = stringResource(R.string.permission_start_button),
+                style = DSTypography.body2.bold,
+            )
+        }
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Previews
+// ─────────────────────────────────────────────────────────────────────────────
+
+@Preview(
+    name          = "PermissionsScreen – Pixel 5",
+    device        = Devices.PIXEL_5,
+    showSystemUi  = true,
+)
+@Composable
+private fun PreviewPermissionsScreenPixel5() {
+    PermissionsScreen()
+}
+
+@Preview(
+    name           = "PermissionsScreen – Compact",
+    widthDp        = 360,
+    heightDp       = 800,
+    showBackground = true,
+)
+@Composable
+private fun PreviewPermissionsScreenCompact() {
+    PermissionsScreen()
 }
