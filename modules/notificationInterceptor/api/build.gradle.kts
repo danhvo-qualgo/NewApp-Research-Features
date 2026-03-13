@@ -6,11 +6,11 @@ androidModule {
 }
 
 android {
-    namespace = "net.qualgo.safeNest.features.notificationInterceptor.api"
+    namespace = "com.safeNest.demo.features.notificationInterceptor.api"
 }
 
 uneyPublishing {
-    groupId = "net.qualgo.safeNest.features"
+    groupId = "com.safeNest.demo.features"
     artifactId = "notificationInterceptor-api"
 }
 

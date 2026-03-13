@@ -9,7 +9,7 @@
       "client_info": {
         "mobilesdk_app_id": "1:999999999999:android:prod123456abcdef",
         "android_client_info": {
-          "package_name": "com.safeNest.features.core.app"
+          "package_name": "com.safeNest.demo.app"
         }
       },
       "oauth_client": [],

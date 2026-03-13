@@ -10,11 +10,11 @@ androidModule {
 }
 
 android {
-    namespace = "net.qualgo.safeNest.urlguard.impl"
+    namespace = "com.safeNest.demo.features.urlGuard.impl"
 }
 
 dependencies {
-    implementation(project(":modules:urlguard:api"))
+    implementation(project(":modules:urlGuard:api"))
     implementation(libs.core.router)
 
     // Ktor HTTP client
@@ -27,6 +27,6 @@ dependencies {
 }
 
 uneyPublishing {
-    groupId = "net.qualgo.safeNest.feauture"
-    artifactId = "urlguard-impl"
+    groupId = "com.safeNest.demo.features"
+    artifactId = "urlGuard-impl"
 }

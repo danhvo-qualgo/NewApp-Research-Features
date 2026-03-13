@@ -10,7 +10,7 @@ androidModule {
 }
 
 android {
-    namespace = "net.qualgo.safeNest.features.phishingDetection.impl"
+    namespace = "com.safeNest.demo.features.phishingDetection.impl"
 
     ndkVersion = "27.2.12479018"
 
@@ -34,6 +34,6 @@ dependencies {
 }
 
 uneyPublishing {
-    groupId = "net.qualgo.safeNest.feautures"
+    groupId = "com.safeNest.demo.features"
     artifactId = "phishingDetection-impl"
 }

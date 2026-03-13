@@ -4,26 +4,31 @@ plugins {
 }
 
 applicationModule {
-    buildName = "SafeNest-Core-Features"
+    buildName = "SafeNest-Demo"
 }
 
 android {
-    namespace = "com.safeNest.features.core.app"
+    namespace = "com.safeNest.demo.app"
 
     defaultConfig {
-        applicationId = "com.safeNest.features.core.app"
+        applicationId = "com.safeNest.demo.app"
     }
 }
 
 
 dependencies {
     implementation(project(":modules:baseApp"))
+    implementation(project(":modules:designSystem"))
+    implementation(project(":modules:splash:impl"))
     implementation(project(":modules:home:impl"))
-    implementation(project(":modules:authChallenge:impl"))
-    implementation(project(":modules:signIn:impl"))
-    implementation(project(":modules:callDetection:api"))
-    implementation(project(":modules:callDetection:impl"))
-    implementation(project(":modules:urlguard:impl"))
+    implementation(project(":modules:callProtection:api"))
+    implementation(project(":modules:callProtection:impl"))
+    implementation(project(":modules:urlGuard:impl"))
+    implementation(project(":modules:permissionManager:impl"))
     implementation(project(":modules:phishingDetection:impl"))
     implementation(project(":modules:notificationInterceptor:impl"))
+    implementation(project(":modules:scamAnalyzer:impl"))
+    implementation(project(":modules:safeBrowsing:impl"))
+    implementation(project(":modules:commonKotlin"))
+    implementation(project(":modules:commonAndroid"))
 }

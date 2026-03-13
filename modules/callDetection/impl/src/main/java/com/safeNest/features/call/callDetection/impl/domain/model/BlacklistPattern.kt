@@ -1,4 +1,3 @@
-package com.safeNest.features.call.callDetection.impl.domain.model
 
 import com.safeNest.features.call.callDetection.impl.data.local.BlacklistPatternEntity
 

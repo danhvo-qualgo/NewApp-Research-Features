@@ -10,7 +10,7 @@ androidModule {
 }
 
 android {
-    namespace = "net.qualgo.safeNest.features.notificationInterceptor.impl"
+    namespace = "com.safeNest.demo.features.notificationInterceptor.impl"
 }
 
 dependencies {
@@ -19,6 +19,6 @@ dependencies {
 }
 
 uneyPublishing {
-    groupId = "net.qualgo.safeNest.features"
+    groupId = "com.safeNest.demo.features"
     artifactId = "notificationInterceptor-impl"
 }

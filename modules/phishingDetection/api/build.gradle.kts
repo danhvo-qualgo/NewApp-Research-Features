@@ -6,11 +6,11 @@ androidModule {
 }
 
 android {
-    namespace = "net.qualgo.safeNest.features.phishingDetection.api"
+    namespace = "com.safeNest.demo.features.phishingDetection.api"
 }
 
 uneyPublishing {
-    groupId = "net.qualgo.safeNest.features"
+    groupId = "com.safeNest.demo.features"
     artifactId = "phishingDetection-api"
 }
 

@@ -9,7 +9,7 @@
       "client_info": {
         "mobilesdk_app_id": "1:123456789012:android:devrelease1234",
         "android_client_info": {
-          "package_name": "com.safeNest.features.core.app.dev"
+          "package_name": "com.safeNest.demo.app.dev"
         }
       },
       "oauth_client": [],
@@ -20,7 +20,7 @@
       "client_info": {
         "mobilesdk_app_id": "1:123456789012:android:devdebug1234",
         "android_client_info": {
-          "package_name": "com.safeNest.features.core.app.dev.debug"
+          "package_name": "com.safeNest.demo.app.dev.debug"
         }
       },
       "oauth_client": [],
@@ -31,7 +31,7 @@
       "client_info": {
         "mobilesdk_app_id": "1:123456789012:android:qarelease1234",
         "android_client_info": {
-          "package_name": "com.safeNest.features.core.app.qa"
+          "package_name": "com.safeNest.demo.app.qa"
         }
       },
       "oauth_client": [],
@@ -42,7 +42,7 @@
       "client_info": {
         "mobilesdk_app_id": "1:123456789012:android:qadebug1234",
         "android_client_info": {
-          "package_name": "com.safeNest.features.core.app.qa.debug"
+          "package_name": "com.safeNest.demo.app.qa.debug"
         }
       },
       "oauth_client": [],
@@ -53,7 +53,7 @@
       "client_info": {
         "mobilesdk_app_id": "1:123456789012:android:stagingrelease1234",
         "android_client_info": {
-          "package_name": "com.safeNest.features.core.app.staging"
+          "package_name": "com.safeNest.demo.app.staging"
         }
       },
       "oauth_client": [],
@@ -64,7 +64,7 @@
       "client_info": {
         "mobilesdk_app_id": "1:123456789012:android:stagingdebug1234",
         "android_client_info": {
-          "package_name": "com.safeNest.features.core.app.debug"
+          "package_name": "com.safeNest.demo.app.debug"
         }
       },
       "oauth_client": [],

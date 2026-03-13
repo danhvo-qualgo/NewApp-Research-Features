@@ -10,20 +10,22 @@ androidModule {
 }
 
 android {
-    namespace = "net.qualgo.safeNest.core.home.impl"
+    namespace = "com.safeNest.demo.features.home.impl"
 }
 
 dependencies {
     implementation(project(":modules:home:api"))
-    implementation(project(":modules:callDetection:impl"))
     implementation(libs.core.router)
-    implementation(project(":modules:signIn:api"))
-    implementation(project(":modules:urlguard:api"))
+    implementation(project(":modules:baseApp"))
+    implementation(project(":modules:designSystem"))
+    implementation(project(":modules:callProtection:impl"))
+    implementation(project(":modules:urlGuard:api"))
+    implementation(project(":modules:permissionManager:api"))
     implementation(project(":modules:phishingDetection:api"))
     implementation(project(":modules:notificationInterceptor:api"))
 }
 
 uneyPublishing {
-    groupId = "net.qualgo.safeNest.core"
+    groupId = "com.safeNest.demo.features"
     artifactId = "home-impl"
 }

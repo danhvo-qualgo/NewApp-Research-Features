@@ -9,14 +9,11 @@ androidModule {
 }
 
 android {
-    namespace = "net.qualgo.safeNest.core.baseApp"
+    namespace = "com.safeNest.demo.features.baseApp"
 }
 
 dependencies {
-    implementation(libs.splashscreen)
-
     implementation(libs.core.utils.android)
-    implementation(libs.core.resources)
     implementation(libs.core.router)
     implementation(libs.core.logger)
     implementation(libs.core.remote.config.api)
@@ -26,6 +23,6 @@ dependencies {
 }
 
 uneyPublishing {
-    groupId = "net.qualgo.safeNest.core"
+    groupId = "com.safeNest.demo.features"
     artifactId = "base-app"
 }

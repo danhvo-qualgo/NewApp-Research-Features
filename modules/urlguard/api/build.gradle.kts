@@ -6,12 +6,12 @@ androidModule {
 }
 
 android {
-    namespace = "net.qualgo.safeNest.urlguard.api"
+    namespace = "com.safeNest.demo.features.urlGuard.api"
 }
 
 uneyPublishing {
-    groupId = "net.qualgo.safeNest.feature"
-    artifactId = "urlguard-api"
+    groupId = "com.safeNest.demo.features"
+    artifactId = "urlGuard-api"
 }
 
 dependencies {
