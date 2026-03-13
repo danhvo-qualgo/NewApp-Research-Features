@@ -6,8 +6,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
-import net.qualgo.safeNest.onboarding.api.permission.PermissionManager
-import net.qualgo.safeNest.onboarding.api.permission.PermissionType
+import com.safeNest.demo.features.splash.impl.presentation.screen.permissions.PermissionType
 import javax.inject.Inject
 
 @HiltViewModel
@@ -37,15 +36,13 @@ internal class PermissionViewModel @Inject constructor(
     // ─────────────────────────────────────────────────────────────────────────
 
     private fun loadPermissionStates() {
-        val states = PermissionType.entries.associateWith { type ->
-            permissionManager.checkPermission(type)
-        }
-        _uiState.update { it.copy(permissionStates = states) }
+//        val states = PermissionType.entries.associateWith { type ->
+//            permissionManager.checkPermission(type)
+//        }
+//        _uiState.update { it.copy(permissionStates = states) }
     }
 
     private fun handleToggle(type: PermissionType) {
-        if (type.isSubscriptionRequired) return
-        permissionManager.requestPermission(type)
         // Immediately reflect whatever the system now reports.
         loadPermissionStates()
     }

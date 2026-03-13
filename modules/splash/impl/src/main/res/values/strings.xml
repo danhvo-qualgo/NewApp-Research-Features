@@ -1,1 +1,33 @@
-<resources></resources>
+<resources>
+    <!--  Accessibility  -->
+    <string name="permission_accessibility_title">Accessibility</string>
+    <string name="permission_accessibility_desc">Detects and blocks fraudulent\nlinks in apps and browsers.</string>
+    <!--  Notification Listener  -->
+    <string name="permission_notification_listener_title">Notification Listener</string>
+    <string name="permission_notification_listener_desc">Scans incoming SMS and chat\nalerts for phishing attempts.</string>
+    <!--  Display over apps  -->
+    <string name="permission_display_over_apps_title">Display over apps</string>
+    <string name="permission_display_over_apps_desc">Allows showing security warnings on top</string>
+    <!--  Phone & Contacts  -->
+    <string name="permission_phone_contacts_title">Phone &amp; Contacts</string>
+    <string name="permission_phone_contacts_desc">Identify and block scam calls\nfrom unknown numbers.</string>
+    <!--  Microphone  -->
+    <string name="permission_microphone_title">Microphone</string>
+    <string name="permission_microphone_desc">Subscription required</string>
+    <!--  Private DNS  -->
+    <string name="permission_private_dns_title">Private DNS</string>
+    <string name="permission_private_dns_desc">Subscription required</string>
+    <!--  DNS Proxy  -->
+    <string name="permission_dns_proxy_title">DNS Proxy</string>
+    <string name="permission_dns_proxy_desc">Subscription required</string>
+    <!--  SMS Filtering  -->
+    <string name="permission_sms_filtering_title">SMS Filtering</string>
+    <string name="permission_sms_filtering_desc">Subscription required</string>
+
+    <string name="title_activity_onboarding">Onboarding</string>
+    <!--  Permissions screen header  -->
+    <string name="permissions_screen_title">Permissions Required</string>
+    <string name="permissions_screen_subtitle">To provide real-time protection against\nscams, please enable the following.</string>
+    <!--  Bottom CTA  -->
+    <string name="permission_start_button">Start</string>
+</resources>

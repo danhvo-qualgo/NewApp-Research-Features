@@ -1,6 +1,6 @@
 package net.qualgo.safeNest.onboarding.impl.permission.presentation
 
-import net.qualgo.safeNest.onboarding.api.permission.PermissionType
+import com.safeNest.demo.features.splash.impl.presentation.screen.permissions.PermissionType
 
 /**
  * Immutable snapshot of the permissions screen state.

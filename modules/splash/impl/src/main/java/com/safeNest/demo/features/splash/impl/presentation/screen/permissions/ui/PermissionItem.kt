@@ -48,7 +48,6 @@ data class PermissionItemData(
     val titleRes: Int,
     val descriptionRes: Int,
     val isGranted: Boolean,
-    val isSubscriptionRequired: Boolean = false,
     val onToggle: (Boolean) -> Unit,
 )
 

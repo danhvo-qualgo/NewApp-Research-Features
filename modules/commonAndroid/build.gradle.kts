@@ -4,6 +4,7 @@ plugins {
 }
 
 androidModule {
+    compose = true
 }
 
 android {

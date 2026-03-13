@@ -17,8 +17,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Security
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -28,6 +26,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Devices
@@ -38,13 +37,14 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
+import com.safeNest.demo.features.designSystem.component.gradientBackground
 import com.safeNest.demo.features.designSystem.theme.DSRadius
 import com.safeNest.demo.features.designSystem.theme.DSSpacing
 import com.safeNest.demo.features.designSystem.theme.DSTheme
 import com.safeNest.demo.features.designSystem.theme.DSTypography
 import com.safeNest.demo.features.designSystem.theme.color.DSColors
-import net.qualgo.safeNest.onboarding.api.permission.PermissionType
-import net.qualgo.safeNest.onboarding.impl.R
+import com.safeNest.demo.features.splash.impl.R
+import com.safeNest.demo.features.splash.impl.presentation.screen.permissions.PermissionType
 import net.qualgo.safeNest.onboarding.impl.permission.presentation.ui.PermissionItem
 import net.qualgo.safeNest.onboarding.impl.permission.presentation.ui.PermissionItemData
 
@@ -68,62 +68,63 @@ internal fun PermissionsScreen(
         }
     }
 
-    DSTheme {
-        val bgGradientTop    = DSColors.current.primaryLighter
-        val bgGradientBottom = DSColors.current.neutralLightest
+    // ── Scrollable content ───────────────────────────────────────────
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(gradientBackground),
+        contentPadding = PaddingValues(
+            top    = DSSpacing.s6,
+            start  = DSSpacing.s6,
+            end    = DSSpacing.s6,
+            bottom = 112.dp, // dock bar (88dp) + 24dp breathing room
+        ),
+        verticalArrangement = Arrangement.spacedBy(DSSpacing.s2),
+    ) {
+        // Header
+        item {
+            Spacer(Modifier.statusBarsPadding())
+            Spacer(modifier = Modifier.height(DSSpacing.s6))
+            PermissionsHeader()
+            Spacer(modifier = Modifier.height(DSSpacing.s8))
+        }
 
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(
-                    brush = Brush.verticalGradient(
-                        colors = listOf(bgGradientTop, bgGradientBottom),
-                    ),
+        // Permission rows
+        items(PermissionType.entries) { type ->
+            PermissionItem(
+                data = PermissionItemData(
+                    iconRes              = type.iconRes,
+                    titleRes             = type.nameRes,
+                    descriptionRes       = type.descriptionRes,
+                    isGranted            = uiState.permissionStates[type] == true,
+                    onToggle             = {
+                        viewModel.onAction(PermissionAction.TogglePermission(type))
+                    },
                 ),
-        ) {
-            // ── Scrollable content ───────────────────────────────────────────
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(
-                    top    = DSSpacing.s6,
-                    start  = DSSpacing.s6,
-                    end    = DSSpacing.s6,
-                    bottom = 112.dp, // dock bar (88dp) + 24dp breathing room
-                ),
-                verticalArrangement = Arrangement.spacedBy(DSSpacing.s2),
-            ) {
-                // Header
-                item {
-                    Spacer(Modifier.statusBarsPadding())
-                    Spacer(modifier = Modifier.height(DSSpacing.s6))
-                    PermissionsHeader()
-                    Spacer(modifier = Modifier.height(DSSpacing.s8))
-                }
-
-                // Permission rows
-                items(PermissionType.entries) { type ->
-                    PermissionItem(
-                        data = PermissionItemData(
-                            iconRes              = type.iconRes,
-                            titleRes             = type.nameRes,
-                            descriptionRes       = type.descriptionRes,
-                            isGranted            = uiState.permissionStates[type] == true,
-                            isSubscriptionRequired = type.isSubscriptionRequired,
-                            onToggle             = {
-                                viewModel.onAction(PermissionAction.TogglePermission(type))
-                            },
-                        ),
-                    )
-                }
-            }
-
-            // ── Dock bar — pinned at the bottom ──────────────────────────────
-            DockBar(
-                modifier     = Modifier.align(Alignment.BottomCenter),
-                onStartClick = onStartClick,
             )
         }
+
+        item {
+            Button(
+                onClick  = onStartClick,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+                shape  = RoundedCornerShape(DSRadius.round),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = DSColors.current.primaryLighter,
+                    contentColor   = DSColors.textOnAction,
+                ),
+                elevation = ButtonDefaults.buttonElevation(defaultElevation = DSSpacing.none),
+            ) {
+                Text(
+                    text  = stringResource(R.string.permission_start_button),
+                    style = DSTypography.body2.bold,
+                )
+            }
+        }
     }
+
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -148,7 +149,7 @@ private fun PermissionsHeader() {
             contentAlignment = Alignment.Center,
         ) {
             Icon(
-                imageVector     = Icons.Filled.Security,
+                painter     = painterResource(R.drawable.ic_shield),
                 contentDescription = null,
                 tint            = DSColors.iconAction,
                 modifier        = Modifier.size(DSSpacing.s8 /* 32dp */),
