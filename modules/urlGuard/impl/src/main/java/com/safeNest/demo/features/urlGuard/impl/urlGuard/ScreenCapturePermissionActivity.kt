@@ -9,7 +9,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 /**
  * Transparent trampoline activity whose sole job is to show the system
  * "Start recording?" consent dialog and relay the result back to
- * [UrlGuardAccessibilityService].
+ * [com.safeNest.demo.features.urlguard.impl.urlguard.UrlGuardAccessibilityService].
  *
  * It is launched by the service via [startActivity] (FLAG_ACTIVITY_NEW_TASK),
  * fires the consent dialog immediately on create, and finishes itself as soon

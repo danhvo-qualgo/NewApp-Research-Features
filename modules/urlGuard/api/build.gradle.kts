@@ -6,12 +6,12 @@ androidModule {
 }
 
 android {
-    namespace = "com.safeNest.demo.features.urlGuard1.api"
+    namespace = "com.safeNest.demo.features.urlGuard.api"
 }
 
 uneyPublishing {
     groupId = "com.safeNest.demo.features"
-    artifactId = "urlGuard1-api"
+    artifactId = "urlGuard-api"
 }
 
 dependencies {
