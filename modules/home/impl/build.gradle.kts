@@ -19,8 +19,8 @@ dependencies {
     implementation(project(":modules:baseApp"))
     implementation(project(":modules:designSystem"))
     implementation(project(":modules:callProtection:impl"))
-    implementation(project(":modules:urlGuard1:api"))
-    implementation(project(":modules:permissionManager1:api"))
+    implementation(project(":modules:urlGuard:api"))
+    implementation(project(":modules:permissionManager:api"))
     implementation(project(":modules:phishingDetection:api"))
     implementation(project(":modules:notificationInterceptor:api"))
 }
