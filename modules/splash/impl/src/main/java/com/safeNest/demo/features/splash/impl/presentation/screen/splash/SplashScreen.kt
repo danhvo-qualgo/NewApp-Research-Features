@@ -23,6 +23,7 @@ import com.uney.core.router.compose.LocalRouterManager
 
 @Composable
 internal fun SplashScreen(
+    onNavigateToRequestPermission: () -> Unit,
     viewModel: SplashViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -56,16 +57,15 @@ internal fun SplashScreen(
                     }
                 }
 
-                UiState.Success -> {
+                is UiState.Success -> {
                     LaunchedEffect(Unit) {
-                        if (routerManager.navigate(activity, "internal://featureHome".toUri())) {
-                            activity.finish()
+
+                        if((uiState as UiState.Success).allPermissionGranted) {
+                            if (routerManager.navigate(activity, "internal://featureHome".toUri())) {
+                                activity.finish()
+                            }
                         } else {
-                            Toast.makeText(
-                                activity,
-                                "Feature not available. Please provide correct entry point through @AppEntryPoint in hilt module.",
-                                Toast.LENGTH_SHORT
-                            ).show()
+                            onNavigateToRequestPermission()
                         }
                     }
                 }

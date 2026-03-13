@@ -1,4 +1,4 @@
-package net.qualgo.safeNest.onboarding.impl.permission.presentation
+package com.safeNest.demo.features.splash.impl.presentation.screen.permissions
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -22,10 +22,13 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -37,16 +40,18 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
+import com.safeNest.demo.features.commonAndroid.rememberMultiplePermissionsLauncher
+import com.safeNest.demo.features.commonAndroid.rememberRuntimePermissionLauncher
 import com.safeNest.demo.features.designSystem.component.gradientBackground
 import com.safeNest.demo.features.designSystem.theme.DSRadius
 import com.safeNest.demo.features.designSystem.theme.DSSpacing
-import com.safeNest.demo.features.designSystem.theme.DSTheme
 import com.safeNest.demo.features.designSystem.theme.DSTypography
 import com.safeNest.demo.features.designSystem.theme.color.DSColors
 import com.safeNest.demo.features.splash.impl.R
-import com.safeNest.demo.features.splash.impl.presentation.screen.permissions.PermissionType
-import net.qualgo.safeNest.onboarding.impl.permission.presentation.ui.PermissionItem
-import net.qualgo.safeNest.onboarding.impl.permission.presentation.ui.PermissionItemData
+import com.safeNest.demo.features.splash.impl.domain.model.PermissionRequestType
+import com.safeNest.demo.features.splash.impl.domain.model.PermissionType
+import com.safeNest.demo.features.splash.impl.presentation.screen.permissions.ui.PermissionItem
+import com.safeNest.demo.features.splash.impl.presentation.screen.permissions.ui.PermissionItemData
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Screen
@@ -59,13 +64,53 @@ internal fun PermissionsScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
+    var permissionTypeRequesting by remember { mutableStateOf<PermissionType?>(null) }
+    val launcherRequestPermission = rememberRuntimePermissionLauncher { granted ->
+        permissionTypeRequesting?.let { permissionType ->
+            viewModel.onAction(PermissionAction.UpdatePermissionGrantedState(permissionType, granted))
+        }
+    }
+
+    val launcherRequestPermissions = rememberMultiplePermissionsLauncher { permissionsResult ->
+        permissionTypeRequesting?.let { permissionType ->
+            val granted = permissionsResult.all { it.value }
+            viewModel.onAction(PermissionAction.UpdatePermissionGrantedState(permissionType, granted))
+        }
+    }
+
+
     // Refresh permission states every time the screen comes back to foreground
     // (the user may have granted a permission in the system settings).
     val lifecycleOwner = LocalLifecycleOwner.current
-    androidx.compose.runtime.LaunchedEffect(lifecycleOwner) {
+    LaunchedEffect(lifecycleOwner) {
         lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
             viewModel.refreshPermissionStates()
         }
+    }
+
+    LaunchedEffect(viewModel.event, lifecycleOwner) {
+        lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+            viewModel.event.collect { event ->
+                when(event) {
+                    is PermissionEvent.RequestPermissionEvent -> {
+                        permissionTypeRequesting = event.permissionType
+                        when(event.permissionType.requestType) {
+                            is PermissionRequestType.RunTime -> {
+                                launcherRequestPermission.launch(event.permissionType.requestType.permission)
+                            }
+
+                            is PermissionRequestType.RunTimes -> {
+                                launcherRequestPermissions.launch(event.permissionType.requestType.permissions.toTypedArray())
+                            }
+                            else ->{}
+                        }
+
+                    }
+                }
+
+            }
+        }
+
     }
 
     // ── Scrollable content ───────────────────────────────────────────
@@ -116,6 +161,7 @@ internal fun PermissionsScreen(
                     contentColor   = DSColors.textOnAction,
                 ),
                 elevation = ButtonDefaults.buttonElevation(defaultElevation = DSSpacing.none),
+                enabled = uiState.allPermissionsGranted
             ) {
                 Text(
                     text  = stringResource(R.string.permission_start_button),

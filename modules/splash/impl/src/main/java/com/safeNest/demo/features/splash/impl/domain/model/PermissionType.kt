@@ -1,7 +1,7 @@
-package com.safeNest.demo.features.splash.impl.presentation.screen.permissions
+package com.safeNest.demo.features.splash.impl.domain.model
 
+import android.Manifest
 import com.safeNest.demo.features.splash.impl.R
-
 
 enum class PermissionType(
     val nameRes: Int,
@@ -32,33 +32,33 @@ enum class PermissionType(
         iconRes = R.drawable.ic_phone_call,
         descriptionRes = R.string.permission_phone_contacts_desc,
         requestType = PermissionRequestType.RunTimes(listOf(
-            android.Manifest.permission.READ_CONTACTS,
-            android.Manifest.permission.READ_PHONE_NUMBERS,
-            android.Manifest.permission.READ_PHONE_STATE,
+            Manifest.permission.READ_CONTACTS,
+            Manifest.permission.READ_PHONE_NUMBERS,
+            Manifest.permission.READ_PHONE_STATE,
         ))
     ),
     MICROPHONE(
         nameRes = R.string.permission_microphone_title,
         iconRes = R.drawable.ic_microphone,
         descriptionRes = R.string.permission_microphone_desc,
-        requestType = PermissionRequestType.RunTime(android.Manifest.permission.RECORD_AUDIO)
+        requestType = PermissionRequestType.RunTime(Manifest.permission.RECORD_AUDIO)
     ),
-    PRIVATE_DNS(
-        nameRes = R.string.permission_private_dns_title,
-        iconRes = R.drawable.ic_server,
-        descriptionRes = R.string.permission_private_dns_desc,
-        requestType = PermissionRequestType.Settings
-    ),
-    DNS_PROXY(
-        nameRes = R.string.permission_dns_proxy_title,
-        iconRes = R.drawable.ic_server_02,
-        descriptionRes = R.string.permission_dns_proxy_desc,
-        requestType = PermissionRequestType.Settings
-    ),
-    SMS_FILTERING(
-        nameRes = R.string.permission_sms_filtering_title,
-        iconRes = R.drawable.ic_message_text_square,
-        descriptionRes = R.string.permission_sms_filtering_desc,
-        requestType = PermissionRequestType.Settings
-    ),
+//    PRIVATE_DNS(
+//        nameRes = R.string.permission_private_dns_title,
+//        iconRes = R.drawable.ic_server,
+//        descriptionRes = R.string.permission_private_dns_desc,
+//        requestType = PermissionRequestType.Settings
+//    ),
+//    DNS_PROXY(
+//        nameRes = R.string.permission_dns_proxy_title,
+//        iconRes = R.drawable.ic_server_02,
+//        descriptionRes = R.string.permission_dns_proxy_desc,
+//        requestType = PermissionRequestType.Settings
+//    ),
+//    SMS_FILTERING(
+//        nameRes = R.string.permission_sms_filtering_title,
+//        iconRes = R.drawable.ic_message_text_square,
+//        descriptionRes = R.string.permission_sms_filtering_desc,
+//        requestType = PermissionRequestType.Settings
+//    ),
 }

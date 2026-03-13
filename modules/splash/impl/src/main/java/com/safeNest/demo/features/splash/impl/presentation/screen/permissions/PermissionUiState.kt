@@ -1,6 +1,6 @@
-package net.qualgo.safeNest.onboarding.impl.permission.presentation
+package com.safeNest.demo.features.splash.impl.presentation.screen.permissions
 
-import com.safeNest.demo.features.splash.impl.presentation.screen.permissions.PermissionType
+import com.safeNest.demo.features.splash.impl.domain.model.PermissionType
 
 /**
  * Immutable snapshot of the permissions screen state.
@@ -10,4 +10,7 @@ import com.safeNest.demo.features.splash.impl.presentation.screen.permissions.Pe
  */
 data class PermissionUiState(
     val permissionStates: Map<PermissionType, Boolean> = emptyMap(),
-)
+) {
+    val allPermissionsGranted: Boolean
+        get() = permissionStates.all { it.value }
+}
