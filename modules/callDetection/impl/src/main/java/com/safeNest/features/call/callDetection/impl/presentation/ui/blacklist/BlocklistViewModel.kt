@@ -3,12 +3,9 @@ package com.safeNest.features.call.callDetection.impl.presentation.ui.blacklist
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.safeNest.features.call.callDetection.impl.domain.usecase.AddBlacklistPatternUseCase
-import com.safeNest.features.call.callDetection.impl.domain.usecase.AddNumberToWhiteListUseCase
 import com.safeNest.features.call.callDetection.impl.domain.usecase.EnableBlackListUseCase
 import com.safeNest.features.call.callDetection.impl.domain.usecase.GetBlacklistPatternsUseCase
-import com.safeNest.features.call.callDetection.impl.domain.usecase.GetWhiteListUseCase
 import com.safeNest.features.call.callDetection.impl.domain.usecase.RemoveBlackListPatternUseCase
-import com.safeNest.features.call.callDetection.impl.domain.usecase.RemoveWhiteListUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
@@ -16,7 +13,7 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class BlacklistModel @Inject constructor(
+class BlocklistViewModel @Inject constructor(
     private val addBlacklistPatternUseCase: AddBlacklistPatternUseCase,
     private val getBlacklistPatternsUseCase: GetBlacklistPatternsUseCase,
     private val removeBlackListPatternUseCase: RemoveBlackListPatternUseCase,
@@ -29,9 +26,9 @@ class BlacklistModel @Inject constructor(
     val isEnable = enableBlackListUseCase.isEnable()
         .stateIn(viewModelScope, SharingStarted.Lazily, false)
 
-    fun add(number: String) {
+    fun add(pattern: String, description: String) {
         viewModelScope.launch {
-            addBlacklistPatternUseCase(number)
+            addBlacklistPatternUseCase(pattern = pattern, description = description)
         }
     }
 

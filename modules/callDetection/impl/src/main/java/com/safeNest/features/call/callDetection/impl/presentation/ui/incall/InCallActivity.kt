@@ -14,31 +14,19 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.navigation3.runtime.NavEntry
-import androidx.navigation3.ui.NavDisplay
-import com.safeNest.features.call.callDetection.impl.presentation.navigator.Screen
 import com.safeNest.features.call.callDetection.impl.presentation.service.call.MyInCallService
-import com.safeNest.features.call.callDetection.impl.presentation.service.call.controller.AudioPlayer
 import com.safeNest.features.call.callDetection.impl.presentation.service.call.controller.AutoAnswerController
 import com.safeNest.features.call.callDetection.impl.presentation.service.recorder.RecorderService
-import com.safeNest.features.call.callDetection.impl.presentation.ui.home.HomeScreen
-import com.safeNest.features.call.callDetection.impl.presentation.ui.home.HomeViewModel
-import com.safeNest.features.call.callDetection.impl.presentation.ui.whitelist.WhitelistScreen
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint

@@ -13,7 +13,7 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class WhitelistModel @Inject constructor(
+class WhitelistViewModel @Inject constructor(
     private val addNumberToWhiteListUseCase: AddNumberToWhiteListUseCase,
     private val getWhitelistUseCase: GetWhiteListUseCase,
     private val removeWhiteListUseCase: RemoveWhiteListUseCase,
@@ -22,12 +22,13 @@ class WhitelistModel @Inject constructor(
 
     val whitelist = getWhitelistUseCase()
         .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+
     val isEnable = enableWhiteListUseCase.isEnable()
         .stateIn(viewModelScope, SharingStarted.Lazily, false)
 
-    fun add(number: String) {
+    fun add(number: String, name: String) {
         viewModelScope.launch {
-            addNumberToWhiteListUseCase(number)
+            addNumberToWhiteListUseCase(number = number, name = name)
         }
     }
 

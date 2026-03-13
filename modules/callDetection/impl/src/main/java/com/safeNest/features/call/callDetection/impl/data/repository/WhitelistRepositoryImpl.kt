@@ -16,11 +16,11 @@ class WhitelistRepositoryImpl @Inject constructor(
 
     override fun getWhitelist(): Flow<List<WhitelistNumber>> =
         dao.getAll().map { list ->
-            list.map { WhitelistNumber(it.phoneNumber) }
+            list.map { it.toWhitelistNumber() }
         }
 
     override fun getPhoneNumber(phoneNumber: String): Flow<WhitelistNumber?> =
-        dao.get(phoneNumber).map { it?.let { it1 -> WhitelistNumber(it1.phoneNumber) } }
+        dao.get(phoneNumber).map { it?.toWhitelistNumber() }
 
     override fun isEnable(): Flow<Boolean> {
         return store.isEnableWhitelist()
@@ -30,8 +30,8 @@ class WhitelistRepositoryImpl @Inject constructor(
         store.setEnableWhitelist(isEnable)
     }
 
-    override suspend fun add(number: String) {
-        dao.insert(WhitelistEntity(number))
+    override suspend fun add(number: WhitelistNumber) {
+        dao.insert(number.toWhitelistEntity())
     }
 
     override suspend fun remove(number: String) {

@@ -16,10 +16,10 @@ class BlacklistPatternRepositoryImpl @Inject constructor(
 
     override fun getBlacklistPatterns(): Flow<List<BlacklistPattern>>  =
         dao.getAll().map { list ->
-            list.map { BlacklistPattern(it.pattern) }
+            list.map { it.toBlacklistPattern() }
         }
-    override suspend fun add(pattern: String) {
-        dao.insert(BlacklistPatternEntity(pattern))
+    override suspend fun add(pattern: BlacklistPattern) {
+        dao.insert(pattern.toBlacklistPatternEntity())
     }
 
     override suspend fun remove(pattern: String) {

@@ -1,12 +1,6 @@
 package com.safeNest.features.call.callDetection.impl.presentation
 
-import android.app.role.RoleManager
-import android.content.Intent
-import android.os.Build
 import android.os.Bundle
-import android.provider.Settings
-import android.telecom.TelecomManager
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
@@ -18,9 +12,9 @@ import androidx.compose.ui.Modifier
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.ui.NavDisplay
 import com.safeNest.features.call.callDetection.impl.presentation.navigator.Screen
-import com.safeNest.features.call.callDetection.impl.presentation.ui.blacklist.BlacklistScreen
-import com.safeNest.features.call.callDetection.impl.presentation.ui.home.HomeScreen
-import com.safeNest.features.call.callDetection.impl.presentation.ui.whitelist.WhitelistScreen
+import com.safeNest.features.call.callDetection.impl.presentation.ui.blacklist.add.AddBlockPatternScreen
+import com.safeNest.features.call.callDetection.impl.presentation.ui.home.CallProtectionScreen
+import com.safeNest.features.call.callDetection.impl.presentation.ui.whitelist.add.AddWhitelistScreen
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -43,6 +37,7 @@ class CallDetectionActivity : ComponentActivity() {
     @Composable
     private fun AppNav3Host() {
         val backStack = remember { mutableStateListOf<Any>(Screen.Home) }
+        val onBack: () -> Unit = { backStack.removeLastOrNull() }
         NavDisplay(
             modifier = Modifier.fillMaxSize(),
             backStack = backStack,
@@ -50,26 +45,27 @@ class CallDetectionActivity : ComponentActivity() {
         ) { key ->
             when (key) {
                 is Screen.Home -> NavEntry(key) {
-                    HomeScreen(
-                        onGoToWhitelist = {
-                            backStack.add(Screen.Whitelist)
+                    CallProtectionScreen(
+                        onBack = {
+                            finish()
                         },
-                        onGoToBlacklist = {
-                            backStack.add(Screen.Blacklist)
+                        onAddToWhitelist = {
+                            backStack.add(Screen.AddWhitelist)
+                        },
+                        onAddToBlacklist = {
+                            backStack.add(Screen.AddBlocklist)
                         }
                     )
                 }
-
-                is Screen.Whitelist -> NavEntry(key) {
-                    WhitelistScreen(onBack = {
-                        backStack.removeLastOrNull()
-                    })
+                is Screen.AddBlocklist -> NavEntry(key) {
+                    AddBlockPatternScreen {
+                        onBack()
+                    }
                 }
-
-                is Screen.Blacklist -> NavEntry(key) {
-                    BlacklistScreen(onBack = {
-                        backStack.removeLastOrNull()
-                    })
+                is Screen.AddWhitelist -> NavEntry(key) {
+                    AddWhitelistScreen {
+                        onBack()
+                    }
                 }
 
                 else -> NavEntry(Unit) { Text("Unknown route") }

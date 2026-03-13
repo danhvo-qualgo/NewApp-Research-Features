@@ -5,7 +5,7 @@ import kotlinx.coroutines.flow.Flow
 
 interface BlacklistPatternRepository {
     fun getBlacklistPatterns(): Flow<List<BlacklistPattern>>
-    suspend fun add(pattern: String)
+    suspend fun add(pattern: BlacklistPattern)
     suspend fun remove(pattern: String)
 
     fun isEnable(): Flow<Boolean>

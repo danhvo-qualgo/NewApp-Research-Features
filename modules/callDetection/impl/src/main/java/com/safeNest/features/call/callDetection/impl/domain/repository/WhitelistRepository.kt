@@ -5,7 +5,7 @@ import kotlinx.coroutines.flow.Flow
 
 interface WhitelistRepository {
     fun getWhitelist(): Flow<List<WhitelistNumber>>
-    suspend fun add(number: String)
+    suspend fun add(number: WhitelistNumber)
     suspend fun remove(number: String)
     suspend fun isWhitelisted(number: String): Boolean
     fun getPhoneNumber(phoneNumber: String): Flow<WhitelistNumber?>

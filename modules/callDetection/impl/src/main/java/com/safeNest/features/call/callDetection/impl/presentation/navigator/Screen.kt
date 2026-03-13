@@ -7,7 +7,7 @@ sealed interface Screen {
     @Serializable
     object Home: Screen
     @Serializable
-    object Whitelist: Screen
+    object AddBlocklist: Screen
     @Serializable
-    object Blacklist: Screen
+    object AddWhitelist: Screen
 }
