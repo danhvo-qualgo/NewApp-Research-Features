@@ -14,6 +14,8 @@ android {
 
 dependencies {
     implementation(project(":modules:splash:api"))
+    implementation(project(":modules:urlGuard:api"))
+    implementation(project(":modules:notificationInterceptor:api"))
     implementation(libs.core.router)
     implementation(libs.core.utils.android)
     implementation(libs.core.resources)
@@ -22,6 +24,7 @@ dependencies {
     implementation(libs.splashscreen)
     implementation(project(":modules:baseApp"))
     implementation(project(":modules:designSystem"))
+    implementation(project(":modules:commonAndroid"))
 }
 
 uneyPublishing {

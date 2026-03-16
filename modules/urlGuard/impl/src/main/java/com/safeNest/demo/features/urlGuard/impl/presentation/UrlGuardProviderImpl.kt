@@ -1,6 +1,12 @@
 package com.safeNest.demo.features.urlGuard.impl.presentation
 
+import android.accessibilityservice.AccessibilityService
 import com.safeNest.demo.features.urlGuard.api.UrlGuardProvider
+import com.safeNest.demo.features.urlGuard.impl.urlGuard.UrlGuardAccessibilityService
 import javax.inject.Inject
 
-class UrlGuardProviderImpl @Inject constructor() : UrlGuardProvider
+class UrlGuardProviderImpl @Inject constructor() : UrlGuardProvider {
+    override fun getA11yServiceName(): Class<out AccessibilityService> {
+        return UrlGuardAccessibilityService::class.java
+    }
+}

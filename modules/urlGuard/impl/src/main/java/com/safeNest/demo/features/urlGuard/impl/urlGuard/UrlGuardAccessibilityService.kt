@@ -10,7 +10,6 @@ import android.app.PendingIntent
 import android.content.ContentValues
 import android.content.Intent
 import android.content.pm.ApplicationInfo
-import android.content.pm.ServiceInfo
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.PixelFormat
@@ -149,9 +148,7 @@ class UrlGuardAccessibilityService : AccessibilityService() {
         createNotificationChannel()
         if (Build.VERSION.SDK_INT > Build.VERSION_CODES.P) {
             startForeground(
-                1, buildNotification(),
-                ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION
-            )
+                1, buildNotification())
         } else {
             startForeground(1, buildNotification())
         }
