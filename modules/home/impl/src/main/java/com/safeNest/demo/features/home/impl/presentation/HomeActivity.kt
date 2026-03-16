@@ -24,6 +24,7 @@ import com.safeNest.demo.features.designSystem.component.gradientBackground
 import com.safeNest.demo.features.designSystem.theme.DSTheme
 import com.safeNest.demo.features.designSystem.theme.DSTypography
 import com.safeNest.demo.features.designSystem.theme.color.DSColors
+import com.safeNest.demo.features.home.impl.presentation.ui.home.HomeScreen
 import com.safeNest.demo.features.notificationInterceptor.api.presentation.router.NotificationInterceptorDeeplink
 import com.safeNest.demo.features.permissionManager.api.presentation.router.PermissionManagerDeeplink
 import com.safeNest.demo.features.phishingDetection.api.presentation.router.PhishingDetectionDeeplink
@@ -50,14 +51,27 @@ class HomeActivity : ComponentActivity() {
         setContent {
             CompositionLocalProvider(LocalRouterManager provides routerManager) {
                 DSTheme {
-                    HomeScreen()
+                    HomeScreen(
+                        onManageProtectionClick = {
+                            routerManager.navigate(
+                                this@HomeActivity,
+                                CallDetectionDeeplink.entryPoint()
+                            )
+                        },
+                        onHomeClick = {
+
+                        },
+                        onToolsClick = {
+
+                        }
+                    )
                 }
             }
         }
     }
 
     @Composable
-    private fun HomeScreen() {
+    private fun HomeScreen1() {
         Scaffold(Modifier.fillMaxSize()) { paddingValues ->
             Column(
                 Modifier
