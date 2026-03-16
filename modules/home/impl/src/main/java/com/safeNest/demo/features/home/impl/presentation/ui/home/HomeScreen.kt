@@ -8,6 +8,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.Build
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -18,12 +19,13 @@ import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.safeNest.demo.features.home.impl.R
+import com.safeNest.demo.features.home.impl.presentation.ScamAnalyzerScreen
 
-// Màu sắc chủ đạo (Giả định dựa trên thiết kế)
 val PrimaryPurple = Color(0xFF4F46E5)
 val BackgroundLight = Color(0xFFF0F4FF)
 val CardBackground = Color.White
@@ -36,16 +38,30 @@ val ChipBackgroundColor = Color(0xFFF9FAFB)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
-    onHomeClick: () -> Unit,
-    onToolsClick: () -> Unit,
     onManageProtectionClick: () -> Unit,
 ) {
     val navController = rememberNavController()
     Scaffold(
         containerColor = BackgroundLight,
         bottomBar = { SafeNestBottomNavigation(
-            onHomeClick = onHomeClick,
-            onToolsClick = onToolsClick
+            onHomeClick = {
+                navController.navigate(BottomNavItem.Home.route) {
+                    popUpTo(navController.graph.findStartDestination().id) {
+                        saveState = true
+                    }
+                    launchSingleTop = true
+                    restoreState = true
+                }
+            },
+            onToolsClick = {
+                navController.navigate(BottomNavItem.Tools.route) {
+                    popUpTo(navController.graph.findStartDestination().id) {
+                        saveState = true
+                    }
+                    launchSingleTop = true
+                    restoreState = true
+                }
+            }
         ) }
     ) { paddingValues ->
         NavHost(
@@ -60,7 +76,7 @@ fun HomeScreen(
             }
 
             composable(BottomNavItem.Tools.route) {
-//                ScamAnalyzerScreen() // Composable của màn hình Tools
+                ScamAnalyzerScreen()
             }
         }
     }
@@ -161,7 +177,7 @@ fun FeatureCard(
     Card(
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = CardBackground),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onClick() } // Cho phép click toàn bộ card
@@ -307,7 +323,9 @@ fun CallProtectionCard(
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = CardBackground),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier.fillMaxWidth().clickable {
+            onManageProtectionClick()
+        }
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
@@ -395,29 +413,96 @@ fun StatusChip(
     }
 }
 
+
+
 @Composable
 fun SafeNestBottomNavigation(
     onHomeClick: () -> Unit,
     onToolsClick: () -> Unit
 ) {
-    // Placeholder cho BottomNavigationBar
-    NavigationBar(containerColor = CardBackground) {
-        NavigationBarItem(
-            icon = { Icon(Icons.Default.Home, contentDescription = "Home") },
-            label = { Text("Home") },
-            selected = true,
-            onClick = {
-                onHomeClick()
-            }
+    var isFirst by remember { mutableStateOf(true) }
+
+    Surface(
+        color = CardBackground,
+        shadowElevation = 16.dp,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(64.dp),
+            horizontalArrangement = Arrangement.SpaceAround
+        ) {
+            // Tab Home
+            CustomTabItem(
+                icon = ImageVector.vectorResource(id = R.drawable.ic_home_selected),
+                label = "Home",
+                isSelected = isFirst,
+                onClick = {
+                    isFirst = true
+                    onHomeClick()
+                },
+                modifier = Modifier.weight(1f)
+            )
+
+            // Tab Tools
+            CustomTabItem(
+                icon = ImageVector.vectorResource(id = R.drawable.ic_tools_unselected),
+                label = "Tools",
+                isSelected = !isFirst,
+                onClick = {
+                    isFirst = false
+                    onToolsClick()
+                },
+                modifier = Modifier.weight(1f)
+            )
+        }
+    }
+}
+
+@Composable
+fun CustomTabItem(
+    icon: ImageVector,
+    label: String,
+    isSelected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val contentColor = if (isSelected) PrimaryPurple else TextSecondary
+    val indicatorColor = if (isSelected) PrimaryPurple else Color.Transparent
+
+    Column(
+        modifier = modifier
+            .fillMaxHeight()
+            .clickable(onClick = onClick),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth(0.5f)
+                .height(3.dp)
+                .background(indicatorColor)
         )
-        NavigationBarItem(
-            icon = { Icon(Icons.Default.Build, contentDescription = "Tools") },
-            label = { Text("Tools") },
-            selected = false,
-            onClick = {
-                onToolsClick()
-            }
+
+        Spacer(modifier = Modifier.weight(1f))
+
+        Icon(
+            imageVector = icon,
+            contentDescription = label,
+            tint = contentColor,
+            modifier = Modifier.size(24.dp)
         )
+
+        Spacer(modifier = Modifier.height(4.dp))
+
+        Text(
+            text = label,
+            fontSize = 14.sp,
+            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
+            color = contentColor
+        )
+
+        Spacer(modifier = Modifier.weight(1f))
     }
 }
 

@@ -1,3 +1,7 @@
 package com.safeNest.demo.features.urlGuard.api
 
-interface UrlGuardProvider
+import android.accessibilityservice.AccessibilityService
+
+interface UrlGuardProvider {
+    fun getA11yServiceName(): Class<out AccessibilityService>
+}

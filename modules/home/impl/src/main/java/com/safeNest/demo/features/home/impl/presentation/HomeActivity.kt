@@ -57,12 +57,6 @@ class HomeActivity : ComponentActivity() {
                                 this@HomeActivity,
                                 CallDetectionDeeplink.entryPoint()
                             )
-                        },
-                        onHomeClick = {
-
-                        },
-                        onToolsClick = {
-
                         }
                     )
                 }
