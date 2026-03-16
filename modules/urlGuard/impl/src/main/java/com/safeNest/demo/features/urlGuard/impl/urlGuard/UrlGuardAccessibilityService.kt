@@ -153,7 +153,7 @@ class UrlGuardAccessibilityService : AccessibilityService() {
             startForeground(1, buildNotification())
         }
 
-        showFloatingButton("chrome")
+        //showFloatingButton("chrome")
     }
 
     override fun onDestroy() {

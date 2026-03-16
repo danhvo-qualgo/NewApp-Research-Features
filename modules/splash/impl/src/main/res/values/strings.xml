@@ -14,6 +14,12 @@
     <!--  Microphone  -->
     <string name="permission_microphone_title">Microphone</string>
     <string name="permission_microphone_desc">Subscription required</string>
+    <!--  Call Screening  -->
+    <string name="permission_call_screening_title">Call Screening</string>
+    <string name="permission_call_screening_desc">Detects and blocks scam calls\nbefore they reach you.</string>
+    <!--  Call Redirection  -->
+    <string name="permission_call_redirection_title">Call Redirection</string>
+    <string name="permission_call_redirection_desc">Redirects suspicious calls\nthrough our security check.</string>
     <!--  Private DNS  -->
     <string name="permission_private_dns_title">Private DNS</string>
     <string name="permission_private_dns_desc">Subscription required</string>
