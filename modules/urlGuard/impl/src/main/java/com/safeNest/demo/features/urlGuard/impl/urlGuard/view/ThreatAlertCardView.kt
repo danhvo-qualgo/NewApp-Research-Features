@@ -1,4 +1,4 @@
-package com.safeNest.demo.features.urlGuard.impl.urlGuard
+package com.safeNest.demo.features.urlGuard.impl.urlGuard.view
 
 import android.content.Context
 import android.graphics.drawable.Drawable
@@ -83,15 +83,13 @@ class ThreatAlertCardView @JvmOverloads constructor(
     // ── Initialisation ────────────────────────────────────────────────────────
 
     init {
-        // ── Card visual style ─────────────────────────────────────────────────
         orientation = VERTICAL
         background = ContextCompat.getDrawable(context, R.drawable.bg_threat_card)
         elevation = dpToPx(8).toFloat()
-        clipToOutline = true             // clip children to rounded-corner outline
+        clipToOutline = true
         val pad = dpToPx(24)
         setPadding(pad, pad, pad, pad)
 
-        // ── Inflate children via <merge> ──────────────────────────────────────
         LayoutInflater.from(context).inflate(R.layout.threat_alert_card, this, true)
 
         frameAlertOuter = findViewById(R.id.frame_threat_alert_outer)
@@ -103,46 +101,28 @@ class ThreatAlertCardView @JvmOverloads constructor(
 
     // ── Header – alert icon setters ───────────────────────────────────────────
 
-    /**
-     * Replaces the icon shown inside the red circle in the card header.
-     * Safe to call at any time.
-     */
     fun setAlertIconDrawable(drawable: Drawable?) {
         ivAlertIcon.setImageDrawable(drawable)
     }
 
-    /** @see setAlertIconDrawable */
     fun setAlertIconRes(@DrawableRes resId: Int) {
         ivAlertIcon.setImageResource(resId)
     }
 
-    /**
-     * Replaces the **outer** (lightly tinted) circle background of the header icon cluster.
-     * Pass `null` to clear.  Safe to call at any time.
-     */
     fun setAlertOuterBackground(drawable: Drawable?) {
         frameAlertOuter.background = drawable
     }
 
-    /**
-     * Replaces the **inner** (solid coloured) circle background of the header icon cluster.
-     * Pass `null` to clear.  Safe to call at any time.
-     */
     fun setAlertInnerBackground(drawable: Drawable?) {
         frameAlertInner.background = drawable
     }
 
     // ── Header – label setter ─────────────────────────────────────────────────
 
-    /**
-     * Replaces the bold alert label text (e.g. "SMS IS SUSPICIOUS").
-     * Safe to call at any time.
-     */
     fun setAlertLabel(text: CharSequence) {
         tvAlertLabel.text = text
     }
 
-    /** @see setAlertLabel */
     fun setAlertLabel(@StringRes resId: Int) {
         tvAlertLabel.setText(resId)
     }
@@ -151,9 +131,6 @@ class ThreatAlertCardView @JvmOverloads constructor(
 
     /**
      * Replaces the entire action list with [actions].
-     *
-     * The first item has no top margin; subsequent items are separated by
-     * `threat_card_section_spacing` (20dp). Safe to call at any time.
      */
     fun setActions(actions: List<Action>) {
         llActions.removeAllViews()
@@ -164,8 +141,6 @@ class ThreatAlertCardView @JvmOverloads constructor(
 
     /**
      * Appends a single [action] to the bottom of the action list.
-     * Automatically applies 20dp top margin if other items already exist.
-     * Safe to call at any time.
      */
     fun addAction(action: Action) {
         val isFirst = llActions.childCount == 0
@@ -174,7 +149,6 @@ class ThreatAlertCardView @JvmOverloads constructor(
 
     /**
      * Removes all action rows from the list.
-     * Safe to call at any time.
      */
     fun clearActions() {
         llActions.removeAllViews()
@@ -193,7 +167,6 @@ class ThreatAlertCardView @JvmOverloads constructor(
             item.setOnClickListener { listener() }
         }
 
-        // Space between action rows (20dp top margin on every item except the first)
         if (!isFirst) {
             (item.layoutParams as LayoutParams).topMargin = dpToPx(20)
         }

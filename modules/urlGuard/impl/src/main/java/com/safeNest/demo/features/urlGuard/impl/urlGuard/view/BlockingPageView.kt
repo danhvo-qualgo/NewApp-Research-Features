@@ -1,4 +1,4 @@
-package com.safeNest.demo.features.urlGuard.impl.urlGuard
+package com.safeNest.demo.features.urlGuard.impl.urlGuard.view
 
 import android.content.Context
 import android.graphics.PixelFormat
@@ -27,28 +27,18 @@ import com.safeNest.demo.features.urlGuard.impl.R
  * they are called from (use the main thread when the view is visible).
  *
  * ---
- * Typical usage inside the service:
+ * Typical usage inside a service / [SecureView]:
  * ```kotlin
- * private var blockingView: BlockingPageView? = null
- *
- * fun showBlockingPage(url: String) {
- *     if (blockingView?.isAttachedToWindow == true) return
- *     val view = BlockingPageView(this).apply {
- *         setBlockedUrl(url)
- *         setTitle("High Risk: Scam Detected")
- *         setDescription("SafeNest blocked this site…")
- *         setAlertIconDrawable(ContextCompat.getDrawable(this@Service, R.drawable.ic_custom))
- *         onGoBackClick        = { hideBlockingPage() }
- *         onProceedAnywayClick = { hideBlockingPage() }
- *     }
- *     windowManager?.addView(view, BlockingPageView.fullScreenParams())
- *     blockingView = view
+ * val view = BlockingPageView(context).apply {
+ *     setBlockedUrl(url)
+ *     setTitle("High Risk: Scam Detected")
+ *     setDescription("SafeNest blocked this site…")
+ *     onGoBackClick        = { hideBlockingPage() }
+ *     onProceedAnywayClick = { hideBlockingPage() }
  * }
- *
- * fun hideBlockingPage() {
- *     blockingView?.dismiss(windowManager!!)
- *     blockingView = null
- * }
+ * view.show(windowManager)
+ * // later:
+ * view.dismiss(windowManager)
  * ```
  */
 class BlockingPageView @JvmOverloads constructor(
@@ -95,87 +85,40 @@ class BlockingPageView @JvmOverloads constructor(
 
     // ── Alert icon setters ────────────────────────────────────────────────────
 
-    /**
-     * Replaces the alert icon image (the icon shown inside the red circle).
-     *
-     * Can be called at any time — including after [show].
-     */
     fun setAlertIconDrawable(drawable: Drawable?) {
         ivAlertIcon.setImageDrawable(drawable)
     }
 
-    /**
-     * Replaces the alert icon image by resource id.
-     *
-     * Can be called at any time — including after [show].
-     */
     fun setAlertIconRes(@DrawableRes resId: Int) {
         ivAlertIcon.setImageResource(resId)
     }
 
-    /**
-     * Replaces the **outer** circle background (the large, lightly-tinted circle).
-     *
-     * Pass `null` to clear the background entirely.
-     * Can be called at any time — including after [show].
-     */
     fun setAlertOuterBackground(drawable: Drawable?) {
         frameAlertIconOuter.background = drawable
     }
 
-    /**
-     * Replaces the **inner** circle background (the solid-coloured circle behind the icon).
-     *
-     * Pass `null` to clear the background entirely.
-     * Can be called at any time — including after [show].
-     */
     fun setAlertInnerBackground(drawable: Drawable?) {
         frameAlertIconInner.background = drawable
     }
 
     // ── Text setters ──────────────────────────────────────────────────────────
 
-    /**
-     * Replaces the bold title text ("High Risk: Scam Detected" by default).
-     *
-     * Can be called at any time — including after [show].
-     */
     fun setTitle(text: CharSequence) {
         tvTitle.text = text
     }
 
-    /**
-     * Replaces the bold title text by string resource id.
-     *
-     * Can be called at any time — including after [show].
-     */
     fun setTitle(@StringRes resId: Int) {
         tvTitle.setText(resId)
     }
 
-    /**
-     * Replaces the body description text.
-     *
-     * Can be called at any time — including after [show].
-     */
     fun setDescription(text: CharSequence) {
         tvDescription.text = text
     }
 
-    /**
-     * Replaces the body description text by string resource id.
-     *
-     * Can be called at any time — including after [show].
-     */
     fun setDescription(@StringRes resId: Int) {
         tvDescription.setText(resId)
     }
 
-    /**
-     * Updates the URL displayed inside the URL bar row.
-     *
-     * Can be called at any time — including after [show].
-     */
     fun setBlockedUrl(url: String) {
         tvBlockedUrl.text = url
     }
@@ -184,7 +127,6 @@ class BlockingPageView @JvmOverloads constructor(
 
     /**
      * Adds this view to [windowManager] as a fullscreen overlay.
-     *
      * No-op when the view is already attached — safe to call multiple times.
      */
     fun show(windowManager: WindowManager) {
@@ -194,7 +136,6 @@ class BlockingPageView @JvmOverloads constructor(
 
     /**
      * Removes this view from [windowManager].
-     *
      * Safe to call even when the view is not currently attached (no-op).
      */
     fun dismiss(windowManager: WindowManager) {
@@ -214,17 +155,6 @@ class BlockingPageView @JvmOverloads constructor(
         /**
          * Returns [WindowManager.LayoutParams] for a match-parent
          * [TYPE_APPLICATION_OVERLAY] that covers the full screen.
-         *
-         * Flags:
-         * - [WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN]  — extend into
-         *   system-bar areas so nothing peeks through at the edges.
-         * - [WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS] — lets
-         *   the view draw its own opaque background behind the status/nav bars.
-         * - [PixelFormat.OPAQUE] — no transparency needed; avoids alpha compositing
-         *   overhead and prevents content from bleeding through.
-         *
-         * Note: [WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE] is intentionally
-         * **omitted** so the buttons on the page receive touch and focus events.
          */
         fun fullScreenParams(): WindowManager.LayoutParams = WindowManager.LayoutParams(
             WindowManager.LayoutParams.MATCH_PARENT,

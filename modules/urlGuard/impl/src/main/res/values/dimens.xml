@@ -59,4 +59,8 @@
     <dimen name="blocking_primary_button_padding_h">32dp</dimen>
     <dimen name="blocking_secondary_button_padding_h">16dp</dimen>
     <dimen name="blocking_secondary_button_padding_v">10dp</dimen>
+
+    <!-- Floating Button -->
+    <dimen name="floating_button_size">56dp</dimen>
+    <dimen name="floating_button_padding">10dp</dimen>
 </resources>
