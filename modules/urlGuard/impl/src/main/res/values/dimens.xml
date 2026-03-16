@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Blocking Page – Screen padding -->
+    <dimen name="blocking_padding_horizontal">24dp</dimen>
+    <dimen name="blocking_padding_top">48dp</dimen>
+    <dimen name="blocking_padding_bottom">24dp</dimen>
+
+    <!-- Spacing between major sections -->
+    <dimen name="blocking_section_spacing">24dp</dimen>
+    <!-- Spacing between content items (title/desc, globe+URL) -->
+    <dimen name="blocking_content_spacing">16dp</dimen>
+    <!-- Tight spacing (title to description gap) -->
+    <dimen name="blocking_text_spacing">8dp</dimen>
+    <!-- Gap between text block and button block inside card -->
+    <dimen name="blocking_buttons_spacing">32dp</dimen>
+    <!-- Gap between the two buttons -->
+    <dimen name="blocking_button_gap">16dp</dimen>
+
+    <!-- Card -->
+    <dimen name="blocking_card_corner_radius">24dp</dimen>
+    <dimen name="blocking_card_padding_top">32dp</dimen>
+    <dimen name="blocking_card_padding_bottom">16dp</dimen>
+    <dimen name="blocking_card_elevation">6dp</dimen>
+
+    <!-- Header icon container (56×56, corners 16dp) -->
+    <dimen name="blocking_icon_container_size">56dp</dimen>
+    <dimen name="blocking_icon_container_corner">16dp</dimen>
+    <dimen name="blocking_shield_icon_size">24dp</dimen>
+
+    <!-- Alert / error icon -->
+    <dimen name="blocking_error_outer_size">48dp</dimen>
+    <dimen name="blocking_error_inner_size">35dp</dimen>
+    <dimen name="blocking_alert_icon_size">20dp</dimen>
+
+    <!-- URL bar -->
+    <dimen name="blocking_url_bar_corner">12dp</dimen>
+    <dimen name="blocking_url_bar_padding">16dp</dimen>
+    <dimen name="blocking_globe_icon_size">16dp</dimen>
+
+    <!-- Threat Alert Card -->
+    <dimen name="threat_card_corner_radius">16dp</dimen>
+    <dimen name="threat_card_elevation">8dp</dimen>
+    <dimen name="threat_card_padding">24dp</dimen>
+    <dimen name="threat_card_section_spacing">20dp</dimen>
+    <!-- Alert icon cluster (32 outer → 23 inner → 13 icon) -->
+    <dimen name="threat_card_alert_outer_size">32dp</dimen>
+    <dimen name="threat_card_alert_inner_size">23dp</dimen>
+    <dimen name="threat_card_alert_icon_size">13dp</dimen>
+    <!-- Action row -->
+    <dimen name="threat_card_action_height">32dp</dimen>
+    <dimen name="threat_card_action_icon_size">24dp</dimen>
+    <dimen name="threat_card_action_gap">8dp</dimen>
+
+    <!-- Buttons -->
+    <dimen name="blocking_primary_button_height">56dp</dimen>
+    <dimen name="blocking_secondary_button_height">40dp</dimen>
+    <!-- Large radius for pill/capsule shape -->
+    <dimen name="blocking_button_corner_radius">500dp</dimen>
+    <dimen name="blocking_primary_button_padding_h">32dp</dimen>
+    <dimen name="blocking_secondary_button_padding_h">16dp</dimen>
+    <dimen name="blocking_secondary_button_padding_v">10dp</dimen>
+</resources>

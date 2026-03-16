@@ -1,0 +1,18 @@
+<!-- Placeholder – shield-tick icon (Iconsax style). Replace with final asset. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="32"
+    android:viewportHeight="32">
+    <!--
+        Path reuses the project's shield-tick shape (same icon family as splash module).
+        Viewport is 32×32 so the paths are identical; the 24dp output size scales it down.
+    -->
+    <path
+        android:pathData="M12,15.333L14.667,18L20.667,12M26.667,16C26.667,22.545 19.528,27.305 16.931,28.82C16.635,28.992 16.488,29.078 16.28,29.123C16.118,29.157 15.882,29.157 15.72,29.123C15.512,29.078 15.365,28.992 15.069,28.82C12.472,27.305 5.333,22.545 5.333,16V9.623C5.333,8.557 5.333,8.024 5.508,7.566C5.662,7.162 5.912,6.8 6.237,6.514C6.605,6.19 7.104,6.003 8.102,5.628L15.251,2.948C15.528,2.844 15.667,2.792 15.809,2.771C15.936,2.753 16.064,2.753 16.191,2.771C16.333,2.792 16.472,2.844 16.749,2.948L23.898,5.628C24.896,6.003 25.395,6.19 25.763,6.514C26.088,6.8 26.338,7.162 26.492,7.566C26.667,8.024 26.667,8.557 26.667,9.623V16Z"
+        android:strokeLineJoin="round"
+        android:strokeWidth="2"
+        android:fillColor="#00000000"
+        android:strokeColor="#4F46E5"
+        android:strokeLineCap="round" />
+</vector>
