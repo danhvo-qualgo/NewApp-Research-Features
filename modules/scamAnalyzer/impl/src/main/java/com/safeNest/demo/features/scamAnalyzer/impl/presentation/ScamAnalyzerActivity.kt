@@ -37,7 +37,9 @@ class ScamAnalyzerActivity : ComponentActivity() {
                     ),
                     originalText = "Dear Nguyen Van A your account 018726547 has been locked. Please call +84 908765678 to verify your identity immediately.",
                     maskedText = "Dear N***** A, your account 01234**** has been locked. Please call \u2028+84 90***** to verify your identity immediately."
-                )) {  }
+                )) {
+                    finish()
+                }
             }
         }
     }

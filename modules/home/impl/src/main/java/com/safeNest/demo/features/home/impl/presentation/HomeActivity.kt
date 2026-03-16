@@ -58,6 +58,12 @@ class HomeActivity : ComponentActivity() {
                                 this@HomeActivity,
                                 CallDetectionDeeplink.entryPoint()
                             )
+                        },
+                        onScamAnalyzerClick = {
+                            routerManager.navigate(
+                                this@HomeActivity,
+                                ScamAnalyzerDeepLink.entryPoint()
+                            )
                         }
                     )
                 }

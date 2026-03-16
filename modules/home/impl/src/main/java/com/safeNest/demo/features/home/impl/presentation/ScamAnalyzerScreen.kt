@@ -37,6 +37,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.safeNest.demo.features.callProtection.impl.presentation.router.CallDetectionDeeplink
 
 // Extracting Colors from the JSON
 val GradientStart = Color(0xFFD5D9F9)
@@ -48,7 +49,7 @@ val PrimaryIndigo = Color(0xFF4F46E5)
 val MediaTextColor = Color(0xFF454955)
 
 @Composable
-fun ScamAnalyzerScreen() {
+fun ScamAnalyzerScreen(onScamAnalyzerClick: () -> Unit) {
     // Scaffold provides the structural layout for the top content and bottom dockbar
     Scaffold(
         containerColor = Color.Transparent, // Let the background box show through
@@ -80,7 +81,9 @@ fun ScamAnalyzerScreen() {
                 ) {
                     TextInputArea()
                     MediaActionsRow()
-                    AnalyzeButton()
+                    AnalyzeButton {
+                        onScamAnalyzerClick()
+                    }
                 }
             }
         }
@@ -231,9 +234,9 @@ private fun MediaActionButton(
 }
 
 @Composable
-private fun AnalyzeButton() {
+private fun AnalyzeButton(onClick: () -> Unit) {
     Button(
-        onClick = { /* Handle Analysis */ },
+        onClick = onClick,
         modifier = Modifier
             .fillMaxWidth()
             .height(56.dp),
@@ -253,6 +256,6 @@ private fun AnalyzeButton() {
 @Composable
 fun preview(){
     Surface {
-        ScamAnalyzerScreen()
+        ScamAnalyzerScreen{ }
     }
 }

@@ -39,6 +39,7 @@ val ChipBackgroundColor = Color(0xFFF9FAFB)
 @Composable
 fun HomeScreen(
     onManageProtectionClick: () -> Unit,
+    onScamAnalyzerClick: () -> Unit
 ) {
     val navController = rememberNavController()
     Scaffold(
@@ -76,7 +77,9 @@ fun HomeScreen(
             }
 
             composable(BottomNavItem.Tools.route) {
-                ScamAnalyzerScreen()
+                ScamAnalyzerScreen(
+                    onScamAnalyzerClick = onScamAnalyzerClick
+                )
             }
         }
     }
