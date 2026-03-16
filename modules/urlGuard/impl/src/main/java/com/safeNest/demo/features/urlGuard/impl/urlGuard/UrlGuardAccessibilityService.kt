@@ -153,7 +153,10 @@ class UrlGuardAccessibilityService : AccessibilityService() {
             startForeground(1, buildNotification())
         }
 
-        showFloatingButton("chrome")
+        /**
+         * Bug: If show UI don't have OVERLAY_PERMISSION -> crash
+         * */
+        //showFloatingButton("chrome")
     }
 
     override fun onDestroy() {
