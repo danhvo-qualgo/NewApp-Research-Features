@@ -13,8 +13,10 @@ android {
 }
 
 dependencies {
+    implementation(libs.coil.compose)
     implementation(project(":modules:scamAnalyzer:api"))
     implementation(libs.core.router)
+    implementation(project(":modules:designSystem"))
 }
 
 uneyPublishing {

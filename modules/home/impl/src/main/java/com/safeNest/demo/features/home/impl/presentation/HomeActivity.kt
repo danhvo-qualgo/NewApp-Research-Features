@@ -28,6 +28,7 @@ import com.safeNest.demo.features.home.impl.presentation.ui.home.HomeScreen
 import com.safeNest.demo.features.notificationInterceptor.api.presentation.router.NotificationInterceptorDeeplink
 import com.safeNest.demo.features.permissionManager.api.presentation.router.PermissionManagerDeeplink
 import com.safeNest.demo.features.phishingDetection.api.presentation.router.PhishingDetectionDeeplink
+import com.safeNest.demo.features.scamAnalyzer.api.router.ScamAnalyzerDeepLink
 import com.safeNest.demo.features.urlGuard.api.presentation.router.UrlGuardDeeplink
 import com.uney.core.router.RouterManager
 import com.uney.core.router.compose.LocalRouterManager
@@ -114,7 +115,7 @@ class HomeActivity : ComponentActivity() {
                     onClick = {
                         routerManager.navigate(
                             this@HomeActivity,
-                            PhishingDetectionDeeplink.entryPoint()
+                            ScamAnalyzerDeepLink.entryPoint()
                         )
                     }
                 )
