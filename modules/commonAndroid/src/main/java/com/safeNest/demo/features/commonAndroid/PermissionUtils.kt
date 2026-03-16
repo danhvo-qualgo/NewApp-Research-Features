@@ -42,11 +42,6 @@ object SpecialPermission {
     /** `WRITE_SETTINGS` – "Modify system settings". */
     const val WRITE_SETTINGS = "write_settings"
 
-    /** `ROLE_CALL_SCREENING` – allow the app to screen incoming calls. */
-    const val CALL_SCREENING = "call_screening"
-
-    /** `ROLE_CALL_REDIRECTION` – allow the app to redirect calls. */
-    const val CALL_REDIRECTION = "call_redirection"
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -193,10 +188,6 @@ object PermissionUtils {
                 Settings.ACTION_MANAGE_WRITE_SETTINGS,
                 "package:${context.packageName}".toUri(),
             )
-            SpecialPermission.CALL_SCREENING ->
-                createRequestRoleIntent(context, RoleManager.ROLE_CALL_SCREENING)
-            SpecialPermission.CALL_REDIRECTION ->
-                createRequestRoleIntent(context, RoleManager.ROLE_CALL_REDIRECTION)
             else -> null
         }
 }
