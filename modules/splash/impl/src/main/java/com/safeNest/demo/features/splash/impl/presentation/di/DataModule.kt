@@ -1,6 +1,8 @@
 package com.safeNest.demo.features.splash.impl.presentation.di
 
 import com.safeNest.demo.features.splash.impl.data.handler.AccessibilityServicePermissionHandler
+import com.safeNest.demo.features.splash.impl.data.handler.CallRedirectionPermissionHandler
+import com.safeNest.demo.features.splash.impl.data.handler.CallScreeningPermissionHandler
 import com.safeNest.demo.features.splash.impl.data.handler.DisplayOverAppsPermissionHandler
 import com.safeNest.demo.features.splash.impl.data.handler.MicrophonePermissionHandler
 import com.safeNest.demo.features.splash.impl.data.handler.NotificationListenerPermissionHandler
@@ -51,5 +53,17 @@ internal class DataModule {
     @IntoSet
     fun provideMicrophoneHandler(
         impl: MicrophonePermissionHandler,
+    ): PermissionHandler = impl
+
+    @Provides
+    @IntoSet
+    fun provideCallScreeningHandler(
+        impl: CallScreeningPermissionHandler,
+    ): PermissionHandler = impl
+
+    @Provides
+    @IntoSet
+    fun provideCallRedirectionHandler(
+        impl: CallRedirectionPermissionHandler,
     ): PermissionHandler = impl
 }

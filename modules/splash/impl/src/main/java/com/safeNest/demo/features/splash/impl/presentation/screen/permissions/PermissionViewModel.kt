@@ -4,14 +4,14 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.safeNest.demo.features.splash.impl.domain.PermissionManager
 import com.safeNest.demo.features.splash.impl.domain.model.PermissionRequestType
+import com.safeNest.demo.features.splash.impl.domain.model.PermissionType
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
-import com.safeNest.demo.features.splash.impl.domain.model.PermissionType
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -55,17 +55,22 @@ internal class PermissionViewModel @Inject constructor(
     }
 
     private fun handleToggle(type: PermissionType) {
-        // Immediately reflect whatever the system now reports.
-        when(type.requestType) {
+        when (type.requestType) {
             is PermissionRequestType.RunTime,
             is PermissionRequestType.RunTimes -> {
                 viewModelScope.launch {
                     _event.send(PermissionEvent.RequestPermissionEvent(type))
                 }
-
             }
             is PermissionRequestType.Settings -> {
                 permissionManager.requestPermission(type)
+            }
+            is PermissionRequestType.Role -> {
+                // Role intents must use startActivityForResult — plain startActivity is silently dropped.
+                val intent = permissionManager.buildRoleRequestIntent(type) ?: return
+                viewModelScope.launch {
+                    _event.send(PermissionEvent.RequestRoleEvent(type, intent))
+                }
             }
         }
         loadPermissionStates()

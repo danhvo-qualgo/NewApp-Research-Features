@@ -2,10 +2,12 @@ package com.safeNest.demo.features.commonAndroid
 
 import android.accessibilityservice.AccessibilityServiceInfo
 import android.app.Activity
+import android.app.role.RoleManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.os.Build
 import android.provider.Settings
 import android.view.accessibility.AccessibilityManager
 import androidx.core.app.ActivityCompat
@@ -39,6 +41,7 @@ object SpecialPermission {
 
     /** `WRITE_SETTINGS` – "Modify system settings". */
     const val WRITE_SETTINGS = "write_settings"
+
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -123,6 +126,44 @@ object PermissionUtils {
     }
 
     // ─────────────────────────────────────────────────────────────────────────
+    // 2d. Role-based permissions (API 29+)
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Returns `true` if [roleName] exists on this device (API 29+).
+     * Always `false` on older API levels.
+     */
+    fun isRoleAvailable(context: Context, roleName: String): Boolean {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            context.getSystemService(RoleManager::class.java).isRoleAvailable(roleName)
+        } else false
+    }
+
+    /**
+     * Returns `true` only when the role is both available on the device
+     * **and** currently held by this app.
+     *
+     * Checking availability first prevents a crash/false-negative on devices
+     * (e.g. tablets, Go-edition) that do not support a particular role.
+     */
+    fun isRoleHeld(context: Context, roleName: String): Boolean {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return false
+        val roleManager = context.getSystemService(RoleManager::class.java)
+        return roleManager.isRoleAvailable(roleName) && roleManager.isRoleHeld(roleName)
+    }
+
+    /**
+     * Returns an [Intent] that asks the user to grant [roleName] to this app,
+     * or `null` if the role is unavailable on this device / API level.
+     */
+    fun createRequestRoleIntent(context: Context, roleName: String): Intent? {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return null
+        val roleManager = context.getSystemService(RoleManager::class.java)
+        if (!roleManager.isRoleAvailable(roleName)) return null
+        return roleManager.createRequestRoleIntent(roleName)
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
     // 4. Unified special-permission settings opener
     // ─────────────────────────────────────────────────────────────────────────
     fun openPermissionSettings(context: Context, permission: String) {
@@ -183,3 +224,15 @@ fun Context.openPermissionSettings(permission: String): Unit =
 /** @see PermissionUtils.shouldShowRationale */
 fun Activity.shouldShowPermissionRationale(permission: String): Boolean =
     PermissionUtils.shouldShowRationale(this, permission)
+
+/** @see PermissionUtils.isRoleAvailable */
+fun Context.isRoleAvailable(roleName: String): Boolean =
+    PermissionUtils.isRoleAvailable(this, roleName)
+
+/** @see PermissionUtils.isRoleHeld */
+fun Context.isRoleHeld(roleName: String): Boolean =
+    PermissionUtils.isRoleHeld(this, roleName)
+
+/** @see PermissionUtils.createRequestRoleIntent */
+fun Context.createRequestRoleIntent(roleName: String): Intent? =
+    PermissionUtils.createRequestRoleIntent(this, roleName)

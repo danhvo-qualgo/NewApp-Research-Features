@@ -1,5 +1,7 @@
 package com.safeNest.demo.features.splash.impl.presentation.screen.permissions
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -87,6 +89,18 @@ internal fun PermissionsScreen(
         }
     }
 
+    // Role permissions must use startActivityForResult — plain startActivity is silently ignored.
+    val launcherRequestRole = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        permissionTypeRequesting?.let { permissionType ->
+            val granted = result.resultCode == android.app.Activity.RESULT_OK
+            viewModel.onAction(
+                PermissionAction.UpdatePermissionGrantedState(permissionType, granted)
+            )
+        }
+    }
+
 
     // Refresh permission states every time the screen comes back to foreground
     // (the user may have granted a permission in the system settings).
@@ -107,14 +121,15 @@ internal fun PermissionsScreen(
                             is PermissionRequestType.RunTime -> {
                                 launcherRequestPermission.launch(event.permissionType.requestType.permission)
                             }
-
                             is PermissionRequestType.RunTimes -> {
                                 launcherRequestPermissions.launch(event.permissionType.requestType.permissions.toTypedArray())
                             }
-
                             else -> {}
                         }
-
+                    }
+                    is PermissionEvent.RequestRoleEvent -> {
+                        permissionTypeRequesting = event.permissionType
+                        launcherRequestRole.launch(event.intent)
                     }
                 }
 
