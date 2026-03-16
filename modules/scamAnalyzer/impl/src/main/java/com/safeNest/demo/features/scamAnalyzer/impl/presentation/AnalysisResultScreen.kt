@@ -1,6 +1,7 @@
 package com.safeNest.demo.features.scamAnalyzer.impl.presentation
 
 import android.net.Uri
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -18,6 +19,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
@@ -26,11 +28,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.safeNest.demo.features.designSystem.component.gradientBackground
@@ -160,9 +165,11 @@ fun AnalysisResultScreen(
             ) {
                 ResultSummaryCard(result.status)
 
-                AnalysisResultsSection(
-                    result
-                )
+                AnalysisResultsSection(result)
+
+                result.analysisItems?.takeIf { it.isNotEmpty() }?.let { items ->
+                    AnalysisItemsSection(items)
+                }
             }
         }
     }
@@ -297,9 +304,10 @@ private fun AnalysisResultsSection(
                 }
 
                 is AnalysisResult.Audio -> {
-                    // TODO: implement audio player
+                    AudioPlayerComponent(uri = analysisResult.audioUri)
                 }
             }
+
 
         }
     }
@@ -347,8 +355,215 @@ private fun ImageContainer(
 }
 
 
-@Preview(showBackground = true, showSystemUi = true, name = "Analysis Result – Safe")
+// ── Analysis Items Section ─────────────────────────────────────────────────────
+
+private val AnalysisItemCardBg = Color(0xFFF9F9F9)
+private val AnalysisItemDivider = Color(0xFFC2C5CD)
+private val AnalysisItemTitleColor = Color(0xFF111827)
+private val AnalysisItemDescColor = Color(0xFF6B717F)
+private val AnalysisItemBadgeRed = Color(0xFFF22A3D)
+
 @Composable
-private fun AnalysisResultScreenPreview() {
-//    AnalysisResultScreen()
+private fun AnalysisItemsSection(items: List<AnalysisItem>) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(DSSpacing.s4),
+    ) {
+        Text(
+            text = "Why it is suspicious",
+            style = DSTypography.caption1.semiBold,
+            color = DSColors.textBody,
+        )
+
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(DSRadius.xxLarge),
+            colors = CardDefaults.cardColors(containerColor = AnalysisItemCardBg),
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(DSSpacing.s6),
+                verticalArrangement = Arrangement.spacedBy(DSSpacing.s6),
+            ) {
+                items.forEachIndexed { index, item ->
+                    AnalysisItemRow(item = item)
+                    if (index < items.lastIndex) {
+                        HorizontalDivider(
+                            color = AnalysisItemDivider,
+                            thickness = 1.dp,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
+                }
+            }
+        }
+    }
 }
+
+@Composable
+private fun AnalysisItemRow(item: AnalysisItem) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(DSSpacing.s4),
+        verticalAlignment = Alignment.Top,
+    ) {
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .size(24.dp)
+                .clip(CircleShape)
+                .background(AnalysisItemBadgeRed),
+        ) {
+            Icon(
+                painter = painterResource(R.drawable.ic_alert_circle),
+                contentDescription = null,
+                tint = Color.White,
+                modifier = Modifier.size(14.dp),
+            )
+        }
+
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(DSSpacing.s1),
+        ) {
+            Text(
+                text = item.title,
+                style = DSTypography.body2.semiBold,
+                color = AnalysisItemTitleColor,
+            )
+            Text(
+                text = item.description,
+                style = DSTypography.caption1.regular,
+                color = AnalysisItemDescColor,
+            )
+        }
+    }
+}
+
+@Preview(showBackground = true, name = "Analysis Items Section")
+@Composable
+private fun AnalysisItemsSectionPreview() {
+    AnalysisItemsSection(
+        items = listOf(
+            AnalysisItem(
+                title = "Artificial Urgency",
+                description = "The message uses high-pressure language (\"URGENT\", \"immediately\") to force a quick reaction.",
+            ),
+            AnalysisItem(
+                title = "Suspicious Link",
+                description = "The URL does not match official bank domains and uses masking techniques.",
+            ),
+            AnalysisItem(
+                title = "Unverified Sender",
+                description = "Phrases like \"Action Required Immediately\" and \"Account Suspension\" are typical pressure tactics.",
+            ),
+        )
+    )
+}
+
+private val AudioPlayRed = Color(0xFFF22A3D)
+
+private val WaveformBars = listOf(
+    0.4f, 0.6f, 0.3f, 0.8f, 0.5f, 0.9f, 0.4f, 0.7f, 0.3f, 0.6f,
+    0.8f, 0.5f, 0.4f, 0.9f, 0.6f, 0.3f, 0.7f, 0.5f, 0.8f, 0.4f,
+    0.6f, 0.3f, 0.9f, 0.5f, 0.7f, 0.4f, 0.6f, 0.8f, 0.3f, 0.5f,
+)
+
+@Composable
+fun AudioPlayerComponent(
+    uri: Uri,
+    modifier: Modifier = Modifier,
+) {
+    val player = rememberAudioPlayer(uri)
+
+    AudioPlayerComponentContent(
+        isPlaying = player.isPlaying,
+        onPlayPauseClick = player::togglePlayPause,
+        modifier = modifier,
+    )
+}
+
+@Composable
+private fun AudioPlayerComponentContent(
+    isPlaying: Boolean,
+    onPlayPauseClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(DSRadius.xLarge),
+        colors = CardDefaults.cardColors(containerColor = DSColors.surfacePrimary),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(DSSpacing.s6),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(DSSpacing.s4),
+        ) {
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(CircleShape)
+                    .background(AudioPlayRed),
+            ) {
+                IconButton(onClick = onPlayPauseClick, modifier = Modifier.size(48.dp)) {
+                    Icon(
+                        painter = painterResource(
+                            R.drawable.ic_play
+                        ),
+                        contentDescription = "",
+                        tint = Color.White,
+                        modifier = Modifier.size(24.dp),
+                    )
+                }
+            }
+
+            FakeWaveform(
+                modifier = Modifier
+                    .weight(1f)
+                    .height(40.dp),
+            )
+        }
+    }
+}
+
+@Composable
+private fun FakeWaveform(
+    modifier: Modifier = Modifier,
+    barWidth: Dp = 4.dp,
+    barGap: Dp = 3.dp,
+    barColor: Color = Color(0xFFDDDFE3),
+) {
+    Canvas(modifier = modifier) {
+        val barPx = barWidth.toPx()
+        val stepPx = barPx + barGap.toPx()
+        val count = (size.width / stepPx).toInt().coerceAtMost(WaveformBars.size)
+
+        for (i in 0 until count) {
+            val barHeight = size.height * WaveformBars[i % WaveformBars.size]
+            val x = i * stepPx + barPx / 2f
+            drawLine(
+                color = barColor,
+                start = Offset(x, (size.height - barHeight) / 2f),
+                end = Offset(x, (size.height + barHeight) / 2f),
+                strokeWidth = barPx,
+                cap = StrokeCap.Round,
+            )
+        }
+    }
+}
+
+@Preview(showBackground = true, name = "Audio Player – idle")
+@Composable
+private fun AudioPlayerComponentPreview() {
+    AudioPlayerComponentContent(
+        isPlaying = false,
+        onPlayPauseClick = {},
+    )
+}
+
