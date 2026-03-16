@@ -1,4 +1,4 @@
-package com.safeNest.demo.features.home.impl.presentation
+package com.safeNest.demo.features.home.impl.presentation.ui.tool
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -32,12 +32,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.safeNest.demo.features.callProtection.impl.presentation.router.CallDetectionDeeplink
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 
 // Extracting Colors from the JSON
 val GradientStart = Color(0xFFD5D9F9)
@@ -49,7 +50,10 @@ val PrimaryIndigo = Color(0xFF4F46E5)
 val MediaTextColor = Color(0xFF454955)
 
 @Composable
-fun ScamAnalyzerScreen(onScamAnalyzerClick: () -> Unit) {
+fun ScamAnalyzerScreen(
+    onScamAnalyzerClick: () -> Unit,
+    scamAnalyzerViewModel: ScamAnalyzerViewModel = hiltViewModel()
+) {
     // Scaffold provides the structural layout for the top content and bottom dockbar
     Scaffold(
         containerColor = Color.Transparent, // Let the background box show through
@@ -83,6 +87,7 @@ fun ScamAnalyzerScreen(onScamAnalyzerClick: () -> Unit) {
                     MediaActionsRow()
                     AnalyzeButton {
                         onScamAnalyzerClick()
+                        scamAnalyzerViewModel.analyzeText("Text")
                     }
                 }
             }
@@ -196,7 +201,7 @@ private fun MediaActionsRow() {
 @Composable
 private fun MediaActionButton(
     modifier: Modifier = Modifier,
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    icon: ImageVector,
     text: String,
     onClick: () -> Unit
 ) {
@@ -249,13 +254,5 @@ private fun AnalyzeButton(onClick: () -> Unit) {
             fontWeight = FontWeight.Bold,
             color = Color.White
         )
-    }
-}
-
-@Preview
-@Composable
-fun preview(){
-    Surface {
-        ScamAnalyzerScreen{ }
     }
 }

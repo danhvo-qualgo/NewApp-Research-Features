@@ -1,4 +1,4 @@
-package com.safeNest.demo.features.scamAnalyzer.impl.presentation
+package com.safeNest.demo.features.scamAnalyzer.impl.presentation.ui
 
 import android.net.Uri
 import androidx.compose.foundation.Canvas
@@ -43,6 +43,9 @@ import com.safeNest.demo.features.designSystem.theme.DSRadius
 import com.safeNest.demo.features.designSystem.theme.DSSpacing
 import com.safeNest.demo.features.designSystem.theme.DSTypography
 import com.safeNest.demo.features.designSystem.theme.color.DSColors
+import com.safeNest.demo.features.scamAnalyzer.api.models.AnalysisItem
+import com.safeNest.demo.features.scamAnalyzer.api.models.AnalysisResult
+import com.safeNest.demo.features.scamAnalyzer.api.models.AnalysisResultStatus
 import com.safeNest.demo.features.scamAnalyzer.impl.R
 
 private val TitlePurple = Color(0xFF4F46E5)
@@ -96,49 +99,6 @@ fun AnalysisResultStatus.toUiState(): AnalysisResultUiState {
             surfaceDarkColor = SurfaceGrayLight
         )
     }
-}
-
-
-enum class AnalysisResultStatus {
-    Safe,
-    Scam,
-    Unverified,
-}
-
-data class AnalysisItem(
-    val title: String,
-    val description: String
-)
-
-sealed class AnalysisResult(
-    open val status: AnalysisResultStatus,
-    open val analysisItems: List<AnalysisItem>?
-) {
-
-    data class Text(
-        val originalText: String,
-        val maskedText: String,
-        override val status: AnalysisResultStatus,
-        override val analysisItems: List<AnalysisItem>?
-    ) : AnalysisResult(status, analysisItems)
-
-    data class Url(
-        val url: String,
-        override val status: AnalysisResultStatus,
-        override val analysisItems: List<AnalysisItem>?
-    ) : AnalysisResult(status, analysisItems)
-
-    data class Image(
-        val imageUri: Uri,
-        override val status: AnalysisResultStatus,
-        override val analysisItems: List<AnalysisItem>?
-    ) : AnalysisResult(status, analysisItems)
-
-    data class Audio(
-        val audioUri: Uri,
-        override val status: AnalysisResultStatus,
-        override val analysisItems: List<AnalysisItem>?
-    ) : AnalysisResult(status, analysisItems)
 }
 
 @Composable

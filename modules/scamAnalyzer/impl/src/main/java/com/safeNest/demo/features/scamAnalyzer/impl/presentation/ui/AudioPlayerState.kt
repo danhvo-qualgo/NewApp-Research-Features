@@ -1,4 +1,4 @@
-package com.safeNest.demo.features.scamAnalyzer.impl.presentation
+package com.safeNest.demo.features.scamAnalyzer.impl.presentation.ui
 
 import android.content.Context
 import android.media.MediaPlayer
