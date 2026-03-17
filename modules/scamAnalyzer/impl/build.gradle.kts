@@ -17,8 +17,8 @@ dependencies {
     implementation(project(":modules:scamAnalyzer:api"))
     implementation(libs.core.router)
     implementation(project(":modules:designSystem"))
-    implementation("com.googlecode.libphonenumber:libphonenumber:8.13.40")
-    implementation("com.google.mlkit:text-recognition:16.0.1")
+    implementation(libsCustom.googlecode.libphonenumber)
+    implementation(libsCustom.google.mlkit.textRecognition)
 }
 
 uneyPublishing {
