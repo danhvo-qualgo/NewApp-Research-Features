@@ -91,5 +91,4 @@ object DSColors {
     val textHeadingDarkest @Composable get() = current.neutralDarkestAlt
     val textBodyMuted @Composable get() = current.neutralMuted
     val surfaceCard @Composable get() = current.cardSurface
-    val waveformBar @Composable get() = current.neutralLightest2
 }

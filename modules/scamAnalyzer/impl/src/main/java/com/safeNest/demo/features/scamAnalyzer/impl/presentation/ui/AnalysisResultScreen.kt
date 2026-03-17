@@ -478,7 +478,7 @@ private fun FakeWaveform(
     modifier: Modifier = Modifier,
     barWidth: Dp = 4.dp,
     barGap: Dp = 3.dp,
-    barColor: Color = DSColors.waveformBar,
+    barColor: Color = DSColors.surface2,
 ) {
     Canvas(modifier = modifier) {
         val barPx = barWidth.toPx()
