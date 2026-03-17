@@ -30,6 +30,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -39,6 +41,7 @@ import com.safeNest.demo.features.designSystem.component.DSButton
 import com.safeNest.demo.features.designSystem.theme.DSSpacing
 import com.safeNest.demo.features.designSystem.theme.DSTypography
 import com.safeNest.demo.features.designSystem.theme.color.DSColors
+import com.safeNest.demo.features.home.impl.R
 
 val PrimaryIndigo = Color(0xFF4F46E5)
 val MediaTextColor = Color(0xFF454955)
@@ -158,19 +161,19 @@ private fun MediaActionsRow() {
     ) {
         MediaActionButton(
             modifier = Modifier.weight(1f),
-            icon = Icons.Outlined.Image,
+            icon = ImageVector.vectorResource(id = R.drawable.ic_attach_image),
             text = "Attach\nimage",
             onClick = { /* Handle image attachment */ }
         )
         MediaActionButton(
             modifier = Modifier.weight(1f),
-            icon = Icons.Outlined.Mic,
+            icon = ImageVector.vectorResource(id = R.drawable.ic_record_audio),
             text = "Record\nAudio",
             onClick = { /* Handle record */ }
         )
         MediaActionButton(
             modifier = Modifier.weight(1f),
-            icon = Icons.Outlined.FileUpload,
+            icon = ImageVector.vectorResource(id = R.drawable.ic_upload_audio),
             text = "Upload\nAudio",
             onClick = { /* Handle audio upload */ }
         )
