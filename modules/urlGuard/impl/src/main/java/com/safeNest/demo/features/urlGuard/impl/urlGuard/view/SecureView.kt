@@ -9,6 +9,7 @@ import android.view.View
 import android.view.WindowManager
 import com.safeNest.demo.features.urlGuard.impl.urlGuard.DetectionStatus
 import com.safeNest.demo.features.urlGuard.impl.urlGuard.FloatingButtonFeature
+import com.safeNest.demo.features.urlGuard.impl.urlGuard.util.CardPositionCalculator
 import com.safeNest.demo.features.urlGuard.impl.urlGuard.view.floatingbutton.FloatingView
 import com.safeNest.demo.features.urlGuard.impl.urlGuard.view.model.toAlertCarViewIconBgColor
 import com.safeNest.demo.features.urlGuard.impl.urlGuard.view.model.toAlertCardViewIcon
@@ -273,33 +274,43 @@ class SecureView(private val context: Context) {
     /**
      * Build [WindowManager.LayoutParams] for the alert tooltip.
      *
-     * Positioning logic:
-     *  - Y is aligned with the floating button's current Y position.
-     *  - If the button is on the **right** half of the screen → the card is
-     *    anchored to the **left** edge (gravity START).
-     *  - If the button is on the **left** half of the screen → the card is
-     *    anchored to the **right** edge (gravity END).
+     * Delegates all positioning logic to [CardPositionCalculator], which runs a
+     * two-phase "Push & Shift" algorithm:
      *
-     * This ensures the card never overlaps the button and never goes off-screen.
+     *  Phase 1 – try placing the card to the LEFT or RIGHT of the button.
+     *    • Preferred side = opposite of the screen-half the button is in.
+     *    • If the card overflows → flip to the other side.
+     *    • Y is aligned with the button centre; pushed up/down if it overlaps
+     *      the button or overflows the screen.
+     *
+     *  Phase 2 – if neither horizontal side fits, try placing the card ABOVE or
+     *    BELOW the button.
+     *
+     *  Phase 3 – clamp to screen bounds as a last resort.
+     *
+     * The card is measured before the call so the algorithm has exact dimensions.
      */
     private fun buildTooltipParams(): WindowManager.LayoutParams {
-        val btnX    = floatingView.windowLayoutParams.x
-        val btnY    = floatingView.windowLayoutParams.y
-        val screenW = displayMetrics.widthPixels
-        val margin  = dpToPx(8)
+        // Measure the card so the calculator has its exact pixel dimensions.
+        val maxCardW = (displayMetrics.widthPixels  * 0.80f).toInt()
+        val maxCardH = (displayMetrics.heightPixels * 0.60f).toInt()
+        actionCard.measure(
+            View.MeasureSpec.makeMeasureSpec(maxCardW, View.MeasureSpec.AT_MOST),
+            View.MeasureSpec.makeMeasureSpec(maxCardH, View.MeasureSpec.AT_MOST)
+        )
 
-        val gravity: Int
-        val x: Int
-
-        if (btnX > screenW / 2) {
-            // Button is on the right side → anchor card to the left
-            gravity = Gravity.TOP or Gravity.START
-            x       = margin
-        } else {
-            // Button is on the left side → anchor card to the right
-            gravity = Gravity.TOP or Gravity.END
-            x       = margin
-        }
+        val btnParams = floatingView.windowLayoutParams
+        val placement = CardPositionCalculator.resolve(
+            btnX         = btnParams.x,
+            btnY         = btnParams.y,
+            btnWidth     = btnParams.width,
+            btnHeight    = btnParams.height,
+            cardWidth    = actionCard.measuredWidth,
+            cardHeight   = actionCard.measuredHeight,
+            screenWidth  = displayMetrics.widthPixels,
+            screenHeight = displayMetrics.heightPixels,
+            density      = displayMetrics.density
+        )
 
         return WindowManager.LayoutParams(
             WindowManager.LayoutParams.WRAP_CONTENT,
@@ -311,9 +322,9 @@ class SecureView(private val context: Context) {
             WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
             PixelFormat.TRANSLUCENT
         ).apply {
-            this.gravity = gravity
-            this.x       = x
-            this.y       = btnY
+            gravity = Gravity.TOP or Gravity.START
+            x       = placement.x
+            y       = placement.y
         }
     }
 
