@@ -1,10 +1,10 @@
 package com.safeNest.demo.features.scamAnalyzer.impl.presentation.di
 
 import com.safeNest.demo.features.scamAnalyzer.impl.data.extractor.RegexEntityExtractor
-import com.safeNest.demo.features.scamAnalyzer.impl.data.repository.OnDeviceAnalyzer
+import com.safeNest.demo.features.scamAnalyzer.impl.data.repository.OnDeviceAnalyzerRepository
 import com.safeNest.demo.features.scamAnalyzer.impl.data.repository.ScamAnalyzerRepositoryImpl
 import com.safeNest.demo.features.scamAnalyzer.impl.domain.extractor.EntityExtractor
-import com.safeNest.demo.features.scamAnalyzer.impl.domain.repository.AnalyzeRepository
+import com.safeNest.demo.features.scamAnalyzer.impl.domain.repository.AnalyzerRepository
 import com.safeNest.demo.features.scamAnalyzer.impl.domain.repository.ScamAnalyzerRepository
 import dagger.Binds
 import dagger.Module
@@ -29,8 +29,8 @@ abstract class BindModule {
     @Binds
     @ActivityRetainedScoped
     abstract fun bindAnalyzeRepository(
-        impl: OnDeviceAnalyzer
-    ): AnalyzeRepository
+        impl: OnDeviceAnalyzerRepository
+    ): AnalyzerRepository
 
     @Binds
     @ActivityRetainedScoped

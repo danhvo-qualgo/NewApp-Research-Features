@@ -48,17 +48,6 @@ import com.safeNest.demo.features.scamAnalyzer.api.models.AnalysisResult
 import com.safeNest.demo.features.scamAnalyzer.api.models.AnalysisResultStatus
 import com.safeNest.demo.features.scamAnalyzer.impl.R
 
-private val TitlePurple = Color(0xFF4F46E5)
-
-private val SafeGreen = Color(0xFF00A07C)
-private val SafeGreenDark = Color(0xFF008365)
-private val SafeGreenSurface = Color(0xFFF2FAF8)
-private val SafeGreenSurfaceDark = Color(0xFFA3DCCF)
-private val ErrorRed = Color(0xFFF22A3D)
-private val ErrorSurface = Color(0xFFF0E9F3)
-private val ErrorSurfaceDark = Color(0xFFF6DDE5)
-private val SurfaceGrayLight = Color(0xFFC2C5CD)
-private val SurfaceGray = Color(0xFF5D6070)
 
 data class AnalysisResultUiState(
     val title: String,
@@ -76,27 +65,27 @@ fun AnalysisResultStatus.toUiState(): AnalysisResultUiState {
             title = "Safe",
             description = "No Risk Alert",
             icon = painterResource(R.drawable.ic_check),
-            surfacePrimaryColor = SafeGreen,
-            surfaceColor = SafeGreenSurface,
-            surfaceDarkColor = SafeGreenSurfaceDark
+            surfacePrimaryColor = DSColors.surfaceSuccess,
+            surfaceColor = DSColors.surfaceSuccessLightest,
+            surfaceDarkColor = DSColors.surfaceSuccessLighter
         )
 
         AnalysisResultStatus.Scam -> AnalysisResultUiState(
             title = "Scam Detected",
             description = "High Risk Alert",
             icon = painterResource(R.drawable.ic_slash_circle),
-            surfacePrimaryColor = ErrorRed,
-            surfaceColor = ErrorSurface ,
-            surfaceDarkColor = ErrorSurfaceDark
+            surfacePrimaryColor = DSColors.surfaceError,
+            surfaceColor = DSColors.surfaceScam,
+            surfaceDarkColor = DSColors.surfaceScamDark
         )
 
         AnalysisResultStatus.Unverified -> AnalysisResultUiState(
             title = "Unverified",
             description = "n/a",
             icon = painterResource(R.drawable.ic_help_circle),
-            surfacePrimaryColor = SurfaceGray,
-            surfaceColor = Color.White,
-            surfaceDarkColor = SurfaceGrayLight
+            surfacePrimaryColor = DSColors.surfaceNeutral,
+            surfaceColor = DSColors.surfacePrimary,
+            surfaceDarkColor = DSColors.surfaceGray
         )
     }
 }
@@ -161,7 +150,7 @@ private fun TopNavBar(onBackClick: () -> Unit) {
                     Icon(
                         painter = painterResource(R.drawable.ic_back),
                         contentDescription = "Back",
-                        tint = TitlePurple,
+                        tint = DSColors.textAction,
                         modifier = Modifier.size(20.dp)
                     )
                 }
@@ -170,7 +159,7 @@ private fun TopNavBar(onBackClick: () -> Unit) {
             Text(
                 text = "Analysis Result",
                 style = DSTypography.h4.bold,
-                color = TitlePurple,
+                color = DSColors.textAction,
             )
         }
     }
@@ -211,7 +200,7 @@ private fun ResultSummaryCard(status: AnalysisResultStatus = AnalysisResultStatu
                     Icon(
                         painter = uiState.icon,
                         contentDescription = "",
-                        tint = Color.White
+                        tint = DSColors.iconInverted
                     )
                 }
             }
@@ -317,12 +306,6 @@ private fun ImageContainer(
 
 // ── Analysis Items Section ─────────────────────────────────────────────────────
 
-private val AnalysisItemCardBg = Color(0xFFF9F9F9)
-private val AnalysisItemDivider = Color(0xFFC2C5CD)
-private val AnalysisItemTitleColor = Color(0xFF111827)
-private val AnalysisItemDescColor = Color(0xFF6B717F)
-private val AnalysisItemBadgeRed = Color(0xFFF22A3D)
-
 @Composable
 private fun AnalysisItemsSection(items: List<AnalysisItem>) {
     Column(
@@ -338,7 +321,7 @@ private fun AnalysisItemsSection(items: List<AnalysisItem>) {
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(DSRadius.xxLarge),
-            colors = CardDefaults.cardColors(containerColor = AnalysisItemCardBg),
+            colors = CardDefaults.cardColors(containerColor = DSColors.surfaceCard),
             elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         ) {
             Column(
@@ -351,7 +334,7 @@ private fun AnalysisItemsSection(items: List<AnalysisItem>) {
                     AnalysisItemRow(item = item)
                     if (index < items.lastIndex) {
                         HorizontalDivider(
-                            color = AnalysisItemDivider,
+                            color = DSColors.surfaceDivider,
                             thickness = 1.dp,
                             modifier = Modifier.fillMaxWidth(),
                         )
@@ -374,12 +357,12 @@ private fun AnalysisItemRow(item: AnalysisItem) {
             modifier = Modifier
                 .size(24.dp)
                 .clip(CircleShape)
-                .background(AnalysisItemBadgeRed),
+                .background(DSColors.surfaceError),
         ) {
             Icon(
                 painter = painterResource(R.drawable.ic_alert_circle),
                 contentDescription = null,
-                tint = Color.White,
+                tint = DSColors.iconInverted,
                 modifier = Modifier.size(14.dp),
             )
         }
@@ -391,12 +374,12 @@ private fun AnalysisItemRow(item: AnalysisItem) {
             Text(
                 text = item.title,
                 style = DSTypography.body2.semiBold,
-                color = AnalysisItemTitleColor,
+                color = DSColors.textHeadingDarkest,
             )
             Text(
                 text = item.description,
                 style = DSTypography.caption1.regular,
-                color = AnalysisItemDescColor,
+                color = DSColors.textBodyMuted,
             )
         }
     }
@@ -422,8 +405,6 @@ private fun AnalysisItemsSectionPreview() {
         )
     )
 }
-
-private val AudioPlayRed = Color(0xFFF22A3D)
 
 private val WaveformBars = listOf(
     0.4f, 0.6f, 0.3f, 0.8f, 0.5f, 0.9f, 0.4f, 0.7f, 0.3f, 0.6f,
@@ -469,7 +450,7 @@ private fun AudioPlayerComponentContent(
                 modifier = Modifier
                     .size(48.dp)
                     .clip(CircleShape)
-                    .background(AudioPlayRed),
+                    .background(DSColors.surfaceError),
             ) {
                 IconButton(onClick = onPlayPauseClick, modifier = Modifier.size(48.dp)) {
                     Icon(
@@ -477,7 +458,7 @@ private fun AudioPlayerComponentContent(
                             R.drawable.ic_play
                         ),
                         contentDescription = "",
-                        tint = Color.White,
+                        tint = DSColors.iconInverted,
                         modifier = Modifier.size(24.dp),
                     )
                 }
@@ -497,7 +478,7 @@ private fun FakeWaveform(
     modifier: Modifier = Modifier,
     barWidth: Dp = 4.dp,
     barGap: Dp = 3.dp,
-    barColor: Color = Color(0xFFDDDFE3),
+    barColor: Color = DSColors.waveformBar,
 ) {
     Canvas(modifier = modifier) {
         val barPx = barWidth.toPx()

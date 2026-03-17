@@ -11,12 +11,12 @@ import com.safeNest.demo.features.scamAnalyzer.impl.data.utils.DeepResearchServi
 import com.safeNest.demo.features.scamAnalyzer.impl.data.utils.DeepResearchSummarizer
 import com.safeNest.demo.features.scamAnalyzer.impl.data.utils.TextRedactor
 import com.safeNest.demo.features.scamAnalyzer.impl.domain.extractor.EntityExtractor
-import com.safeNest.demo.features.scamAnalyzer.impl.domain.repository.AnalyzeRepository
+import com.safeNest.demo.features.scamAnalyzer.impl.domain.repository.AnalyzerRepository
 import javax.inject.Inject
 
-class OnDeviceAnalyzer @Inject constructor(
+class OnDeviceAnalyzerRepository @Inject constructor(
     private val entityExtractor: EntityExtractor,
-) : AnalyzeRepository {
+) : AnalyzerRepository {
 
     companion object {
         private const val TAG = "OnDeviceAnalyzer"

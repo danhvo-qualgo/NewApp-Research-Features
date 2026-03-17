@@ -3,6 +3,8 @@ package com.safeNest.demo.features.designSystem.theme.color
 import androidx.compose.ui.graphics.Color
 
 val colorWhite = Color(0xFFFFFFFF)
+val colorWhiteSmoke = Color(0xFFFAFAFA)
+val colorWhiteCard = Color(0xFFF9F9F9)
 
 val colorBlack = Color(0xFF000000)
 
@@ -160,3 +162,9 @@ val colorCoral600 = Color(0xFFFF8D68)
 val colorCoral700 = Color(0xFFD07355)
 val colorCoral800 = Color(0xFFA25942)
 val colorCoral900 = Color(0xFF733F2F)
+
+val colorScamSurface = Color(0xFFF0E9F3)
+val colorScamSurfaceDark = Color(0xFFF6DDE5)
+
+val colorIndigoGradientStart = Color(0xFFD5D9F9)
+val colorNeutral900 = Color(0xFF111827)

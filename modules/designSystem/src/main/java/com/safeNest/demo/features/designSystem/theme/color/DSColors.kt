@@ -83,4 +83,13 @@ object DSColors {
     val borderInverted @Composable get() = current.white
     val borderDarkest @Composable get() = current.neutralDarkest
     val borderButton @Composable get() = current.neutralLighter
+
+    val surfaceSuccessDark @Composable get() = current.successDark
+    val surfaceSuccessLighter @Composable get() = current.successLighter
+    val surfaceScam @Composable get() = current.scamSurface
+    val surfaceScamDark @Composable get() = current.scamSurfaceDark
+    val textHeadingDarkest @Composable get() = current.neutralDarkestAlt
+    val textBodyMuted @Composable get() = current.neutralMuted
+    val surfaceCard @Composable get() = current.cardSurface
+    val waveformBar @Composable get() = current.neutralLightest2
 }
