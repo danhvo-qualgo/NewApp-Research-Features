@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    Single action row for ThreatAlertCardView.
+    Single action row for QuickActionCardView.
     Horizontal: [24dp icon] [8dp gap] [title text]
     Height: 32dp  |  width: match_parent
     Clickable – foreground ripple provided by the theme.
@@ -14,7 +14,7 @@
     android:focusable="true"
     android:foreground="?android:attr/selectableItemBackground">
 
-    <!-- Action icon  24×24dp (set via ThreatAlertCardView.Action.icon) -->
+    <!-- Action icon  24×24dp (set via QuickActionCardView.Action.icon) -->
     <ImageView
         android:id="@+id/iv_action_icon"
         android:layout_width="@dimen/threat_card_action_icon_size"

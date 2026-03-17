@@ -10,6 +10,10 @@ import android.view.WindowManager
 import com.safeNest.demo.features.urlGuard.impl.urlGuard.DetectionStatus
 import com.safeNest.demo.features.urlGuard.impl.urlGuard.FloatingButtonFeature
 import com.safeNest.demo.features.urlGuard.impl.urlGuard.view.floatingbutton.FloatingView
+import com.safeNest.demo.features.urlGuard.impl.urlGuard.view.model.toAlertCarViewIconBgColor
+import com.safeNest.demo.features.urlGuard.impl.urlGuard.view.model.toAlertCardViewIcon
+import com.safeNest.demo.features.urlGuard.impl.urlGuard.view.model.toAlertCardViewLabel
+import com.safeNest.demo.features.urlGuard.impl.urlGuard.view.model.toAlertCardViewListAction
 
 /**
  * Orchestrates three system-overlay layers drawn on top of every app.
@@ -18,7 +22,7 @@ import com.safeNest.demo.features.urlGuard.impl.urlGuard.view.floatingbutton.Flo
  * ┌─────────────────────────────────────────────────────┐
  * │  [1] BlockingPageView    — fullscreen danger page   │  pre-added as GONE; shown on demand
  * │  [2] FloatingView        — draggable shield button  │  always visible after show()
- * │  [3] ThreatAlertCardView — tooltip on button tap    │  toggles on tap
+ * │  [3] QuickActionCardView — tooltip on button tap    │  toggles on tap
  * └─────────────────────────────────────────────────────┘
  *
  * **Z-order guarantee**: [BlockingPageView] is added to the [WindowManager] first
@@ -27,7 +31,7 @@ import com.safeNest.demo.features.urlGuard.impl.urlGuard.view.floatingbutton.Flo
  * / [View.GONE] state and the [WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE] flag —
  * the button is never hidden.
  *
- * The [ThreatAlertCardView] behaves as a **tooltip** anchored near the
+ * The [QuickActionCardView] behaves as a **tooltip** anchored near the
  * [com.safeNest.demo.features.urlGuard.impl.urlGuard.view.floatingbutton.FloatingView]: tapping the button shows/hides it; it automatically
  * appears on the opposite side of the screen so it never goes off-screen.
  *
@@ -45,7 +49,7 @@ import com.safeNest.demo.features.urlGuard.impl.urlGuard.view.floatingbutton.Flo
  * secureView.showAlertCard(
  *     label = "High-Risk URL Detected",
  *     actions = listOf(
- *         ThreatAlertCardView.Action(icon = ..., title = "Block site") {
+ *         QuickActionCardView.Action(icon = ..., title = "Block site") {
  *             secureView.showBlockingPage(url)
  *         }
  *     )
@@ -55,7 +59,7 @@ import com.safeNest.demo.features.urlGuard.impl.urlGuard.view.floatingbutton.Flo
  * secureView.dismiss()
  * ```
  */
-class SecureView(context: Context) {
+class SecureView(private val context: Context) {
 
     private val windowManager: WindowManager =
         context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
@@ -84,14 +88,15 @@ class SecureView(context: Context) {
 
     /**
      * The threat-alert card that pops up as a tooltip when the floating button
-     * is tapped. Populate it before calling [showAlertCard], or configure it
-     * directly and call [showAlertCard] without arguments to use whatever was
+     * is tapped. Populate it before calling [showActionCard], or configure it
+     * directly and call [showActionCard] without arguments to use whatever was
      * already set.
      */
-    val alertCard = ThreatAlertCardView(context)
+    val actionCard = QuickActionCardView(context)
 
-    private var isAlertCardShown  = false
-    private var alertCardParams   : WindowManager.LayoutParams? = null
+    private var isActionCardShown  = false
+    private var actionCardParams   : WindowManager.LayoutParams? = null
+    private var currentFeature    : FloatingButtonFeature = FloatingButtonFeature.DEFAULT
 
     // ── Callbacks ─────────────────────────────────────────────────────────────
 
@@ -144,7 +149,7 @@ class SecureView(context: Context) {
      * Call this in [Service.onDestroy].
      */
     fun dismiss() {
-        hideAlertCard()
+        hideActionCard()
         // blockingPage was pre-added in show() — remove it directly.
         if (blockingPage.isAttachedToWindow) {
             try { windowManager.removeView(blockingPage) } catch (e: Exception) {
@@ -163,47 +168,52 @@ class SecureView(context: Context) {
      * @param status  Determines the background colour (unknown/safe/warning/dangerous).
      */
     fun updateButton(feature: FloatingButtonFeature, status: DetectionStatus) {
+        currentFeature = feature
         floatingView.update(feature, status)
     }
 
     // ── Public API: alert tooltip ─────────────────────────────────────────────
 
-    /**
-     * Show the [ThreatAlertCardView] as a tooltip near the floating button.
-     *
-     * The card is positioned on the **opposite side** of the screen from the
-     * button so it is always fully visible. If the card is already showing,
-     * only its content is refreshed.
-     *
-     * @param label   Bold header text, e.g. "High-Risk URL Detected".
-     * @param actions Action rows to display. Pass an empty list for a header-only card.
-     */
-    fun showAlertCard(
-        label  : CharSequence,
-        actions: List<ThreatAlertCardView.Action> = emptyList()
-    ) {
-        alertCard.setAlertLabel(label)
-        alertCard.setActions(actions)
+    fun updateActionCard(feature: FloatingButtonFeature, status: DetectionStatus) {
+        feature.toAlertCardViewLabel(context)?.let {
+            actionCard.setAlertLabel(it)
+        }
+        feature.toAlertCardViewListAction(context)
+            .let {
+                if(it.isNotEmpty()) {
+                    actionCard.setActions(it)
+                }
+            }
 
-        if (isAlertCardShown) return     // already visible — content already updated above
+        feature.toAlertCardViewIcon(context).let {
+            actionCard.setAlertIconDrawable(it)
+        }
+
+        status.toAlertCarViewIconBgColor().let {
+            actionCard.setAlertInnerBackground(it)
+        }
+    }
+
+    fun showActionCard() {
+        if (isActionCardShown) return     // already visible — content already updated above
 
         val p = buildTooltipParams()
-        windowManager.addView(alertCard, p)
-        alertCardParams   = p
-        isAlertCardShown  = true
+        windowManager.addView(actionCard, p)
+        actionCardParams   = p
+        isActionCardShown  = true
     }
 
     /**
      * Remove the alert tooltip from the screen.
      * No-op if the tooltip is not currently showing.
      */
-    fun hideAlertCard() {
-        if (!isAlertCardShown) return
-        try { windowManager.removeView(alertCard) } catch (e: Exception) {
+    fun hideActionCard() {
+        if (!isActionCardShown) return
+        try { windowManager.removeView(actionCard) } catch (e: Exception) {
             Log.w(TAG, "hideAlertCard: removeView failed", e)
         }
-        isAlertCardShown = false
-        alertCardParams  = null
+        isActionCardShown = false
+        actionCardParams  = null
     }
 
     // ── Public API: blocking page ─────────────────────────────────────────────
@@ -223,7 +233,7 @@ class SecureView(context: Context) {
         title      : CharSequence = "High Risk: Scam Detected",
         description: CharSequence = "SafeNest has blocked this site to protect you."
     ) {
-        hideAlertCard()                         // dismiss tooltip if open
+        hideActionCard()                         // dismiss tooltip if open
         blockingPage.setBlockedUrl(url)
         blockingPage.setTitle(title)
         blockingPage.setDescription(description)
@@ -254,9 +264,10 @@ class SecureView(context: Context) {
 
     // ── Private helpers ───────────────────────────────────────────────────────
 
-    /** Toggle the alert tooltip on each tap of the floating button. */
+    /** Toggle the quick-actions card on each tap of the floating button. */
     private fun toggleAlertCard() {
-        if (isAlertCardShown) hideAlertCard() else showAlertCard("")
+        if (!currentFeature.hasQuickActions) return
+        if (isActionCardShown) hideActionCard() else showActionCard()
     }
 
     /**

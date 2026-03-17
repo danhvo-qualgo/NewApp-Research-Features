@@ -2,6 +2,7 @@ package com.safeNest.demo.features.urlGuard.impl.urlGuard.view
 
 import android.content.Context
 import android.graphics.drawable.Drawable
+import android.graphics.drawable.GradientDrawable
 import android.util.AttributeSet
 import android.view.LayoutInflater
 import android.view.View
@@ -9,6 +10,7 @@ import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
+import androidx.annotation.ColorInt
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.core.content.ContextCompat
@@ -32,17 +34,17 @@ import com.safeNest.demo.features.urlGuard.impl.R
  * ---
  * ### Usage
  * ```kotlin
- * val card = ThreatAlertCardView(context).apply {
+ * val card = QuickActionCardView(context).apply {
  *     setAlertLabel("SMS IS SUSPICIOUS")
  *     setAlertIconDrawable(ContextCompat.getDrawable(context, R.drawable.ic_custom_alert))
  *
  *     setActions(listOf(
- *         ThreatAlertCardView.Action(
+ *         QuickActionCardView.Action(
  *             icon = ContextCompat.getDrawable(context, R.drawable.ic_threat_alert_octagon_indigo)!!,
  *             title = "Scam detail",
  *             onClick = { showScamDetails() }
  *         ),
- *         ThreatAlertCardView.Action(
+ *         QuickActionCardView.Action(
  *             icon = ContextCompat.getDrawable(context, R.drawable.ic_threat_eye)!!,
  *             title = "View SMS",
  *             onClick = { openSms() }
@@ -52,7 +54,7 @@ import com.safeNest.demo.features.urlGuard.impl.R
  * parentLayout.addView(card)
  * ```
  */
-class ThreatAlertCardView @JvmOverloads constructor(
+class QuickActionCardView @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null
 ) : LinearLayout(context, attrs) {
@@ -73,8 +75,6 @@ class ThreatAlertCardView @JvmOverloads constructor(
     )
 
     // ── Child view references ─────────────────────────────────────────────────
-
-    private val frameAlertOuter: FrameLayout
     private val frameAlertInner: FrameLayout
     private val ivAlertIcon: ImageView
     private val tvAlertLabel: TextView
@@ -92,7 +92,6 @@ class ThreatAlertCardView @JvmOverloads constructor(
 
         LayoutInflater.from(context).inflate(R.layout.threat_alert_card, this, true)
 
-        frameAlertOuter = findViewById(R.id.frame_threat_alert_outer)
         frameAlertInner = findViewById(R.id.frame_threat_alert_inner)
         ivAlertIcon     = findViewById(R.id.iv_threat_alert_icon)
         tvAlertLabel    = findViewById(R.id.tv_threat_alert_label)
@@ -109,12 +108,12 @@ class ThreatAlertCardView @JvmOverloads constructor(
         ivAlertIcon.setImageResource(resId)
     }
 
-    fun setAlertOuterBackground(drawable: Drawable?) {
-        frameAlertOuter.background = drawable
-    }
-
     fun setAlertInnerBackground(drawable: Drawable?) {
         frameAlertInner.background = drawable
+    }
+
+    fun setAlertInnerBackground(@ColorInt color: Int ) {
+        (frameAlertInner.background as? GradientDrawable)?.setColor(color)
     }
 
     // ── Header – label setter ─────────────────────────────────────────────────

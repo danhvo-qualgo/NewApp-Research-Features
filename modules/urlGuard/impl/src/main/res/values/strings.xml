@@ -14,4 +14,10 @@
     <string name="blocking_go_back">Go back to Safety</string>
     <string name="blocking_proceed">I understand the risk, proceed anyway</string>
     <string name="blocking_footer">Your connection is protected by SafeNest Advanced Threat Intelligence. If you believe this is an error, please report it.</string>
+    <string name="sms_is_suspicious">SMS IS SUSPICIOUS</string>
+    <string name="check_scam_intent">Check Scam Intent</string>
+    <string name="screenshot">Screenshot</string>
+    <string name="record">Record</string>
+    <string name="scam_detail">Scam detail</string>
+    <string name="view_sms">View SMS</string>
 </resources>
