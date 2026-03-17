@@ -1,6 +1,5 @@
 package com.safeNest.demo.features.home.impl.presentation
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -30,20 +29,17 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.safeNest.demo.features.designSystem.component.DSButton
+import com.safeNest.demo.features.designSystem.theme.DSSpacing
+import com.safeNest.demo.features.designSystem.theme.DSTypography
+import com.safeNest.demo.features.designSystem.theme.color.DSColors
 
-// Extracting Colors from the JSON
-val GradientStart = Color(0xFFD5D9F9)
-val TitlePurple = Color(0xFF4338CA)
-val TextDark = Color(0xFF1C1D22)
-val TextGray = Color(0xFF84899A)
-val SurfaceLightGray = Color(0xFFF9F9F9)
 val PrimaryIndigo = Color(0xFF4F46E5)
 val MediaTextColor = Color(0xFF454955)
 
@@ -53,30 +49,23 @@ fun ScamAnalyzerScreen() {
     Scaffold(
         containerColor = Color.Transparent, // Let the background box show through
     ) { paddingValues ->
-
-        // Background Gradient
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(
-                    brush = Brush.linearGradient(
-                        colors = listOf(GradientStart, Color.White)
-                    )
-                )
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(paddingValues) // Respects bottom bar
-                    .padding(top = 50.dp) // Status bar padding from JSON
+                    .padding(paddingValues)
+                    .padding(top = DSSpacing.s9)
             ) {
                 TopHeader()
 
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 24.dp),
-                    verticalArrangement = Arrangement.spacedBy(24.dp)
+                        .padding(horizontal = DSSpacing.s6),
+                    verticalArrangement = Arrangement.spacedBy(DSSpacing.s6)
                 ) {
                     TextInputArea()
                     MediaActionsRow()
@@ -97,16 +86,14 @@ private fun TopHeader() {
     ) {
         Text(
             text = "Scam Analyzer",
-            fontSize = 36.sp,
-            fontWeight = FontWeight.Bold,
-            color = TitlePurple,
+            style = DSTypography.h2.bold,
+            color = DSColors.textActionActive,
             lineHeight = 42.sp
         )
         Text(
             text = "Identify scams in messages, links, or images using our AI-powered analyzer.",
-            fontSize = 16.sp,
-            fontWeight = FontWeight.Normal,
-            color = TextDark,
+            style = DSTypography.body2.medium,
+            color = DSColors.textHeading,
             lineHeight = 24.sp
         )
     }
@@ -119,43 +106,43 @@ private fun TextInputArea() {
             .fillMaxWidth()
             .height(180.dp),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = DSColors.surface1),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(top = 16.dp, start = 16.dp, end = 16.dp, bottom = 12.dp)
+                .padding(top = DSSpacing.s4, start = DSSpacing.s4, end = DSSpacing.s4, bottom = DSSpacing.s3)
         ) {
             Text(
                 text = "Message, link, or text here to analyze",
-                fontSize = 16.sp,
-                color = TextGray,
+                style = DSTypography.body2.medium,
+                color = DSColors.textNeutral,
                 modifier = Modifier.weight(1f)
             )
 
-            // Paste from clipboard button
             Surface(
-                modifier = Modifier.clickable { /* Handle paste */ },
+                modifier = Modifier.clickable {
+
+                },
                 shape = CircleShape,
-                color = SurfaceLightGray
+                color = DSColors.surface2,
             ) {
                 Row(
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                    modifier = Modifier.padding(horizontal = DSSpacing.s3, vertical = DSSpacing.s2),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    horizontalArrangement = Arrangement.spacedBy(DSSpacing.s1)
                 ) {
                     Icon(
                         imageVector = Icons.Default.ContentPaste,
                         contentDescription = "Paste",
-                        tint = TextDark,
+                        tint = DSColors.iconHeading,
                         modifier = Modifier.size(14.dp)
                     )
                     Text(
                         text = "Paste from clipboard",
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = TextDark
+                        style = DSTypography.caption2.medium,
+                        color = DSColors.textHeading
                     )
                 }
             }
@@ -167,7 +154,7 @@ private fun TextInputArea() {
 private fun MediaActionsRow() {
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+        horizontalArrangement = Arrangement.spacedBy(DSSpacing.s2)
     ) {
         MediaActionButton(
             modifier = Modifier.weight(1f),
@@ -202,27 +189,26 @@ private fun MediaActionButton(
             .height(120.dp)
             .clickable(onClick = onClick),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
+        colors = CardDefaults.cardColors(containerColor = DSColors.surface1)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(16.dp),
+                .padding(DSSpacing.s4),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                tint = TextDark,
-                modifier = Modifier.size(24.dp)
+                tint = Color.Unspecified,
+                modifier = Modifier.size(DSSpacing.s4)
             )
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(DSSpacing.s2))
             Text(
                 text = text,
-                fontSize = 12.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = MediaTextColor,
+                style = DSTypography.caption2.semiBold,
+                color = DSColors.textBody,
                 textAlign = TextAlign.Center,
                 lineHeight = 16.sp
             )
@@ -232,21 +218,14 @@ private fun MediaActionButton(
 
 @Composable
 private fun AnalyzeButton() {
-    Button(
+    DSButton(
+        text = "Analyze Now",
         onClick = { /* Handle Analysis */ },
         modifier = Modifier
             .fillMaxWidth()
             .height(56.dp),
-        colors = ButtonDefaults.buttonColors(containerColor = PrimaryIndigo),
-        shape = RoundedCornerShape(9999.dp) // Fully rounded pill shape
-    ) {
-        Text(
-            text = "Analyze Now",
-            fontSize = 16.sp,
-            fontWeight = FontWeight.Bold,
-            color = Color.White
-        )
-    }
+        textStyle = DSTypography.caption1.bold,
+    )
 }
 
 @Preview
