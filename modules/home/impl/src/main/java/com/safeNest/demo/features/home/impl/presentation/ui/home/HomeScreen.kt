@@ -34,24 +34,18 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
+import com.safeNest.demo.features.designSystem.component.DSButton
 import com.safeNest.demo.features.designSystem.component.DsToggle
+import com.safeNest.demo.features.designSystem.component.gradientBackground
 import com.safeNest.demo.features.designSystem.theme.DSSpacing
 import com.safeNest.demo.features.designSystem.theme.DSTypography
 import com.safeNest.demo.features.designSystem.theme.color.DSColors
 import com.safeNest.demo.features.home.impl.R
 import com.safeNest.demo.features.home.impl.presentation.ScamAnalyzerScreen
-
-val AppBackgroundGradient = Brush.verticalGradient(
-    colors = listOf(
-        Color(0xFFD5D9F9), // Màu tím nhạt ở trên
-        Color(0xFFF8F8F9)  // Màu trắng xám ở dưới
-    )
-)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -63,7 +57,7 @@ fun HomeScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(AppBackgroundGradient)
+            .background(gradientBackground)
     ) {
         Scaffold(
             containerColor = Color.Transparent,
@@ -387,16 +381,14 @@ fun CallProtectionCard(
             }
 
             Spacer(modifier = Modifier.height(DSSpacing.s2))
-            Button(
+            DSButton(
+                text = "Manage Protection",
                 onClick = {
                     onManageProtectionClick()
                 },
-                colors = ButtonDefaults.buttonColors(containerColor = DSColors.surfaceAction),
-                shape = RoundedCornerShape(12.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Manage Protection", color = DSColors.textOnAction)
-            }
+                modifier = Modifier.fillMaxWidth().padding(horizontal = DSSpacing.s2),
+                textStyle = DSTypography.caption1.bold
+            )
         }
     }
 }
