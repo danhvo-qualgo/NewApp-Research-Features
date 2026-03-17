@@ -2,121 +2,135 @@ package com.safeNest.demo.features.home.impl.presentation.ui.home
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowForward
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.outlined.Build
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.vectorResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.navigation.NavGraph.Companion.findStartDestination
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
+import com.safeNest.demo.features.designSystem.component.DsToggle
+import com.safeNest.demo.features.designSystem.theme.DSSpacing
+import com.safeNest.demo.features.designSystem.theme.DSTypography
+import com.safeNest.demo.features.designSystem.theme.color.DSColors
 import com.safeNest.demo.features.home.impl.R
 import com.safeNest.demo.features.home.impl.presentation.ScamAnalyzerScreen
 
-val PrimaryPurple = Color(0xFF4F46E5)
-val BackgroundLight = Color(0xFFF0F4FF)
-val CardBackground = Color.White
-val TextPrimary = Color(0xFF1F2937)
-val TextSecondary = Color(0xFF6B7280)
-val ColorError = Color(0xFFEF4444)
-val ColorSuccess = Color(0xFF10B981)
-val ChipBackgroundColor = Color(0xFFF9FAFB)
+val AppBackgroundGradient = Brush.verticalGradient(
+    colors = listOf(
+        Color(0xFFD5D9F9), // Màu tím nhạt ở trên
+        Color(0xFFF8F8F9)  // Màu trắng xám ở dưới
+    )
+)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     onManageProtectionClick: () -> Unit,
 ) {
-    val navController = rememberNavController()
-    Scaffold(
-        containerColor = BackgroundLight,
-        bottomBar = { SafeNestBottomNavigation(
-            onHomeClick = {
-                navController.navigate(BottomNavItem.Home.route) {
-                    popUpTo(navController.graph.findStartDestination().id) {
-                        saveState = true
-                    }
-                    launchSingleTop = true
-                    restoreState = true
-                }
-            },
-            onToolsClick = {
-                navController.navigate(BottomNavItem.Tools.route) {
-                    popUpTo(navController.graph.findStartDestination().id) {
-                        saveState = true
-                    }
-                    launchSingleTop = true
-                    restoreState = true
-                }
-            }
-        ) }
-    ) { paddingValues ->
-        NavHost(
-            navController = navController,
-            startDestination = BottomNavItem.Home.route,
-            modifier = Modifier.padding(paddingValues)
-        ) {
-            composable(BottomNavItem.Home.route) {
-                SafeNestHomeScreen(
-                    onManageProtectionClick = onManageProtectionClick
+    var currentTab by remember { mutableStateOf(BottomTab.Home) }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(AppBackgroundGradient)
+    ) {
+        Scaffold(
+            containerColor = Color.Transparent,
+            bottomBar = {
+                SafeNestBottomNavigation(
+                    onHomeClick = { currentTab = BottomTab.Home },
+                    onToolsClick = { currentTab = BottomTab.Tools },
+                    currentTab
                 )
             }
+        ) { innerPadding ->
 
-            composable(BottomNavItem.Tools.route) {
-                ScamAnalyzerScreen()
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+            ) {
+                when (currentTab) {
+                    BottomTab.Home -> {
+                        SafeNestHomeScreen(
+                            innerPadding,
+                            onManageProtectionClick = onManageProtectionClick
+                        )
+                    }
+
+                    BottomTab.Tools -> {
+                        ScamAnalyzerScreen()
+                    }
+                }
             }
         }
     }
 }
 
+
 @Composable
 fun SafeNestHomeScreen(
+    innerPadding: PaddingValues,
     onManageProtectionClick: () -> Unit,
 
-) {
+    ) {
     LazyColumn(
         modifier = Modifier
-            .fillMaxSize()
-            .padding(horizontal = 20.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+            .fillMaxSize().padding(innerPadding)
+            .padding(start = DSSpacing.s6, end = DSSpacing.s6, top = DSSpacing.s9),
+        verticalArrangement = Arrangement.spacedBy(DSSpacing.s2)
     ) {
         item {
-            Spacer(modifier = Modifier.height(24.dp))
             Text(
                 text = "SafeNest Security",
-                fontSize = 28.sp,
-                fontWeight = FontWeight.Bold,
-                color = PrimaryPurple
+                style = DSTypography.h2.bold,
+                color = DSColors.textActionActive
             )
+            Spacer(modifier = Modifier.height(24.dp))
             Text(
                 text = "Security Services",
-                fontSize = 14.sp,
-                color = TextSecondary,
-                modifier = Modifier.padding(top = 4.dp, bottom = 8.dp)
+                style = DSTypography.caption1.regular,
+                color = DSColors.textBody,
+                modifier = Modifier.padding(top = DSSpacing.s6, bottom = DSSpacing.s2)
             )
         }
 
-        // Card 1: Call Protection (Card đặc biệt có UI phức tạp hơn một chút)
         item {
             CallProtectionCard(
                 onManageProtectionClick = onManageProtectionClick
             )
         }
 
-        // Các Card tính năng chuẩn
         item {
             FeatureCard(
                 icon = ImageVector.vectorResource(id = R.drawable.ic_safe_browsing),
@@ -176,7 +190,7 @@ fun FeatureCard(
     var checked by remember { mutableStateOf(isToggled) }
     Card(
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = CardBackground),
+        colors = CardDefaults.cardColors(containerColor = DSColors.surface1),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         modifier = Modifier
             .fillMaxWidth()
@@ -191,45 +205,37 @@ fun FeatureCard(
             ) {
                 Box(
                     modifier = Modifier
-                        .size(44.dp)
-                        .background(BackgroundLight, RoundedCornerShape(10.dp)),
+                        .size(48.dp)
+                        .background(DSColors.surfaceActive, RoundedCornerShape(8.dp)),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = icon,
                         contentDescription = null,
-                        tint = PrimaryPurple,
-                        modifier = Modifier.size(24.dp)
+                        tint = DSColors.iconAction
                     )
                 }
 
-                Spacer(modifier = Modifier.width(16.dp))
+                Spacer(modifier = Modifier.width(DSSpacing.s2))
 
                 Text(
                     text = title,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp,
-                    color = TextPrimary,
-                    lineHeight = 22.sp,
+                    style = DSTypography.body2.bold,
+                    color = DSColors.textBody,
                     modifier = Modifier.weight(1f)
                 )
-                Switch(
+                DsToggle(
                     checked = checked,
-                    onCheckedChange = { checked = it },
-                    colors = SwitchDefaults.colors(
-                        checkedThumbColor = Color.White,
-                        checkedTrackColor = PrimaryPurple
-                    )
+                    onCheckedChange = { checked = it }
                 )
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(DSSpacing.s3))
 
             Text(
                 text = description,
-                fontSize = 14.sp,
-                color = TextSecondary,
-                lineHeight = 22.sp
+                style = DSTypography.caption1.regular,
+                color = DSColors.textBody
             )
         }
     }
@@ -246,8 +252,8 @@ fun ActionFeatureCard(
 ) {
     Card(
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = CardBackground),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        colors = CardDefaults.cardColors(containerColor = DSColors.surface1),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onClick() } // Cho phép click toàn bộ card
@@ -261,55 +267,50 @@ fun ActionFeatureCard(
             ) {
                 Box(
                     modifier = Modifier
-                        .size(44.dp)
-                        .background(BackgroundLight, RoundedCornerShape(10.dp)),
+                        .size(48.dp)
+                        .background(DSColors.surfaceActive, RoundedCornerShape(8.dp)),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = icon,
                         contentDescription = null,
-                        tint = PrimaryPurple,
-                        modifier = Modifier.size(24.dp)
+                        tint = DSColors.iconAction
                     )
                 }
 
-                Spacer(modifier = Modifier.width(16.dp))
+                Spacer(modifier = Modifier.width(DSSpacing.s2))
 
                 Text(
                     text = title,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp,
-                    color = TextPrimary,
-                    lineHeight = 22.sp,
+                    style = DSTypography.body2.bold,
+                    color = DSColors.textBody,
                     modifier = Modifier.weight(1f)
                 )
 
-                // Cụm "Open Telegram ->"
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
                         text = actionText,
-                        fontSize = 14.sp,
-                        color = TextSecondary
+                        style = DSTypography.caption2.regular,
+                        color = DSColors.textBody
                     )
-                    Spacer(modifier = Modifier.width(4.dp))
+                    Spacer(modifier = Modifier.width(DSSpacing.s1))
                     Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                        imageVector = ImageVector.vectorResource(id = R.drawable.ic_arrow_right),
                         contentDescription = "Open",
-                        tint = TextSecondary,
-                        modifier = Modifier.size(16.dp)
+                        tint = DSColors.iconBody,
+                        modifier = Modifier.size(DSSpacing.s4)
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(DSSpacing.s3))
 
             Text(
                 text = description,
-                fontSize = 14.sp,
-                color = TextSecondary,
-                lineHeight = 22.sp
+                style = DSTypography.caption1.regular,
+                color = DSColors.textBody
             )
         }
     }
@@ -321,13 +322,13 @@ fun CallProtectionCard(
 ) {
     Card(
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = CardBackground),
+        colors = CardDefaults.cardColors(containerColor = DSColors.surface1),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         modifier = Modifier.fillMaxWidth().clickable {
             onManageProtectionClick()
         }
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(modifier = Modifier.padding(DSSpacing.s5)) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -336,49 +337,65 @@ fun CallProtectionCard(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(
                         modifier = Modifier
-                            .size(40.dp)
-                            .background(BackgroundLight, RoundedCornerShape(8.dp)),
+                            .size(48.dp)
+                            .background(DSColors.surfaceActive, RoundedCornerShape(8.dp)),
                         contentAlignment = Alignment.Center
                     ) {
-                        Icon(imageVector = ImageVector.vectorResource(id = R.drawable.ic_communication_protection), contentDescription = null, tint = PrimaryPurple)
+                        Icon(
+                            imageVector = ImageVector.vectorResource(id = R.drawable.ic_communication_protection),
+                            contentDescription = null,
+                            tint = DSColors.iconAction
+                        )
                     }
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Text("Call Protection", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = TextPrimary)
+                    Spacer(modifier = Modifier.width(DSSpacing.s2))
+                    Text(
+                        "Call Protection",
+                        style = DSTypography.body2.bold,
+                        color = DSColors.textBody
+                    )
                 }
-                Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "Details", tint = TextSecondary)
+                Icon(
+                    ImageVector.vectorResource(id = R.drawable.ic_arrow_right),
+                    contentDescription = "Details",
+                    tint = DSColors.iconBody
+                )
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
-            Text("Blocking 5,240+ known spam numbers", fontSize = 13.sp, color = TextSecondary)
+            Spacer(modifier = Modifier.height(DSSpacing.s3))
+            Text(
+                "Blocking 5,240+ known spam numbers",
+                style = DSTypography.caption1.regular,
+                color = DSColors.textBody
+            )
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(DSSpacing.s3))
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                horizontalArrangement = Arrangement.spacedBy(DSSpacing.s3)
             ) {
                 StatusChip(
                     icon = ImageVector.vectorResource(id = R.drawable.ic_blocking),
-                    iconTint = ColorError,
+                    iconTint = DSColors.iconError,
                     text = "Blocklist"
                 )
                 StatusChip(
                     icon = ImageVector.vectorResource(id = R.drawable.ic_whitelist),
-                    iconTint = ColorSuccess,
+                    iconTint = DSColors.iconSuccess,
                     text = "Whitelist"
                 )
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(DSSpacing.s2))
             Button(
                 onClick = {
                     onManageProtectionClick()
                 },
-                colors = ButtonDefaults.buttonColors(containerColor = PrimaryPurple),
+                colors = ButtonDefaults.buttonColors(containerColor = DSColors.surfaceAction),
                 shape = RoundedCornerShape(12.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Manage Protection", color = Color.White)
+                Text("Manage Protection", color = DSColors.textOnAction)
             }
         }
     }
@@ -394,67 +411,79 @@ fun StatusChip(
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
-            .background(ChipBackgroundColor, RoundedCornerShape(50)) // Bo tròn góc 50%
-            .padding(horizontal = 14.dp, vertical = 8.dp)
+            .background(DSColors.surface2, RoundedCornerShape(50)) // Bo tròn góc 50%
+            .padding(horizontal = DSSpacing.s4, vertical = DSSpacing.s3)
     ) {
         Icon(
             imageVector = icon,
             contentDescription = text,
             tint = iconTint,
-            modifier = Modifier.size(18.dp)
+            modifier = Modifier.size(20.dp)
         )
-        Spacer(modifier = Modifier.width(6.dp))
+        Spacer(modifier = Modifier.width(DSSpacing.s2))
         Text(
             text = text,
-            fontSize = 14.sp,
-            color = TextPrimary,
-            fontWeight = FontWeight.Medium
+            style = DSTypography.caption1.medium,
+            color = DSColors.textHeading
         )
     }
 }
 
-
-
 @Composable
 fun SafeNestBottomNavigation(
     onHomeClick: () -> Unit,
-    onToolsClick: () -> Unit
+    onToolsClick: () -> Unit,
+    bottomTab: BottomTab
 ) {
-    var isFirst by remember { mutableStateOf(true) }
 
     Surface(
-        color = CardBackground,
+        modifier = Modifier.fillMaxWidth(),
+        color = DSColors.surface1,
         shadowElevation = 16.dp,
-        modifier = Modifier.fillMaxWidth()
     ) {
         Row(
-            modifier = Modifier
+            modifier = Modifier.navigationBarsPadding()
                 .fillMaxWidth()
                 .height(64.dp),
             horizontalArrangement = Arrangement.SpaceAround
         ) {
-            // Tab Home
+            Spacer(
+                modifier = Modifier.weight(0.8f)
+            )
+
             CustomTabItem(
-                icon = ImageVector.vectorResource(id = R.drawable.ic_home_selected),
+                icon = ImageVector.vectorResource(
+                    id = if (bottomTab == BottomTab.Home) R.drawable.ic_home_selected
+                    else R.drawable.ic_home_unselected
+                )
+                ,
                 label = "Home",
-                isSelected = isFirst,
+                isSelected = bottomTab == BottomTab.Home,
                 onClick = {
-                    isFirst = true
                     onHomeClick()
                 },
                 modifier = Modifier.weight(1f)
             )
 
-            // Tab Tools
+            Spacer(
+                modifier = Modifier.weight(0.2f)
+            )
+
             CustomTabItem(
-                icon = ImageVector.vectorResource(id = R.drawable.ic_tools_unselected),
+                icon = ImageVector.vectorResource(
+                    id = if (bottomTab == BottomTab.Tools) R.drawable.ic_tools_selected
+                    else R.drawable.ic_tools_unselected
+                ),
                 label = "Tools",
-                isSelected = !isFirst,
+                isSelected = bottomTab == BottomTab.Tools,
                 onClick = {
-                    isFirst = false
                     onToolsClick()
                 },
                 modifier = Modifier.weight(1f)
+            )
+
+            Spacer(
+                modifier = Modifier.weight(0.8f)
             )
         }
     }
@@ -468,8 +497,8 @@ fun CustomTabItem(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val contentColor = if (isSelected) PrimaryPurple else TextSecondary
-    val indicatorColor = if (isSelected) PrimaryPurple else Color.Transparent
+    val contentColor = if (isSelected) DSColors.textActionActive else DSColors.textNeutral
+    val indicatorColor = if (isSelected) DSColors.textActionActive else Color.Transparent
 
     Column(
         modifier = modifier
@@ -479,7 +508,7 @@ fun CustomTabItem(
     ) {
         Box(
             modifier = Modifier
-                .fillMaxWidth(0.5f)
+                .fillMaxWidth(0.8f)
                 .height(3.dp)
                 .background(indicatorColor)
         )
@@ -489,16 +518,15 @@ fun CustomTabItem(
         Icon(
             imageVector = icon,
             contentDescription = label,
-            tint = contentColor,
-            modifier = Modifier.size(24.dp)
+            modifier = Modifier.size(24.dp),
+            tint = Color.Unspecified
         )
 
-        Spacer(modifier = Modifier.height(4.dp))
+        Spacer(modifier = Modifier.height(DSSpacing.s1))
 
         Text(
             text = label,
-            fontSize = 14.sp,
-            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
+            style = DSTypography.caption2.semiBold,
             color = contentColor
         )
 
@@ -506,7 +534,4 @@ fun CustomTabItem(
     }
 }
 
-sealed class BottomNavItem(val route: String, val title: String, val icon: ImageVector) {
-    object Home : BottomNavItem("home", "Home", Icons.Default.Home)
-    object Tools : BottomNavItem("tools", "Tools", Icons.Default.Build)
-}
+enum class BottomTab { Home, Tools }
