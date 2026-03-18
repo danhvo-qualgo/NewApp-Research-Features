@@ -18,18 +18,6 @@
         <activity
             android:name="com.safeNest.demo.features.urlGuard.impl.presentation.AudioRecordTest"
             android:exported="false" />
-        <!--
-            Transparent trampoline that shows the "Start recording?" system dialog
-            and relays the MediaProjection token back to UrlGuardAccessibilityService.
-            Must be excluded from Recents so it leaves no task entry.
-        -->
-        <activity
-            android:name="com.safeNest.demo.features.urlGuard.impl.urlGuard.ScreenCapturePermissionActivity"
-            android:excludeFromRecents="true"
-            android:exported="false"
-            android:noHistory="true"
-            android:taskAffinity=""
-            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
         <service
             android:name="com.safeNest.demo.features.urlGuard.impl.urlGuard.UrlGuardAccessibilityService"
             android:exported="false"

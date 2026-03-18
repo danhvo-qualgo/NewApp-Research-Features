@@ -3,6 +3,7 @@ package com.safeNest.demo.features.urlGuard.impl.urlGuard.view
 import android.content.Context
 import android.graphics.PixelFormat
 import android.graphics.drawable.Drawable
+import android.graphics.drawable.GradientDrawable
 import android.util.AttributeSet
 import android.util.Log
 import android.view.LayoutInflater
@@ -11,6 +12,7 @@ import android.view.WindowManager
 import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.annotation.ColorInt
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import com.safeNest.demo.features.urlGuard.impl.R
@@ -25,20 +27,6 @@ import com.safeNest.demo.features.urlGuard.impl.R
  * All setter functions are safe to call **before or after** [show] —
  * they update the live view hierarchy immediately on whichever thread
  * they are called from (use the main thread when the view is visible).
- *
- * ---
- * Typical usage inside a service / [SecureView]:
- * ```kotlin
- * val view = BlockingPageView(context).apply {
- *     setBlockedUrl(url)
- *     setTitle("High Risk: Scam Detected")
- *     setDescription("SafeNest blocked this site…")
- *     onGoBackClick        = { hideBlockingPage() }
- *     onProceedAnywayClick = { hideBlockingPage() }
- * }
- * view.show(windowManager)
- * // later:
- * view.dismiss(windowManager)
  * ```
  */
 class BlockingPageView @JvmOverloads constructor(
@@ -48,17 +36,15 @@ class BlockingPageView @JvmOverloads constructor(
 
     // ── Callbacks ─────────────────────────────────────────────────────────────
 
-    /** Called when the user taps "Go back to Safety". */
     var onGoBackClick: (() -> Unit)? = null
 
-    /** Called when the user taps "I understand the risk, proceed anyway". */
     var onProceedAnywayClick: (() -> Unit)? = null
 
     // ── Child view references ─────────────────────────────────────────────────
 
-    private val frameAlertIconOuter: FrameLayout
     private val frameAlertIconInner: FrameLayout
     private val ivAlertIcon: ImageView
+    private val securityAlertText: TextView
     private val tvTitle: TextView
     private val tvDescription: TextView
     private val tvBlockedUrl: TextView
@@ -68,9 +54,9 @@ class BlockingPageView @JvmOverloads constructor(
     init {
         LayoutInflater.from(context).inflate(R.layout.blocking_page, this, true)
 
-        frameAlertIconOuter = findViewById(R.id.frame_alert_icon_outer)
         frameAlertIconInner = findViewById(R.id.frame_alert_icon_inner)
         ivAlertIcon         = findViewById(R.id.iv_alert_icon)
+        securityAlertText = findViewById(R.id.security_alert_text)
         tvTitle             = findViewById(R.id.tv_blocking_title)
         tvDescription       = findViewById(R.id.tv_blocking_description)
         tvBlockedUrl        = findViewById(R.id.tv_blocked_url)
@@ -89,22 +75,32 @@ class BlockingPageView @JvmOverloads constructor(
         ivAlertIcon.setImageDrawable(drawable)
     }
 
+
     fun setAlertIconRes(@DrawableRes resId: Int) {
         ivAlertIcon.setImageResource(resId)
     }
 
-    fun setAlertOuterBackground(drawable: Drawable?) {
-        frameAlertIconOuter.background = drawable
-    }
 
     fun setAlertInnerBackground(drawable: Drawable?) {
         frameAlertIconInner.background = drawable
     }
 
+    fun setAlertInnerBackground(@ColorInt color: Int ) {
+        (frameAlertIconInner.background as? GradientDrawable)?.setColor(color)
+    }
+
     // ── Text setters ──────────────────────────────────────────────────────────
+
+    fun setSecurityAlertTextColor(@ColorInt color: Int) {
+        securityAlertText.setTextColor(color)
+    }
 
     fun setTitle(text: CharSequence) {
         tvTitle.text = text
+    }
+
+    fun setTittleColor(@ColorInt color: Int) {
+        tvTitle.setTextColor(color)
     }
 
     fun setTitle(@StringRes resId: Int) {

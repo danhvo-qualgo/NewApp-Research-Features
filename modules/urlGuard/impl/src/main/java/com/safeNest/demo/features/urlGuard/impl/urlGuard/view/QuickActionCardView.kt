@@ -17,42 +17,14 @@ import androidx.core.content.ContextCompat
 import com.safeNest.demo.features.urlGuard.impl.R
 
 /**
- * Self-contained threat alert card that matches the Figma "Select card" design:
+ * Self-contained action card that matches the Figma "Select card" design:
  *
- * ```
  * ┌──────────────────────────────────────────┐
  * │  [●] SMS IS SUSPICIOUS                   │  ← header (icon + alert label)
  * │  ──────────────────────────────────────  │  ← divider
  * │  [⬡]  Scam detail                        │  ← action rows (dynamic)
  * │  [👁]  View SMS                           │
  * └──────────────────────────────────────────┘
- * ```
- *
- * Both the **header** (icon cluster + label) and the **action list** can be
- * changed at any time — before or after the view is attached to a window.
- *
- * ---
- * ### Usage
- * ```kotlin
- * val card = QuickActionCardView(context).apply {
- *     setAlertLabel("SMS IS SUSPICIOUS")
- *     setAlertIconDrawable(ContextCompat.getDrawable(context, R.drawable.ic_custom_alert))
- *
- *     setActions(listOf(
- *         QuickActionCardView.Action(
- *             icon = ContextCompat.getDrawable(context, R.drawable.ic_threat_alert_octagon_indigo)!!,
- *             title = "Scam detail",
- *             onClick = { showScamDetails() }
- *         ),
- *         QuickActionCardView.Action(
- *             icon = ContextCompat.getDrawable(context, R.drawable.ic_threat_eye)!!,
- *             title = "View SMS",
- *             onClick = { openSms() }
- *         ),
- *     ))
- * }
- * parentLayout.addView(card)
- * ```
  */
 class QuickActionCardView @JvmOverloads constructor(
     context: Context,

@@ -87,34 +87,28 @@
                 android:gravity="center_vertical"
                 android:layout_marginBottom="@dimen/blocking_section_spacing">
 
-                <!-- Outer circle  48×48, fill #FEEAEC @ 50% -->
+
+                <!-- Inner circle  ~35×35, fill #F22A3D, stroke #FCD4D8 @ 50% -->
                 <FrameLayout
-                    android:id="@+id/frame_alert_icon_outer"
-                    android:layout_width="@dimen/blocking_error_outer_size"
-                    android:layout_height="@dimen/blocking_error_outer_size"
-                    android:background="@drawable/bg_blocking_error_outer">
+                    android:id="@+id/frame_alert_icon_inner"
+                    android:layout_width="@dimen/blocking_error_inner_size"
+                    android:layout_height="@dimen/blocking_error_inner_size"
+                    android:layout_gravity="center"
+                    android:background="@drawable/bg_blocking_error_inner">
 
-                    <!-- Inner circle  ~35×35, fill #F22A3D, stroke #FCD4D8 @ 50% -->
-                    <FrameLayout
-                        android:id="@+id/frame_alert_icon_inner"
-                        android:layout_width="@dimen/blocking_error_inner_size"
-                        android:layout_height="@dimen/blocking_error_inner_size"
+                    <!-- alert-octagon icon  20×20, white strokes -->
+                    <ImageView
+                        android:id="@+id/iv_alert_icon"
+                        android:layout_width="@dimen/blocking_alert_icon_size"
+                        android:layout_height="@dimen/blocking_alert_icon_size"
                         android:layout_gravity="center"
-                        android:background="@drawable/bg_blocking_error_inner">
-
-                        <!-- alert-octagon icon  20×20, white strokes -->
-                        <ImageView
-                            android:id="@+id/iv_alert_icon"
-                            android:layout_width="@dimen/blocking_alert_icon_size"
-                            android:layout_height="@dimen/blocking_alert_icon_size"
-                            android:layout_gravity="center"
-                            android:src="@drawable/ic_blocking_alert_octagon"
-                            android:contentDescription="@null" />
-                    </FrameLayout>
+                        android:src="@drawable/ic_blocking_alert_octagon"
+                        android:contentDescription="@null" />
                 </FrameLayout>
 
                 <!-- "SECURITY ALERT"  –  14sp Bold, #F22A3D -->
                 <TextView
+                    android:id="@+id/security_alert_text"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="8dp"

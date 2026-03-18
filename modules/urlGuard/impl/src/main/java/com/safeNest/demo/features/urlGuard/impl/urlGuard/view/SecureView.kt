@@ -7,14 +7,17 @@ import android.util.Log
 import android.view.Gravity
 import android.view.View
 import android.view.WindowManager
+import androidx.core.content.ContextCompat
+import androidx.core.view.isVisible
+import com.safeNest.demo.features.urlGuard.impl.R
 import com.safeNest.demo.features.urlGuard.impl.urlGuard.DetectionStatus
 import com.safeNest.demo.features.urlGuard.impl.urlGuard.FloatingButtonFeature
 import com.safeNest.demo.features.urlGuard.impl.urlGuard.util.CardPositionCalculator
 import com.safeNest.demo.features.urlGuard.impl.urlGuard.view.floatingbutton.FloatingView
-import com.safeNest.demo.features.urlGuard.impl.urlGuard.view.model.toAlertCarViewIconBgColor
-import com.safeNest.demo.features.urlGuard.impl.urlGuard.view.model.toAlertCardViewIcon
-import com.safeNest.demo.features.urlGuard.impl.urlGuard.view.model.toAlertCardViewLabel
-import com.safeNest.demo.features.urlGuard.impl.urlGuard.view.model.toAlertCardViewListAction
+import com.safeNest.demo.features.urlGuard.impl.urlGuard.view.model.toActionCarViewIconBgColor
+import com.safeNest.demo.features.urlGuard.impl.urlGuard.view.model.toActionCardViewIcon
+import com.safeNest.demo.features.urlGuard.impl.urlGuard.view.model.toActionCardViewLabel
+import com.safeNest.demo.features.urlGuard.impl.urlGuard.view.model.toActionCardViewListAction
 
 /**
  * Orchestrates three system-overlay layers drawn on top of every app.
@@ -27,7 +30,7 @@ import com.safeNest.demo.features.urlGuard.impl.urlGuard.view.model.toAlertCardV
  * └─────────────────────────────────────────────────────┘
  *
  * **Z-order guarantee**: [BlockingPageView] is added to the [WindowManager] first
- * (in [show]), so [FloatingView] is always rendered on top even when the blocking
+ * (in [showFirstTime]), so [FloatingView] is always rendered on top even when the blocking
  * page is visible.  Showing/hiding the blocking page only toggles its [View.VISIBLE]
  * / [View.GONE] state and the [WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE] flag —
  * the button is never hidden.
@@ -36,29 +39,6 @@ import com.safeNest.demo.features.urlGuard.impl.urlGuard.view.model.toAlertCardV
  * [com.safeNest.demo.features.urlGuard.impl.urlGuard.view.floatingbutton.FloatingView]: tapping the button shows/hides it; it automatically
  * appears on the opposite side of the screen so it never goes off-screen.
  *
- * ---
- * ### Typical usage inside a Service / AccessibilityService
- * ```kotlin
- * // onCreate
- * val secureView = SecureView(this)
- * secureView.onGoBackClick        = { secureView.hideBlockingPage() }
- * secureView.onProceedAnywayClick = { secureView.hideBlockingPage() }
- * secureView.show()
- *
- * // When a threat is detected
- * secureView.updateButton(FloatingButtonFeature.SAFE_BROWSING, DetectionStatus.DANGEROUS)
- * secureView.showAlertCard(
- *     label = "High-Risk URL Detected",
- *     actions = listOf(
- *         QuickActionCardView.Action(icon = ..., title = "Block site") {
- *             secureView.showBlockingPage(url)
- *         }
- *     )
- * )
- *
- * // onDestroy
- * secureView.dismiss()
- * ```
  */
 class SecureView(private val context: Context) {
 
@@ -72,13 +52,6 @@ class SecureView(private val context: Context) {
 
     // ── Layer 1: Blocking page (fullscreen, shown on demand) ──────────────────
 
-    /**
-     * The fullscreen danger page. Configure callbacks before calling [show]:
-     * ```kotlin
-     * secureView.blockingPage.onGoBackClick = { ... }
-     * ```
-     * Or use the convenience [onGoBackClick] / [onProceedAnywayClick] properties.
-     */
     val blockingPage = BlockingPageView(context)
 
     // ── Layer 2: Floating button (always visible after show()) ─────────────────
@@ -87,17 +60,15 @@ class SecureView(private val context: Context) {
 
     // ── Layer 3: Alert tooltip (shown when FloatingView is tapped) ────────────
 
-    /**
-     * The threat-alert card that pops up as a tooltip when the floating button
-     * is tapped. Populate it before calling [showActionCard], or configure it
-     * directly and call [showActionCard] without arguments to use whatever was
-     * already set.
-     */
     val actionCard = QuickActionCardView(context)
 
     private var isActionCardShown  = false
     private var actionCardParams   : WindowManager.LayoutParams? = null
     private var currentFeature    : FloatingButtonFeature = FloatingButtonFeature.DEFAULT
+
+    /** True while the fullscreen blocking page is visible on screen. */
+    val isBlockingPageVisible: Boolean
+        get() = blockingPage.isVisible
 
     // ── Callbacks ─────────────────────────────────────────────────────────────
 
@@ -128,7 +99,7 @@ class SecureView(private val context: Context) {
      * below [FloatingView]. The floating button is therefore always visible on top,
      * even when the blocking page is displayed.
      */
-    fun show() {
+    fun showFirstTime() {
         // ── Layer 1: BlockingPageView — added FIRST so it renders below FloatingView ──
         // Start touch-transparent (FLAG_NOT_TOUCHABLE) and invisible (GONE).
         // showBlockingPage() / hideBlockingPage() toggle these; the view is never
@@ -166,31 +137,31 @@ class SecureView(private val context: Context) {
      * Update the floating button's icon and background colour.
      *
      * @param feature Determines the icon (shield, globe, phone, message).
-     * @param status  Determines the background colour (unknown/safe/warning/dangerous).
+     * @param status  Determines the background color (unknown/safe/warning/dangerous).
      */
     fun updateButton(feature: FloatingButtonFeature, status: DetectionStatus) {
         currentFeature = feature
         floatingView.update(feature, status)
     }
 
-    // ── Public API: alert tooltip ─────────────────────────────────────────────
+    // ── Public API: quick action card ─────────────────────────────────────────────
 
     fun updateActionCard(feature: FloatingButtonFeature, status: DetectionStatus) {
-        feature.toAlertCardViewLabel(context)?.let {
+        feature.toActionCardViewLabel(context)?.let {
             actionCard.setAlertLabel(it)
         }
-        feature.toAlertCardViewListAction(context)
+        feature.toActionCardViewListAction(context)
             .let {
                 if(it.isNotEmpty()) {
                     actionCard.setActions(it)
                 }
             }
 
-        feature.toAlertCardViewIcon(context).let {
+        feature.toActionCardViewIcon(context).let {
             actionCard.setAlertIconDrawable(it)
         }
 
-        status.toAlertCarViewIconBgColor().let {
+        status.toActionCarViewIconBgColor().let {
             actionCard.setAlertInnerBackground(it)
         }
     }
@@ -219,25 +190,42 @@ class SecureView(private val context: Context) {
 
     // ── Public API: blocking page ─────────────────────────────────────────────
 
+    fun updateBLockingPage(
+        floatingButtonFeature: FloatingButtonFeature,
+        detectionStatus: DetectionStatus,
+        url: String) {
+        if(floatingButtonFeature != FloatingButtonFeature.SAFE_BROWSING) return
+        blockingPage.setBlockedUrl(url)
+        blockingPage.setSecurityAlertTextColor(ContextCompat.getColor(context, detectionStatus.colorRes))
+        val bgColor = ContextCompat.getColor(context, detectionStatus.colorRes)
+        blockingPage.setAlertInnerBackground(bgColor)
+        when(detectionStatus) {
+            DetectionStatus.WARNING -> {
+                val drawable = ContextCompat.getDrawable(context, floatingButtonFeature.iconRes)?.mutate()
+                val color = ContextCompat.getColor(context, R.color.blocking_primary_text)
+                drawable?.setTint(color)
+                blockingPage.setAlertIconDrawable(drawable)
+                blockingPage.setTitle(R.string.high_risk_suspicious_form_detected)
+                blockingPage.setDescription(R.string.high_risk_warning_content)
+            }
+
+            DetectionStatus.DANGEROUS -> {
+                val drawable = ContextCompat.getDrawable(context, R.drawable.ic_threat_alert_octagon_indigo)?.mutate()
+                val color = ContextCompat.getColor(context, R.color.blocking_primary_text)
+                drawable?.setTint(color)
+                blockingPage.setAlertIconDrawable(drawable)
+                blockingPage.setTitle(R.string.high_risk_scam_detected)
+                blockingPage.setDescription(R.string.high_risk_scam_content)
+            }
+            else -> null
+        }
+    }
+
     /**
      * Show the fullscreen blocking page.
-     *
-     * The [FloatingView] remains visible on top — it was added to the
-     * [WindowManager] after [blockingPage] so it always has a higher Z-order.
-     *
-     * @param url         URL that was blocked — shown in the URL bar on the page.
-     * @param title       Bold heading on the blocking page.
-     * @param description Body text below the heading.
      */
-    fun showBlockingPage(
-        url        : String,
-        title      : CharSequence = "High Risk: Scam Detected",
-        description: CharSequence = "SafeNest has blocked this site to protect you."
-    ) {
+    fun showBlockingPage() {
         hideActionCard()                         // dismiss tooltip if open
-        blockingPage.setBlockedUrl(url)
-        blockingPage.setTitle(title)
-        blockingPage.setDescription(description)
 
         // Remove FLAG_NOT_TOUCHABLE so the blocking page intercepts touches,
         // then reveal it. FloatingView stays on top — no need to hide the button.

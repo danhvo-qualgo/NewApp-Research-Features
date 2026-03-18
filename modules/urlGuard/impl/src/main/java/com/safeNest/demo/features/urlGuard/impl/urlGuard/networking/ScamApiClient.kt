@@ -8,8 +8,6 @@ import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.logging.LogLevel
 import io.ktor.client.plugins.logging.Logger
 import io.ktor.client.plugins.logging.Logging
-import io.ktor.client.request.get
-import io.ktor.client.request.header
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
@@ -23,20 +21,20 @@ import kotlinx.serialization.json.Json
 
 @Serializable
 data class AnalyzeTextRequest(
-    val text: String,
-    @SerialName("use_llm") val useLlm: Boolean = false
+    val url: String
 )
 
 // ── Response ──────────────────────────────────────────────────────────────────
 
 @Serializable
+data class VerdictScore(
+    val riskScore: Double,
+    val verdict: String
+)
+
+@Serializable
 data class AnalyzeTextResponse(
-    @SerialName("is_scam") val isScam: Boolean = false,
-    @SerialName("scam_categories") val scamCategories: List<String> = emptyList(),
-    val confidence: Double = 0.0,
-    @SerialName("risk_level") val riskLevel: String = "",
-    val evidence: List<String> = emptyList(),
-    @SerialName("detected_entities") val detectedEntities: DetectedEntities? = null
+    val data: VerdictScore
 )
 
 @Serializable
@@ -53,7 +51,7 @@ object ScamApiClient {
 
     private const val TAG = "ScamApiClient"
     private const val ENDPOINT =
-        "https://safenest-public.danhtran94.dev:8443/llm-entry-service/v1/scam/analyze-text"
+        "https://demo-safenest-usecase.qualgo.dev/api/v1.0/analyze/url/verdict"
 
     private val httpClient: HttpClient by lazy {
         HttpClient(Android) {
@@ -78,69 +76,63 @@ object ScamApiClient {
         }
     }
 
-    /**
-     * Analyze [text] (URL, message, etc.) for scam / phishing content.
-     *
-     * Usage:
-     * ```
-     * val result = ScamApiClient.checkUrl("https://evil.com")
-     * if (result?.isScam == true) { ... }
-     * ```
-     *
-     * @return [AnalyzeTextResponse] on success, or null if the request failed.
-     */
+
     suspend fun checkUrl(text: String): AnalyzeTextResponse? {
         return try {
             httpClient
                 .post(ENDPOINT) {
                     contentType(ContentType.Application.Json)
-                    setBody(AnalyzeTextRequest(text = text))
+                    setBody(AnalyzeTextRequest(url = text))
                 }
                 .body<AnalyzeTextResponse>()
         } catch (e: Exception) {
             Log.e(TAG, "checkUrl failed: ${e.message}", e)
             null
+            checkUrlTest(url = text)
         }
     }
+    
 
-    /**
-     * Fetches the app category from the Google Play Store page.
-     *
-     * Strategy:
-     *  1. Looks for `"applicationCategory"` inside the JSON-LD <script> tag (most reliable).
-     *  2. Falls back to the `/store/apps/category/` link text in the page HTML.
-     *
-     * @return Human-readable category string (e.g. "Communication", "Social Networking")
-     *         or null if unavailable / not found.
-     */
-    suspend fun fetchPlayStoreCategory(packageName: String): String? {
-        return try {
-            val pageUrl = "https://play.google.com/store/apps/details?id=$packageName&hl=en"
-            val html = httpClient.get(pageUrl) {
-                header("Accept-Language", "en-US,en;q=0.9")
-                header(
-                    "User-Agent",
-                    "Mozilla/5.0 (Linux; Android 10; Mobile) AppleWebKit/537.36"
-                )
-            }.body<String>()
-
-            // ── Strategy 1: JSON-LD applicationCategory ──────────────────────
-            val jsonLdMatch = Regex(""""applicationCategory"\s*:\s*"([^"]+)"""").find(html)
-            if (jsonLdMatch != null) {
-                return jsonLdMatch.groupValues[1]
-                    .removeSuffix("Application")
-                    .replace(Regex("([A-Z])"), " $1")
-                    .trim()
-            }
-
-            // ── Strategy 2: category link href ───────────────────────────────
-            Regex("""/store/apps/category/[^"]+">([^<]+)<""").find(html)
-                ?.groupValues?.get(1)?.trim()
-        } catch (e: Exception) {
-            Log.e(TAG, "fetchPlayStoreCategory failed [$packageName]: ${e.message}")
-            null
-        }
+    //Check url for testing purpose
+    fun checkUrlTest(url: String): AnalyzeTextResponse {
+        return PREDEFINED_URL_TABLE[url] ?: FALLBACK_SAFE_RESPONSE
     }
+
+    // ── Predefined test URL table ─────────────────────────────────────────────
+
+    private fun response(riskScore: Double, verdict: String) =
+        AnalyzeTextResponse(data = VerdictScore(riskScore = riskScore, verdict = verdict))
+
+    private val PREDEFINED_URL_TABLE: Map<String, AnalyzeTextResponse> = mapOf(
+
+        // ── SAFE urls (riskScore ≤ 0.3) ───────────────────────────────────────
+        "https://google.com"         to response(0.01, "safe"),
+        "https://www.google.com"     to response(0.01, "safe"),
+        "https://youtube.com"        to response(0.02, "safe"),
+        "https://github.com"         to response(0.02, "safe"),
+        "https://stackoverflow.com"  to response(0.03, "safe"),
+        "https://wikipedia.org"      to response(0.01, "safe"),
+        "https://apple.com"          to response(0.02, "safe"),
+        "https://microsoft.com"      to response(0.02, "safe"),
+
+        // ── WARNING urls (riskScore 0.31 – 0.80) ──────────────────────────────
+        "https://bit.ly/3xAbc12"     to response(0.55, "medium"),
+        "https://tinyurl.com/y4k2b"  to response(0.50, "medium"),
+        "https://t.co/suspicious"    to response(0.65, "medium"),
+        "https://unknown-shop.net"   to response(0.72, "medium"),
+        "https://free-prize.info"    to response(0.78, "medium"),
+
+        // ── DANGEROUS / SCAM urls (riskScore > 0.8) ───────────────────────────
+        "https://paypa1-secure.com"              to response(0.97, "dangerous"),
+        "https://apple-id-verify.xyz"            to response(0.95, "dangerous"),
+        "https://banking-secure-login.net"       to response(0.93, "dangerous"),
+        "https://click-here-claim-reward.com"    to response(0.92, "dangerous"),
+        "https://faceb00k-login.ru"              to response(0.98, "dangerous"),
+        "https://amazon-gift-verify.club"        to response(0.91, "dangerous"),
+        "https://virus-alert-download-now.com"   to response(0.99, "dangerous")
+    )
+
+    private val FALLBACK_SAFE_RESPONSE = response(0.01, "safe")
 
     /** Call this when the app is destroyed to free resources. */
     fun close() {

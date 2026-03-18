@@ -20,4 +20,9 @@
     <string name="record">Record</string>
     <string name="scam_detail">Scam detail</string>
     <string name="view_sms">View SMS</string>
+    <string name="high_risk_scam_detected">High Risk: Scam Detected</string>
+    <string name="high_risk_suspicious_form_detected">High Risk: Suspicious Form Detected</string>
+    <string name="high_risk_scam_content">SafeNest has blocked this site because it may be a scam. It appears to be an unauthorized imitation designed to steal your credentials or
+financial information.</string>
+    <string name="high_risk_warning_content">This site contains a form that appears to be designed to capture sensitive login or financial information. Our system has flagged this page as unsafe.</string>
 </resources>

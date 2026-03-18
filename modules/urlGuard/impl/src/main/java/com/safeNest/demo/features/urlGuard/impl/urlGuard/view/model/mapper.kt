@@ -8,7 +8,9 @@ import com.safeNest.demo.features.urlGuard.impl.urlGuard.DetectionStatus
 import com.safeNest.demo.features.urlGuard.impl.urlGuard.FloatingButtonFeature
 import com.safeNest.demo.features.urlGuard.impl.urlGuard.view.QuickActionCardView.Action
 
-fun FloatingButtonFeature.toAlertCardViewLabel(context: Context): CharSequence? {
+
+// ── Public API: action card view mapper ─────────────────────────────────────────────
+fun FloatingButtonFeature.toActionCardViewLabel(context: Context): CharSequence? {
     return when(this) {
         FloatingButtonFeature.DEFAULT -> null
         FloatingButtonFeature.SAFE_BROWSING -> context.getString(R.string.blocking_security_alert)
@@ -17,7 +19,7 @@ fun FloatingButtonFeature.toAlertCardViewLabel(context: Context): CharSequence? 
     }
 }
 
-fun FloatingButtonFeature.toAlertCardViewListAction(context: Context): List<Action> {
+fun FloatingButtonFeature.toActionCardViewListAction(context: Context): List<Action> {
     return when(this) {
         FloatingButtonFeature.DEFAULT, FloatingButtonFeature.CALL_PROTECTION -> emptyList()
         FloatingButtonFeature.SAFE_BROWSING -> listOf(
@@ -68,7 +70,7 @@ fun FloatingButtonFeature.toAlertCardViewListAction(context: Context): List<Acti
     }
 }
 
-fun FloatingButtonFeature.toAlertCardViewIcon(context: Context): Drawable? {
+fun FloatingButtonFeature.toActionCardViewIcon(context: Context): Drawable? {
     return when(this) {
         FloatingButtonFeature.DEFAULT -> null
         FloatingButtonFeature.SAFE_BROWSING -> ContextCompat.getDrawable(context,this.iconRes)
@@ -77,6 +79,6 @@ fun FloatingButtonFeature.toAlertCardViewIcon(context: Context): Drawable? {
     }
 }
 
-fun DetectionStatus.toAlertCarViewIconBgColor(): Int {
+fun DetectionStatus.toActionCarViewIconBgColor(): Int {
     return this.colorRes
 }
