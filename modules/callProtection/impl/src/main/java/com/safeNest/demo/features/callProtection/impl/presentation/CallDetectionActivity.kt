@@ -12,6 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.ui.NavDisplay
 import com.safeNest.demo.features.callProtection.impl.presentation.navigator.Screen
+import com.safeNest.demo.features.callProtection.impl.presentation.router.CallDetectionDeeplink
 import com.safeNest.demo.features.callProtection.impl.presentation.ui.blacklist.add.AddBlockPatternScreen
 import com.safeNest.demo.features.callProtection.impl.presentation.ui.home.CallProtectionScreen
 import com.safeNest.demo.features.callProtection.impl.presentation.ui.whitelist.add.AddWhitelistScreen
@@ -32,7 +33,8 @@ class CallDetectionActivity : ComponentActivity() {
 
     @Composable
     private fun AppNav3Host() {
-        val backStack = remember { mutableStateListOf<Any>(Screen.Home) }
+        val page = intent?.data?.getQueryParameter(CallDetectionDeeplink.PAGE) ?: CallDetectionDeeplink.BLOCKLIST
+        val backStack = remember { mutableStateListOf<Any>(Screen.Home(page)) }
         val onBack: () -> Unit = { backStack.removeLastOrNull() }
         NavDisplay(
             modifier = Modifier.fillMaxSize(),
@@ -42,6 +44,7 @@ class CallDetectionActivity : ComponentActivity() {
             when (key) {
                 is Screen.Home -> NavEntry(key) {
                     CallProtectionScreen(
+                        tabName = page,
                         onBack = {
                             finish()
                         },

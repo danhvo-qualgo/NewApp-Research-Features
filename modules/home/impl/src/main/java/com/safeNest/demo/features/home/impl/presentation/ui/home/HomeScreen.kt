@@ -49,6 +49,8 @@ import com.safeNest.demo.features.home.impl.presentation.ui.tool.ScamAnalyzerScr
 @Composable
 fun HomeScreen(
     onManageProtectionClick: () -> Unit,
+    onBlocklistClick: () -> Unit,
+    onWhitelistClick: () -> Unit,
     onScamAnalyzerClick: () -> Unit
 ) {
     var currentTab by remember { mutableStateOf(BottomTab.Home) }
@@ -77,6 +79,8 @@ fun HomeScreen(
                     BottomTab.Home -> {
                         SafeNestHomeScreen(
                             innerPadding,
+                            onBlocklistClick = onBlocklistClick,
+                            onWhitelistClick = onWhitelistClick,
                             onManageProtectionClick = onManageProtectionClick
                         )
                     }
@@ -96,6 +100,8 @@ fun HomeScreen(
 @Composable
 fun SafeNestHomeScreen(
     innerPadding: PaddingValues,
+    onBlocklistClick: () -> Unit,
+    onWhitelistClick: () -> Unit,
     onManageProtectionClick: () -> Unit,
 
     ) {
@@ -122,6 +128,8 @@ fun SafeNestHomeScreen(
 
         item {
             CallProtectionCard(
+                onBlocklistClick = onBlocklistClick,
+                onWhitelistClick = onWhitelistClick,
                 onManageProtectionClick = onManageProtectionClick
             )
         }
@@ -313,6 +321,8 @@ fun ActionFeatureCard(
 
 @Composable
 fun CallProtectionCard(
+    onBlocklistClick: () -> Unit,
+    onWhitelistClick: () -> Unit,
     onManageProtectionClick: () -> Unit
 ) {
     Card(
@@ -372,12 +382,18 @@ fun CallProtectionCard(
                 StatusChip(
                     icon = ImageVector.vectorResource(id = R.drawable.ic_blocking),
                     iconTint = DSColors.iconError,
-                    text = "Blocklist"
+                    text = "Blocklist",
+                    modifier = Modifier.clickable {
+                        onBlocklistClick()
+                    }
                 )
                 StatusChip(
                     icon = ImageVector.vectorResource(id = R.drawable.ic_whitelist),
                     iconTint = DSColors.iconSuccess,
-                    text = "Whitelist"
+                    text = "Whitelist",
+                    modifier = Modifier.clickable {
+                        onWhitelistClick()
+                    }
                 )
             }
 

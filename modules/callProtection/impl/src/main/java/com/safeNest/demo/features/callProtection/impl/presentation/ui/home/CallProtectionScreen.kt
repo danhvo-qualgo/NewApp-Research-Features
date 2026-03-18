@@ -3,15 +3,29 @@ package com.safeNest.demo.features.callProtection.impl.presentation.ui.home
 import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.safeNest.demo.features.callProtection.impl.presentation.router.CallDetectionDeeplink
 import com.safeNest.demo.features.callProtection.impl.presentation.ui.blacklist.BlocklistScreen
 import com.safeNest.demo.features.callProtection.impl.presentation.ui.component.Toolbar
 import com.safeNest.demo.features.callProtection.impl.presentation.ui.whitelist.WhitelistScreen
@@ -20,20 +34,9 @@ import com.safeNest.demo.features.designSystem.theme.DSSpacing
 import com.safeNest.demo.features.designSystem.theme.DSTypography
 import com.safeNest.demo.features.designSystem.theme.color.DSColors
 
-// Custom Colors
-val PrimaryPurple = Color(0xFF5A4FCF)
-val BackgroundLight = Color(0xFFF0F0FA)
-val TextDark = Color(0xFF1E1E24)
-val TextGray = Color(0xFF8B8B9B)
-val RedIconBg = Color(0xFFFFEAEA)
-val RedIconColor = Color(0xFFD3405B)
-val InfoBoxBg = Color(0xFFF0F4FF)
-val InfoBoxBorder = Color(0xFFD0D9F5)
-val PurpleIconBg = Color(0xFFF0F0FA)
-
 @Composable
 fun CallProtectionScreen(
-    tabName: String = "Blocklist",
+    tabName: String,
     onBack: () -> Unit = {},
     onAddToWhitelist: () -> Unit = {},
     onAddToBlacklist: () -> Unit = {}
@@ -86,7 +89,7 @@ fun CallProtectionScreen(
                 Crossfade(
                     targetState = selectedTab,
                     label = "Tab Transition",
-                    modifier = Modifier.fillMaxSize().background(BackgroundLight)
+                    modifier = Modifier.fillMaxSize().background(DSColors.surfaceActive)
                 ) { tabIndex ->
                     when (tabIndex) {
                         Tab.Blocklist -> BlocklistScreen {
@@ -131,20 +134,14 @@ fun CustomTab(
     }
 }
 
-@Preview
-@Composable
-fun CallProtectionScreenPreview() {
-    CallProtectionScreen()
-}
-
 enum class Tab(val tabName: String) {
-    Blocklist("Blocklist"), Whitelist("Whitelist");
+    Blocklist(CallDetectionDeeplink.BLOCKLIST), Whitelist(CallDetectionDeeplink.WHITELIST);
 
     companion object {
         fun from(tabName: String): Tab {
             return when (tabName) {
-                "Blocklist" -> Blocklist
-                "Whitelist" -> Whitelist
+                Blocklist.tabName -> Blocklist
+                Whitelist.tabName -> Whitelist
                 else -> Blocklist
             }
         }

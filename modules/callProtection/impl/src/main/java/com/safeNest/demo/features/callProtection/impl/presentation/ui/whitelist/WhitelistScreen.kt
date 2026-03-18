@@ -17,8 +17,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -38,8 +36,6 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.safeNest.demo.features.callProtection.impl.R
 import com.safeNest.demo.features.callProtection.impl.domain.common.formatBeautifulNumber
 import com.safeNest.demo.features.callProtection.impl.domain.model.PhoneNumberInfo
-import com.safeNest.demo.features.callProtection.impl.presentation.ui.home.PrimaryPurple
-import com.safeNest.demo.features.callProtection.impl.presentation.ui.home.PurpleIconBg
 import com.safeNest.demo.features.designSystem.component.DsToggle
 import com.safeNest.demo.features.designSystem.theme.DSSpacing
 import com.safeNest.demo.features.designSystem.theme.DSTypography
@@ -154,10 +150,10 @@ fun ContactItem(phoneNumberInfo: PhoneNumberInfo, isShowDivider: Boolean, onDele
             verticalAlignment = Alignment.CenterVertically
         ) {
             Box(
-                modifier = Modifier.size(40.dp).background(PurpleIconBg, RoundedCornerShape(8.dp)),
+                modifier = Modifier.size(40.dp).background(DSColors.surfaceActive, RoundedCornerShape(8.dp)),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(ImageVector.vectorResource(R.drawable.ic_user_profile), contentDescription = "Person", tint = PrimaryPurple, modifier = Modifier.size(16.dp))
+                Icon(ImageVector.vectorResource(R.drawable.ic_user_profile), contentDescription = "Person", tint = Color.Unspecified, modifier = Modifier.size(16.dp))
             }
             Column(modifier = Modifier.weight(1f).padding(horizontal = DSSpacing.s4)) {
                 Text(phoneNumberInfo.name, color = DSColors.textHeading, style = DSTypography.body2.bold)

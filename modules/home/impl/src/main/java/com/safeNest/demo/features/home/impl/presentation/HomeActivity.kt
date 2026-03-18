@@ -39,6 +39,18 @@ class HomeActivity : ComponentActivity() {
             CompositionLocalProvider(LocalRouterManager provides routerManager) {
                 DSTheme {
                     HomeScreen(
+                        onBlocklistClick = {
+                            routerManager.navigate(
+                                this@HomeActivity,
+                                CallDetectionDeeplink.entryPointBlocklist()
+                            )
+                        },
+                        onWhitelistClick = {
+                            routerManager.navigate(
+                                this@HomeActivity,
+                                CallDetectionDeeplink.entryPointWhitelist()
+                            )
+                        },
                         onManageProtectionClick = {
                             routerManager.navigate(
                                 this@HomeActivity,
