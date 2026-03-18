@@ -6,7 +6,8 @@ import com.safeNest.demo.features.callProtection.impl.domain.model.BlacklistPatt
 
 @Entity(tableName = "blacklist_pattern")
 data class BlacklistPatternEntity(
-    @PrimaryKey val pattern: String,
+    @PrimaryKey
+    val pattern: String,
     val description: String
 ) {
     fun toBlacklistPattern(): BlacklistPattern {

@@ -84,22 +84,6 @@ fun AddWhitelistScreen(
                     Spacer(modifier = Modifier.height(DSSpacing.s6))
 
                     Text(
-                        text = "Phone number",
-                        style = DSTypography.caption1.regular,
-                        color = DSColors.textBody
-                    )
-                    Spacer(modifier = Modifier.height(DSSpacing.s3))
-
-                    // Reusing the custom pill text field from the previous screen
-                    CustomPillTextField(
-                        value = phoneNumber,
-                        onValueChange = { phoneNumber = it },
-                        placeholder = "+1 (555) 000-0000"
-                    )
-
-                    Spacer(modifier = Modifier.height(DSSpacing.s6))
-
-                    Text(
                         text = "Name",
                         style = DSTypography.caption1.regular,
                         color = DSColors.textBody
@@ -111,11 +95,38 @@ fun AddWhitelistScreen(
                         onValueChange = { name = it },
                         placeholder = "Hint name"
                     )
+
+                    Spacer(modifier = Modifier.height(DSSpacing.s6))
+
+                    Text(
+                        text = "Phone number",
+                        style = DSTypography.caption1.regular,
+                        color = DSColors.textBody
+                    )
+                    Spacer(modifier = Modifier.height(DSSpacing.s3))
+
+                    // Reusing the custom pill text field from the previous screen
+                    CustomPillTextField(
+                        value = phoneNumber,
+                        onValueChange = {
+                            if (phoneNumber.isEmpty()) {
+                                phoneNumber = it
+                                return@CustomPillTextField
+                            }
+                            val sanitizedText = it.replace(Regex("[^\\+0-9]"), "")
+                            if (sanitizedText.matches(Regex("^\\+?[0-9]*$"))) {
+                                phoneNumber = it
+                            }
+                        },
+                        placeholder = "+1 (555) 000-0000"
+                    )
+
                 }
                 Spacer(modifier = Modifier.height(DSSpacing.s6))
                 Button(
                     onClick = {
                         viewModel.add(name = name, number = phoneNumber)
+                        onBack()
                     },
                     modifier = Modifier
                         .fillMaxWidth()

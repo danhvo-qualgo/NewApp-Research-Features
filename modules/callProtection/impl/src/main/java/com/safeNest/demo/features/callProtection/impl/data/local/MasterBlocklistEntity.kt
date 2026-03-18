@@ -4,8 +4,8 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.safeNest.demo.features.callProtection.impl.domain.model.PhoneNumberInfo
 
-@Entity(tableName = "whitelist")
-data class WhitelistEntity(
+@Entity(tableName = "master_blocklist")
+data class MasterBlocklistEntity(
     val phoneNumber: String,
     val name: String = "",
     val label: String = "",

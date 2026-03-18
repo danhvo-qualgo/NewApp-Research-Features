@@ -2,7 +2,7 @@ package com.safeNest.demo.features.callProtection.impl.presentation.ui.whitelist
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.safeNest.demo.features.callProtection.impl.domain.usecase.AddNumberToWhiteListUseCase
+import com.safeNest.demo.features.callProtection.impl.domain.usecase.AddToWhiteListUseCase
 import com.safeNest.demo.features.callProtection.impl.domain.usecase.EnableWhiteListUseCase
 import com.safeNest.demo.features.callProtection.impl.domain.usecase.GetWhiteListUseCase
 import com.safeNest.demo.features.callProtection.impl.domain.usecase.RemoveWhiteListUseCase
@@ -14,7 +14,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class WhitelistViewModel @Inject constructor(
-    private val addNumberToWhiteListUseCase: AddNumberToWhiteListUseCase,
+    private val addToWhiteListUseCase: AddToWhiteListUseCase,
     private val getWhitelistUseCase: GetWhiteListUseCase,
     private val removeWhiteListUseCase: RemoveWhiteListUseCase,
     private val enableWhiteListUseCase: EnableWhiteListUseCase
@@ -28,7 +28,7 @@ class WhitelistViewModel @Inject constructor(
 
     fun add(number: String, name: String) {
         viewModelScope.launch {
-            addNumberToWhiteListUseCase(number = number, name = name)
+            addToWhiteListUseCase(number = number, name = name)
         }
     }
 

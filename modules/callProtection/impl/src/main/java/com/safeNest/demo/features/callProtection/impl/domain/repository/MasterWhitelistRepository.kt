@@ -3,7 +3,7 @@ package com.safeNest.demo.features.callProtection.impl.domain.repository
 import com.safeNest.demo.features.callProtection.impl.domain.model.PhoneNumberInfo
 import kotlinx.coroutines.flow.Flow
 
-interface WhitelistRepository {
+interface MasterWhitelistRepository {
     fun getWhitelist(): Flow<List<PhoneNumberInfo>>
     suspend fun add(number: PhoneNumberInfo)
     suspend fun remove(number: String)

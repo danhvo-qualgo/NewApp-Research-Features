@@ -1,19 +1,19 @@
 package com.safeNest.demo.features.callProtection.impl.data.repository
 
 import com.safeNest.demo.features.callProtection.impl.data.local.CallDeviceStore
-import com.safeNest.demo.features.callProtection.impl.data.local.WhitelistDao
+import com.safeNest.demo.features.callProtection.impl.data.local.MasterBlocklistDao
 import com.safeNest.demo.features.callProtection.impl.domain.model.PhoneNumberInfo
-import com.safeNest.demo.features.callProtection.impl.domain.repository.WhitelistRepository
+import com.safeNest.demo.features.callProtection.impl.domain.repository.MasterBlocklistRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 
-class WhitelistRepositoryImpl @Inject constructor(
-    private val dao: WhitelistDao,
+class MasterBlocklistRepositoryImpl @Inject constructor(
+    private val dao: MasterBlocklistDao,
     private val store: CallDeviceStore
-) : WhitelistRepository {
+) : MasterBlocklistRepository {
 
-    override fun getWhitelist(): Flow<List<PhoneNumberInfo>> =
+    override fun getBlocklist(): Flow<List<PhoneNumberInfo>> =
         dao.getAll().map { list ->
             list.map { it.toPhoneNumberInfo() }
         }
@@ -30,14 +30,14 @@ class WhitelistRepositoryImpl @Inject constructor(
     }
 
     override suspend fun add(number: PhoneNumberInfo) {
-        dao.insert(number.toWhitelistEntity())
+        dao.insert(number.toMasterBlocklistEntity())
     }
 
     override suspend fun remove(number: String) {
         dao.delete(number)
     }
 
-    override suspend fun isWhitelisted(number: String): Boolean {
+    override suspend fun isBlocklisted(number: String): Boolean {
         return dao.exists(number)
     }
 }

@@ -1,17 +1,17 @@
 package com.safeNest.demo.features.callProtection.impl.data.repository
 
 import com.safeNest.demo.features.callProtection.impl.data.local.CallDeviceStore
-import com.safeNest.demo.features.callProtection.impl.data.local.WhitelistDao
+import com.safeNest.demo.features.callProtection.impl.data.local.MasterWhitelistDao
 import com.safeNest.demo.features.callProtection.impl.domain.model.PhoneNumberInfo
-import com.safeNest.demo.features.callProtection.impl.domain.repository.WhitelistRepository
+import com.safeNest.demo.features.callProtection.impl.domain.repository.MasterWhitelistRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 
-class WhitelistRepositoryImpl @Inject constructor(
-    private val dao: WhitelistDao,
+class MasterWhitelistRepositoryImpl @Inject constructor(
+    private val dao: MasterWhitelistDao,
     private val store: CallDeviceStore
-) : WhitelistRepository {
+) : MasterWhitelistRepository {
 
     override fun getWhitelist(): Flow<List<PhoneNumberInfo>> =
         dao.getAll().map { list ->
@@ -30,7 +30,7 @@ class WhitelistRepositoryImpl @Inject constructor(
     }
 
     override suspend fun add(number: PhoneNumberInfo) {
-        dao.insert(number.toWhitelistEntity())
+        dao.insert(number.toMasterWhitelistEntity())
     }
 
     override suspend fun remove(number: String) {

@@ -32,4 +32,14 @@ internal object RoomModule {
     @Singleton
     @Provides
     fun blacklistPatternDao(database: CallDataBase) = database.blacklistPatternDao()
+
+
+    @Singleton
+    @Provides
+    fun masterBlocklistDao(database: CallDataBase) = database.masterBlocklistDao()
+
+
+    @Singleton
+    @Provides
+    fun masterWhitelistDao(database: CallDataBase) = database.masterWhitelistDao()
 }

@@ -94,6 +94,7 @@ fun BlocklistScreen(
                         }
                         Column(modifier = Modifier.weight(1f).padding(horizontal = DSSpacing.s4)) {
                             Text("Blocklist Protection", style = DSTypography.body2.bold, color = DSColors.textHeading)
+                            Spacer(modifier = Modifier.height(DSSpacing.half))
                             Text("Automatically block calls from unknown patterns", style = DSTypography.caption1.regular, color = DSColors.textNeutral)
                         }
                         DsToggle(

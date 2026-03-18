@@ -16,20 +16,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.material.icons.rounded.Person
-import androidx.compose.material.icons.rounded.PhoneCallback
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.Switch
-import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -39,17 +33,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.vectorResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.safeNest.demo.features.callProtection.impl.R
-import com.safeNest.demo.features.callProtection.impl.domain.model.WhitelistNumber
-import com.safeNest.demo.features.callProtection.impl.presentation.ui.home.BackgroundLight
+import com.safeNest.demo.features.callProtection.impl.domain.common.formatBeautifulNumber
+import com.safeNest.demo.features.callProtection.impl.domain.model.PhoneNumberInfo
 import com.safeNest.demo.features.callProtection.impl.presentation.ui.home.PrimaryPurple
 import com.safeNest.demo.features.callProtection.impl.presentation.ui.home.PurpleIconBg
-import com.safeNest.demo.features.callProtection.impl.presentation.ui.home.TextDark
-import com.safeNest.demo.features.callProtection.impl.presentation.ui.home.TextGray
 import com.safeNest.demo.features.designSystem.component.DsToggle
 import com.safeNest.demo.features.designSystem.theme.DSSpacing
 import com.safeNest.demo.features.designSystem.theme.DSTypography
@@ -90,6 +80,7 @@ fun WhitelistScreen(
                         }
                         Column(modifier = Modifier.weight(1f).padding(horizontal = DSSpacing.s4)) {
                             Text("Whitelist Protection", style = DSTypography.body2.bold, color = DSColors.textHeading)
+                            Spacer(modifier = Modifier.height(DSSpacing.half))
                             Text("Only allowed contacts can reach you", style = DSTypography.caption1.regular, color = DSColors.textNeutral)
                         }
                         DsToggle(
@@ -152,7 +143,7 @@ fun WhitelistScreen(
 
 
 @Composable
-fun ContactItem(whitelistNumber: WhitelistNumber, isShowDivider: Boolean, onDelete: () -> Unit) {
+fun ContactItem(phoneNumberInfo: PhoneNumberInfo, isShowDivider: Boolean, onDelete: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -166,12 +157,12 @@ fun ContactItem(whitelistNumber: WhitelistNumber, isShowDivider: Boolean, onDele
                 modifier = Modifier.size(40.dp).background(PurpleIconBg, RoundedCornerShape(8.dp)),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(Icons.Rounded.Person, contentDescription = "Person", tint = PrimaryPurple, modifier = Modifier.size(16.dp))
+                Icon(ImageVector.vectorResource(R.drawable.ic_user_profile), contentDescription = "Person", tint = PrimaryPurple, modifier = Modifier.size(16.dp))
             }
             Column(modifier = Modifier.weight(1f).padding(horizontal = DSSpacing.s4)) {
-                Text(whitelistNumber.name, color = DSColors.textHeading, style = DSTypography.body2.bold)
+                Text(phoneNumberInfo.name, color = DSColors.textHeading, style = DSTypography.body2.bold)
                 Spacer(modifier = Modifier.height(DSSpacing.half))
-                Text(whitelistNumber.phoneNumber, color = DSColors.textNeutral, style = DSTypography.caption2.regular)
+                Text(formatBeautifulNumber(phoneNumberInfo.phoneNumber), color = DSColors.textNeutral, style = DSTypography.caption2.regular)
             }
             Icon(ImageVector.vectorResource(R.drawable.ic_delete_trash), contentDescription = "Delete", tint = Color.Unspecified, modifier = Modifier.clickable {
                 onDelete()
