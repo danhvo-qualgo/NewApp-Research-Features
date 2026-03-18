@@ -94,6 +94,10 @@ class QuickActionCardView @JvmOverloads constructor(
         tvAlertLabel.text = text
     }
 
+    fun setAlertLabelColor(@ColorInt color: Int) {
+        tvAlertLabel.setTextColor(color)
+    }
+
     fun setAlertLabel(@StringRes resId: Int) {
         tvAlertLabel.setText(resId)
     }
