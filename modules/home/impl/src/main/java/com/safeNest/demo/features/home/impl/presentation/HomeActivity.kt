@@ -28,6 +28,7 @@ import com.safeNest.demo.features.home.impl.presentation.ui.home.HomeScreen
 import com.safeNest.demo.features.notificationInterceptor.api.presentation.router.NotificationInterceptorDeeplink
 import com.safeNest.demo.features.permissionManager.api.presentation.router.PermissionManagerDeeplink
 import com.safeNest.demo.features.phishingDetection.api.presentation.router.PhishingDetectionDeeplink
+import com.safeNest.demo.features.scamAnalyzer.api.router.ScamAnalyzerDeepLink
 import com.safeNest.demo.features.urlGuard.api.UrlGuardProvider
 import com.safeNest.demo.features.urlGuard.api.presentation.router.UrlGuardDeeplink
 import com.uney.core.router.RouterManager
@@ -62,77 +63,15 @@ class HomeActivity : ComponentActivity() {
                                 this@HomeActivity,
                                 CallDetectionDeeplink.entryPoint()
                             )
+                        },
+                        onScamAnalyzerClick = {
+                            routerManager.navigate(
+                                this@HomeActivity,
+                                ScamAnalyzerDeepLink.entryPoint()
+                            )
                         }
                     )
                 }
-            }
-        }
-    }
-
-    @Composable
-    private fun HomeScreen1() {
-        Scaffold(Modifier.fillMaxSize()) { paddingValues ->
-            Column(
-                Modifier
-                    .fillMaxSize()
-                    .background(gradientBackground)
-                    .padding(paddingValues)
-                    .padding(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                Text(
-                    "SafeNest Security",
-                    style = DSTypography.h2.bold,
-                    color = DSColors.textActionActive
-                )
-
-                DSButton(
-                    text = "Call Detection",
-                    onClick = {
-                        routerManager.navigate(
-                            this@HomeActivity,
-                            CallDetectionDeeplink.entryPoint()
-                        )
-                    }
-                )
-
-                DSButton(
-                    text = "Url Guard",
-                    onClick = {
-                        routerManager.navigate(this@HomeActivity, UrlGuardDeeplink.entryPoint())
-                    }
-                )
-
-                DSButton(
-                    text = "PermissionManager",
-                    onClick = {
-                        routerManager.navigate(
-                            this@HomeActivity,
-                            PermissionManagerDeeplink.entryPoint()
-                        )
-                    }
-                )
-
-                DSButton(
-                    text = "Phishing Detection",
-                    onClick = {
-                        routerManager.navigate(
-                            this@HomeActivity,
-                            PhishingDetectionDeeplink.entryPoint()
-                        )
-                    }
-                )
-
-                DSButton(
-                    text = "Notification Interceptor",
-                    onClick = {
-                        routerManager.navigate(
-                            this@HomeActivity,
-                            NotificationInterceptorDeeplink.entryPoint()
-                        )
-                    }
-                )
             }
         }
     }

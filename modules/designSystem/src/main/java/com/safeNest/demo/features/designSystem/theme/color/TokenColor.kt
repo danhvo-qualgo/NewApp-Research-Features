@@ -70,6 +70,15 @@ interface TokenColor {
     val secondaryDark: Color
     val secondaryDarker: Color
     val secondaryDarkest: Color
+
+    // ── Scam Analyzer ──────────────────────────────────────────────────────────
+    val scamSurface: Color
+    val scamSurfaceDark: Color
+    val neutralDarkestAlt: Color
+    val neutralMuted: Color
+    val cardSurface: Color
+    val neutralLightest2: Color
+    val gradientStart: Color
 }
 
 data object TokenColorLight : TokenColor {
@@ -140,4 +149,13 @@ data object TokenColorLight : TokenColor {
     override val secondaryDark = colorOrange700
     override val secondaryDarker = colorOrange800
     override val secondaryDarkest = colorOrange900
+
+    // ── Scam Analyzer ──────────────────────────────────────────────────────────
+    override val scamSurface = colorScamSurface
+    override val scamSurfaceDark = colorScamSurfaceDark
+    override val neutralDarkestAlt = colorNeutral900
+    override val neutralMuted = colorGray500
+    override val cardSurface = colorWhiteCard
+    override val neutralLightest2 = colorGray100
+    override val gradientStart = colorIndigoGradientStart
 }

@@ -1,7 +1,12 @@
 package com.safeNest.demo.features.scamAnalyzer.impl.presentation.di
 
+import com.safeNest.demo.features.scamAnalyzer.impl.data.extractor.RegexEntityExtractor
+import com.safeNest.demo.features.scamAnalyzer.impl.data.repository.OnDeviceAnalyzerRepository
 import com.safeNest.demo.features.scamAnalyzer.impl.data.repository.ScamAnalyzerRepositoryImpl
+import com.safeNest.demo.features.scamAnalyzer.impl.domain.extractor.EntityExtractor
+import com.safeNest.demo.features.scamAnalyzer.impl.domain.repository.AnalyzerRepository
 import com.safeNest.demo.features.scamAnalyzer.impl.domain.repository.ScamAnalyzerRepository
+import dagger.Binds
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -15,4 +20,21 @@ internal class DataModule {
     @Provides
     @ActivityRetainedScoped
     fun scamAnalyzerRepository(impl: ScamAnalyzerRepositoryImpl): ScamAnalyzerRepository = impl
+}
+
+@Module
+@InstallIn(ActivityRetainedComponent::class)
+abstract class BindModule {
+
+    @Binds
+    @ActivityRetainedScoped
+    abstract fun bindAnalyzeRepository(
+        impl: OnDeviceAnalyzerRepository
+    ): AnalyzerRepository
+
+    @Binds
+    @ActivityRetainedScoped
+    abstract fun bindEntityExtractor(
+        impl: RegexEntityExtractor
+    ): EntityExtractor
 }

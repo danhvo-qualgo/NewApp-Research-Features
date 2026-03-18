@@ -22,6 +22,7 @@ dependencies {
     implementation(project(":modules:urlGuard:api"))
     implementation(project(":modules:permissionManager:api"))
     implementation(project(":modules:phishingDetection:api"))
+    implementation(project(":modules:scamAnalyzer:api"))
     implementation(project(":modules:notificationInterceptor:api"))
     implementation("androidx.compose.material:material-icons-extended:1.6.3")
 

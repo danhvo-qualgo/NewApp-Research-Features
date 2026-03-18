@@ -45,12 +45,13 @@ import com.safeNest.demo.features.designSystem.theme.DSSpacing
 import com.safeNest.demo.features.designSystem.theme.DSTypography
 import com.safeNest.demo.features.designSystem.theme.color.DSColors
 import com.safeNest.demo.features.home.impl.R
-import com.safeNest.demo.features.home.impl.presentation.ScamAnalyzerScreen
+import com.safeNest.demo.features.home.impl.presentation.ui.tool.ScamAnalyzerScreen
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     onManageProtectionClick: () -> Unit,
+    onScamAnalyzerClick: () -> Unit
 ) {
     var currentTab by remember { mutableStateOf(BottomTab.Home) }
 
@@ -83,7 +84,9 @@ fun HomeScreen(
                     }
 
                     BottomTab.Tools -> {
-                        ScamAnalyzerScreen()
+                        ScamAnalyzerScreen(
+                            onScamAnalyzerClick = onScamAnalyzerClick
+                        )
                     }
                 }
             }

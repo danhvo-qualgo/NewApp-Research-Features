@@ -1,4 +1,4 @@
-package com.safeNest.demo.features.home.impl.presentation
+package com.safeNest.demo.features.home.impl.presentation.ui.tool
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -32,6 +32,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.vectorResource
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -42,12 +43,16 @@ import com.safeNest.demo.features.designSystem.theme.DSSpacing
 import com.safeNest.demo.features.designSystem.theme.DSTypography
 import com.safeNest.demo.features.designSystem.theme.color.DSColors
 import com.safeNest.demo.features.home.impl.R
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 
 val PrimaryIndigo = Color(0xFF4F46E5)
 val MediaTextColor = Color(0xFF454955)
 
 @Composable
-fun ScamAnalyzerScreen() {
+fun ScamAnalyzerScreen(
+    onScamAnalyzerClick: () -> Unit,
+    scamAnalyzerViewModel: ScamAnalyzerViewModel = hiltViewModel()
+) {
     // Scaffold provides the structural layout for the top content and bottom dockbar
     Scaffold(
         containerColor = Color.Transparent, // Let the background box show through
@@ -72,7 +77,10 @@ fun ScamAnalyzerScreen() {
                 ) {
                     TextInputArea()
                     MediaActionsRow()
-                    AnalyzeButton()
+                    AnalyzeButton {
+                        onScamAnalyzerClick()
+                        scamAnalyzerViewModel.analyzeText("Text")
+                    }
                 }
             }
         }
@@ -183,7 +191,7 @@ private fun MediaActionsRow() {
 @Composable
 private fun MediaActionButton(
     modifier: Modifier = Modifier,
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    icon: ImageVector,
     text: String,
     onClick: () -> Unit
 ) {
@@ -220,21 +228,12 @@ private fun MediaActionButton(
 }
 
 @Composable
-private fun AnalyzeButton() {
-    DSButton(
-        text = "Analyze Now",
-        onClick = { /* Handle Analysis */ },
+private fun AnalyzeButton(onClick: () -> Unit) {
+    Button(
+        onClick = onClick,
         modifier = Modifier
             .fillMaxWidth()
             .height(56.dp),
         textStyle = DSTypography.caption1.bold,
     )
-}
-
-@Preview
-@Composable
-fun preview(){
-    Surface {
-        ScamAnalyzerScreen()
-    }
 }
