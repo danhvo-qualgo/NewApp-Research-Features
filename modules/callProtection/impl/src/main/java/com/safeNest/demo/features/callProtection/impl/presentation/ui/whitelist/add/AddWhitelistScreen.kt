@@ -1,27 +1,37 @@
 package com.safeNest.demo.features.callProtection.impl.presentation.ui.whitelist.add
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Add
-import androidx.compose.material.icons.rounded.ArrowBack
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.vectorResource
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.safeNest.demo.features.callProtection.impl.R
 import com.safeNest.demo.features.callProtection.impl.presentation.ui.component.Toolbar
@@ -140,41 +150,45 @@ fun AddWhitelistScreen(
                 ) {
                     Icon(ImageVector.vectorResource(R.drawable.ic_plus), contentDescription = "Add")
                     Spacer(modifier = Modifier.width(DSSpacing.s3))
-                    Text("Add to whitelist", style = DSTypography.body2.bold, color = DSColors.textOnAction)
+                    Text(
+                        "Add to whitelist",
+                        style = DSTypography.body2.bold,
+                        color = DSColors.textOnAction
+                    )
                 }
             }
         }
     }
 }
 
-    // Custom composable for the pill-shaped text field
-    @Composable
-    fun CustomPillTextField(
-        value: String,
-        onValueChange: (String) -> Unit,
-        placeholder: String
+// Custom composable for the pill-shaped text field
+@Composable
+fun CustomPillTextField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    placeholder: String
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(DSColors.surface1, RoundedCornerShape(24.dp))
+            .padding(horizontal = DSSpacing.s5, vertical = DSSpacing.s4)
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(DSColors.surface1, RoundedCornerShape(24.dp))
-                .padding(horizontal = DSSpacing.s5, vertical = DSSpacing.s4)
-        ) {
-            BasicTextField(
-                value = value,
-                onValueChange = onValueChange,
-                textStyle = DSTypography.body2.regular.copy(color = DSColors.textBody),
-                modifier = Modifier.fillMaxWidth(),
-                decorationBox = { innerTextField ->
-                    if (value.isEmpty()) {
-                        Text(
-                            text = placeholder,
-                            style = DSTypography.body2.regular,
-                            color = DSColors.textNeutral
-                        )
-                    }
-                    innerTextField()
+        BasicTextField(
+            value = value,
+            onValueChange = onValueChange,
+            textStyle = DSTypography.body2.regular.copy(color = DSColors.textBody),
+            modifier = Modifier.fillMaxWidth(),
+            decorationBox = { innerTextField ->
+                if (value.isEmpty()) {
+                    Text(
+                        text = placeholder,
+                        style = DSTypography.body2.regular,
+                        color = DSColors.textNeutral
+                    )
                 }
-            )
-        }
+                innerTextField()
+            }
+        )
     }
+}

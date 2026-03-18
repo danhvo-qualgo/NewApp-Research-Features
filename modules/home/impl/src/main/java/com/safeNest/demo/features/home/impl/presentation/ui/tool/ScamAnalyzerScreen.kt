@@ -15,11 +15,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ContentPaste
-import androidx.compose.material.icons.outlined.FileUpload
-import androidx.compose.material.icons.outlined.Image
-import androidx.compose.material.icons.outlined.Mic
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -32,18 +28,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.vectorResource
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.safeNest.demo.features.designSystem.component.DSButton
 import com.safeNest.demo.features.designSystem.theme.DSSpacing
 import com.safeNest.demo.features.designSystem.theme.DSTypography
 import com.safeNest.demo.features.designSystem.theme.color.DSColors
 import com.safeNest.demo.features.home.impl.R
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 
 val PrimaryIndigo = Color(0xFF4F46E5)
 val MediaTextColor = Color(0xFF454955)
@@ -229,7 +222,8 @@ private fun MediaActionButton(
 
 @Composable
 private fun AnalyzeButton(onClick: () -> Unit) {
-    Button(
+    DSButton(
+        text = "Analyze Now",
         onClick = onClick,
         modifier = Modifier
             .fillMaxWidth()
