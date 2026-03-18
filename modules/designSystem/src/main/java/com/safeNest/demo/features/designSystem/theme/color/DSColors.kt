@@ -1,6 +1,7 @@
 package com.safeNest.demo.features.designSystem.theme.color
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
 import com.safeNest.demo.features.designSystem.theme.isInDarkTheme
 
 object DSColors {

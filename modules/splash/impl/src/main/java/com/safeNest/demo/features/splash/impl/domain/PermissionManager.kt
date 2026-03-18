@@ -1,6 +1,7 @@
 package com.safeNest.demo.features.splash.impl.domain
 
 import android.content.Context
+import android.content.Intent
 import com.safeNest.demo.features.splash.impl.domain.handler.PermissionHandler
 import com.safeNest.demo.features.splash.impl.domain.model.PermissionType
 import kotlinx.coroutines.flow.Flow
@@ -25,4 +26,9 @@ class PermissionManager(
     }
 
     fun isAllPermissionGranted(): Boolean = handlers.all { it.isGranted(context) }
- }
+
+    fun buildRoleRequestIntent(permissionType: PermissionType): Intent? {
+        val handler = handlers.find { it.type == permissionType } ?: error("Handler not found for permission type: $permissionType")
+        return handler.buildRoleRequestIntent(context)
+    }
+}

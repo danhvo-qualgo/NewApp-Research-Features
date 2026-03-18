@@ -55,6 +55,7 @@ turbine = "1.2.1"
 uneyPlugin = "0.0.0.43-rc"
 workManager = "2.11.0"
 media3CommonKtx = "1.9.2"
+ui = "1.10.4"
 
 [libraries]
 accompanist-permissions = { module = "com.google.accompanist:accompanist-permissions", version.ref = "accompanistPermission" }
@@ -149,6 +150,7 @@ turbine = { module = "app.cash.turbine:turbine", version.ref = "turbine" }
 uney-lint-check = { module = "com.uney.utilities:lint-check", version.ref = "uneyPlugin" }
 workmanager = { module = "androidx.work:work-runtime-ktx", version.ref = "workManager" }
 androidx-media3-common-ktx = { group = "androidx.media3", name = "media3-common-ktx", version.ref = "media3CommonKtx" }
+androidx-compose-ui = { group = "androidx.compose.ui", name = "ui", version.ref = "ui" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

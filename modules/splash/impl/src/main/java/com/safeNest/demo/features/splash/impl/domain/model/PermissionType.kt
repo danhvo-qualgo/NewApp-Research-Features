@@ -33,7 +33,7 @@ enum class PermissionType(
         descriptionRes = R.string.permission_phone_contacts_desc,
         requestType = PermissionRequestType.RunTimes(listOf(
             Manifest.permission.READ_PHONE_STATE,
-            Manifest.permission.READ_CONTACTS,
+            Manifest.permission.READ_CALL_LOG,
         ))
 
     ),
@@ -43,6 +43,20 @@ enum class PermissionType(
         descriptionRes = R.string.permission_microphone_desc,
         requestType = PermissionRequestType.RunTime(Manifest.permission.RECORD_AUDIO)
     ),
+    CALL_SCREENING(
+        nameRes = R.string.permission_call_screening_title,
+        iconRes = R.drawable.ic_shield,
+        descriptionRes = R.string.permission_call_screening_desc,
+        requestType = PermissionRequestType.Role
+    ),
+    CALL_REDIRECTION(
+        nameRes = R.string.permission_call_redirection_title,
+        iconRes = R.drawable.ic_phone_call,
+        descriptionRes = R.string.permission_call_redirection_desc,
+        requestType = PermissionRequestType.Role
+    ),
+
+
 //    PRIVATE_DNS(
 //        nameRes = R.string.permission_private_dns_title,
 //        iconRes = R.drawable.ic_server,

@@ -84,10 +84,11 @@ fun WhitelistScreen(
         }
 
         Spacer(modifier = Modifier.height(24.dp))
-        Text("Allowed Contacts", color = TextDark, fontSize = 14.sp, fontWeight = FontWeight.Medium)
+        if (isEnable)
+            Text("Allowed Contacts", color = TextDark, fontSize = 14.sp, fontWeight = FontWeight.Medium)
         Spacer(modifier = Modifier.height(16.dp))
 
-        if (allowedContacts.isNotEmpty())
+        if (allowedContacts.isNotEmpty() && isEnable)
             Card(
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(containerColor = Color.White),
