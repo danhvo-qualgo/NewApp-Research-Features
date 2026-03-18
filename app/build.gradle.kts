@@ -17,6 +17,11 @@ android {
 
 
 dependencies {
+    implementation(libs.core.network.api)
+    implementation(libs.core.network.impl)
+    implementation(libs.core.crypto.api)
+    implementation(libs.core.crypto.impl)
+
     implementation(project(":modules:baseApp"))
     implementation(project(":modules:designSystem"))
     implementation(project(":modules:splash:impl"))
@@ -31,4 +36,5 @@ dependencies {
     implementation(project(":modules:safeBrowsing:impl"))
     implementation(project(":modules:commonKotlin"))
     implementation(project(":modules:commonAndroid"))
+    implementation(project(":modules:commonUseCases:impl"))
 }

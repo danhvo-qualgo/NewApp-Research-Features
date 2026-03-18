@@ -2,9 +2,11 @@ package com.safeNest.demo.features.splash.impl.presentation.screen.permissions
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.safeNest.demo.features.commonUseCases.api.TestApiUseCase
 import com.safeNest.demo.features.splash.impl.domain.PermissionManager
 import com.safeNest.demo.features.splash.impl.domain.model.PermissionRequestType
 import com.safeNest.demo.features.splash.impl.domain.model.PermissionType
+import com.uney.core.utils.kotlin.result.DomainResult
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,7 +19,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 internal class PermissionViewModel @Inject constructor(
-    private val permissionManager: PermissionManager
+    private val permissionManager: PermissionManager,
+    private val testApiUseCase: TestApiUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(PermissionUiState())
@@ -28,13 +31,22 @@ internal class PermissionViewModel @Inject constructor(
     val event = _event.receiveAsFlow()
 
     init {
+        viewModelScope.launch {
+            when (val result = testApiUseCase()) {
+                is DomainResult.Error<String> -> println("Error: ${result.error}")
+                is DomainResult.Success<String> -> println("Success: ${result.data}")
+            }
+        }
         loadPermissionStates()
     }
 
     fun onAction(action: PermissionAction) {
         when (action) {
             is PermissionAction.TogglePermission -> handleToggle(action.type)
-            is PermissionAction.UpdatePermissionGrantedState -> handleUpdatePermissionState(action.type, action.isGranted)
+            is PermissionAction.UpdatePermissionGrantedState -> handleUpdatePermissionState(
+                action.type,
+                action.isGranted
+            )
         }
     }
 
@@ -62,9 +74,11 @@ internal class PermissionViewModel @Inject constructor(
                     _event.send(PermissionEvent.RequestPermissionEvent(type))
                 }
             }
+
             is PermissionRequestType.Settings -> {
                 permissionManager.requestPermission(type)
             }
+
             is PermissionRequestType.Role -> {
                 // Role intents must use startActivityForResult — plain startActivity is silently dropped.
                 val intent = permissionManager.buildRoleRequestIntent(type) ?: return

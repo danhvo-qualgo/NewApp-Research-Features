@@ -17,6 +17,7 @@ dependencies {
     implementation(project(":modules:urlGuard:api"))
     implementation(project(":modules:notificationInterceptor:api"))
     implementation(libs.core.router)
+    implementation(libs.core.utils.kotlin)
     implementation(libs.core.utils.android)
     implementation(libs.core.resources)
     implementation(libs.core.router)
@@ -25,6 +26,7 @@ dependencies {
     implementation(project(":modules:baseApp"))
     implementation(project(":modules:designSystem"))
     implementation(project(":modules:commonAndroid"))
+    implementation(project(":modules:commonUseCases:api"))
 }
 
 uneyPublishing {

@@ -4,6 +4,8 @@ plugins {
 }
 
 androidModule {
+    hilt = true
+    serialization = true
 }
 
 android {
@@ -11,6 +13,10 @@ android {
 }
 
 dependencies {
+    implementation(libs.core.utils.kotlin)
+    implementation(libs.core.utils.android)
+    implementation(libs.core.network.api)
+    implementation(project(":modules:commonUseCases:api"))
 }
 
 uneyPublishing {
