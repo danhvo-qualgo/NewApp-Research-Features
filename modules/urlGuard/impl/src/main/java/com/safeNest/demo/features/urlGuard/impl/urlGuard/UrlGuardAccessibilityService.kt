@@ -199,26 +199,30 @@ class UrlGuardAccessibilityService : AccessibilityService() {
 
         when (event.eventType) {
             // ── A new window / screen came to the foreground ──────────────────
-            AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED -> {
-                when {
-                    pkg in AppTrustChecker.BROWSER_PACKAGES -> onBrowserForeground(pkg)
-                    pkg in AppTrustChecker.CALL_PACKAGES -> onCallForeground(pkg, event)
+            AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED,
+            AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED -> {
+                when (pkg) {
+                    in AppTrustChecker.BROWSER_PACKAGES -> onBrowserForeground(pkg)
+                    in AppTrustChecker.CALL_PACKAGES -> onCallForeground(pkg, event)
                     else -> onAppForeground(pkg)
                 }
             }
 
             // ── Content inside an already-visible window changed ──────────────
             //AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED,
-            AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED -> {
-                when {
-                    pkg in AppTrustChecker.BROWSER_PACKAGES -> {
-                        lastBrowserPackage = pkg
-                        scheduleUrlCheck()
-                    }
-
-                    pkg in AppTrustChecker.CALL_PACKAGES -> scheduleCallInfoExtraction(pkg)
-                }
-            }
+//            AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED -> {
+//                when (pkg) {
+//                    in AppTrustChecker.BROWSER_PACKAGES -> {
+////                        lastBrowserPackage = pkg
+////                        scheduleUrlCheck()
+//                        onBrowserForeground(pkg)
+//                    }
+//                    in AppTrustChecker.CALL_PACKAGES -> onCallForeground(pkg, event)
+//                    else -> {
+//                        onAppForeground(pkg)
+//                    }
+//                }
+//            }
 
             // ── A notification appeared in the status bar ─────────────────────
             AccessibilityEvent.TYPE_NOTIFICATION_STATE_CHANGED -> {
@@ -243,8 +247,8 @@ class UrlGuardAccessibilityService : AccessibilityService() {
         if (pkg != lastBrowserPackage) lastCheckedUrl = null
         lastBrowserPackage = pkg
         SurfaceDetector.update(ScreenSurface.Browser(pkg, null, DetectionStatus.UNKNOWN))
-        secureView.updateButton(FloatingButtonFeature.SAFE_BROWSING, DetectionStatus.UNKNOWN)
-        secureView.updateActionCard(FloatingButtonFeature.SAFE_BROWSING, DetectionStatus.UNKNOWN)
+//        secureView.updateButton(FloatingButtonFeature.SAFE_BROWSING, DetectionStatus.UNKNOWN)
+//        secureView.updateActionCard(FloatingButtonFeature.SAFE_BROWSING, DetectionStatus.UNKNOWN)
         scheduleUrlCheck()
     }
 
@@ -430,7 +434,7 @@ class UrlGuardAccessibilityService : AccessibilityService() {
     private fun onAppForeground(pkg: String) {
         if (appTrustChecker.isSystemApp(pkg)) {
             Log.d(TAG, "AppTrust skipped — system app [$pkg]")
-            SurfaceDetector.update(ScreenSurface.Idle)
+            //SurfaceDetector.update(ScreenSurface.Idle)
             return
         }
 
