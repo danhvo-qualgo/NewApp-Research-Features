@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Blocking Page – Brand -->
+    <color name="blocking_primary">#4F46E5</color>
+    <color name="blocking_primary_text">#FFFFFF</color>
+
+    <!-- Header icon container background -->
+    <color name="blocking_icon_bg">#EEF2FF</color>
+
+    <!-- Card background -->
+    <color name="blocking_card_bg">#F9F9F9</color>
+
+    <!-- Error / Alert -->
+    <color name="blocking_error">#F22A3D</color>
+    <!-- Outer circle: #FEEAEC at 50% alpha — Android #AARRGGBB -->
+    <color name="blocking_error_bg_outer">#80FEEAEC</color>
+    <color name="blocking_error_bg_inner">#F22A3D</color>
+    <!-- Inner circle stroke: #FCD4D8 at 50% alpha -->
+    <color name="blocking_error_border">#80FCD4D8</color>
+
+    <!-- Text -->
+    <color name="blocking_text_title">#1C1D22</color>
+    <color name="blocking_text_body">#454955</color>
+    <color name="blocking_text_footer">#84899A</color>
+
+    <!-- URL bar -->
+    <color name="blocking_url_bar_bg">#FFFFFF</color>
+    <color name="blocking_url_icon">#5C6170</color>
+
+    <!-- Divider -->
+    <color name="blocking_divider">#C2C5CD</color>
+
+    <!-- Threat Alert Card -->
+    <color name="threat_card_bg">#FFFFFF</color>
+    <!-- Stroke reuses blocking_divider (#C2C5CD) -->
+    <!-- Action item text: r=0.2 g=0.255 b=0.333 → #334155 -->
+    <color name="threat_action_text">#334155</color>
+
+    <!-- Floating Button — DetectionStatus colours -->
+    <color name="floating_unknown">#94A3B8</color>
+    <color name="floating_safe">#28B274</color>
+    <color name="floating_warning">#FFA823</color>
+    <color name="floating_dangerous">#F22A3D</color>
+</resources>

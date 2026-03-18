@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Single action row for QuickActionCardView.
+    Horizontal: [24dp icon] [8dp gap] [title text]
+    Height: 32dp  |  width: match_parent
+    Clickable – foreground ripple provided by the theme.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="@dimen/threat_card_action_height"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:clickable="true"
+    android:focusable="true"
+    android:foreground="?android:attr/selectableItemBackground">
+
+    <!-- Action icon  24×24dp (set via QuickActionCardView.Action.icon) -->
+    <ImageView
+        android:id="@+id/iv_action_icon"
+        android:layout_width="@dimen/threat_card_action_icon_size"
+        android:layout_height="@dimen/threat_card_action_icon_size"
+        android:scaleType="centerInside"
+        android:contentDescription="@null" />
+
+    <!-- Action title  –  16sp SemiBold, #334155 -->
+    <TextView
+        android:id="@+id/tv_action_title"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:layout_marginStart="@dimen/threat_card_action_gap"
+        android:textSize="16sp"
+        android:textColor="@color/threat_action_text"
+        android:lineSpacingMultiplier="1.5"
+        android:maxLines="1"
+        android:ellipsize="end" />
+
+</LinearLayout>

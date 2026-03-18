@@ -28,6 +28,7 @@ import com.safeNest.demo.features.home.impl.presentation.ui.home.HomeScreen
 import com.safeNest.demo.features.notificationInterceptor.api.presentation.router.NotificationInterceptorDeeplink
 import com.safeNest.demo.features.permissionManager.api.presentation.router.PermissionManagerDeeplink
 import com.safeNest.demo.features.phishingDetection.api.presentation.router.PhishingDetectionDeeplink
+import com.safeNest.demo.features.urlGuard.api.UrlGuardProvider
 import com.safeNest.demo.features.urlGuard.api.presentation.router.UrlGuardDeeplink
 import com.uney.core.router.RouterManager
 import com.uney.core.router.compose.LocalRouterManager
@@ -40,6 +41,9 @@ class HomeActivity : ComponentActivity() {
     @Inject
     lateinit var routerManager: RouterManager
 
+    @Inject
+    lateinit var urlGuardProvider: UrlGuardProvider
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -48,6 +52,7 @@ class HomeActivity : ComponentActivity() {
             navigationBarStyle = SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT)
         )
 
+        urlGuardProvider.startService(this)
         setContent {
             CompositionLocalProvider(LocalRouterManager provides routerManager) {
                 DSTheme {

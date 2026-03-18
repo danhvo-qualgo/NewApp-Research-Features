@@ -1,0 +1,257 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Blocking Page – SafeNest URL Guard
+    Figma: Frame 13 (391×696)
+
+    Screen padding: 48dp top / 24dp sides / 24dp bottom
+    Sections spaced 24dp apart vertically.
+-->
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#FFFFFF"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingLeft="@dimen/blocking_padding_horizontal"
+        android:paddingTop="@dimen/blocking_padding_top"
+        android:paddingRight="@dimen/blocking_padding_horizontal"
+        android:paddingBottom="@dimen/blocking_padding_bottom"
+        android:clipToPadding="false">
+
+        <!-- ════════════════════════════════════════════════════════════
+             HEADER  –  Shield icon + "SafeNest Security"
+             Frame 1000002690  (h=56, gap=16dp, items center-aligned)
+             ════════════════════════════════════════════════════════════ -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="@dimen/blocking_icon_container_size"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="@dimen/blocking_section_spacing">
+
+            <!-- Shield-tick icon container  56×56, corners 16dp, fill #EEF2FF -->
+            <FrameLayout
+                android:layout_width="@dimen/blocking_icon_container_size"
+                android:layout_height="@dimen/blocking_icon_container_size"
+                android:background="@drawable/bg_blocking_icon_container">
+
+                <ImageView
+                    android:layout_width="@dimen/blocking_shield_icon_size"
+                    android:layout_height="@dimen/blocking_shield_icon_size"
+                    android:layout_gravity="center"
+                    android:src="@drawable/ic_blocking_shield_tick"
+                    android:contentDescription="@null" />
+            </FrameLayout>
+
+            <!-- App name  –  24sp Bold, #1C1D22 -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:text="@string/blocking_app_name"
+                android:textSize="24sp"
+                android:textStyle="bold"
+                android:textColor="@color/blocking_text_title"
+                android:includeFontPadding="false" />
+        </LinearLayout>
+
+        <!-- ════════════════════════════════════════════════════════════
+             CARD  –  "Select card"
+             cornerRadius=24dp, bg=#F9F9F9, elevation=6dp
+             padding: 32dp top / 24dp sides / 16dp bottom
+             inner itemSpacing: 24dp
+             ════════════════════════════════════════════════════════════ -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/bg_blocking_card"
+            android:elevation="@dimen/blocking_card_elevation"
+            android:paddingTop="@dimen/blocking_card_padding_top"
+            android:paddingLeft="@dimen/blocking_padding_horizontal"
+            android:paddingRight="@dimen/blocking_padding_horizontal"
+            android:paddingBottom="@dimen/blocking_card_padding_bottom"
+            android:layout_marginBottom="@dimen/blocking_section_spacing">
+
+            <!-- ── Alert header row  ──────────────────────────────────
+                 Frame 1000002684  (h=48, gap=8dp, items center-aligned)
+                 ─────────────────────────────────────────────────────── -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="@dimen/blocking_error_outer_size"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="@dimen/blocking_section_spacing">
+
+
+                <!-- Inner circle  ~35×35, fill #F22A3D, stroke #FCD4D8 @ 50% -->
+                <FrameLayout
+                    android:id="@+id/frame_alert_icon_inner"
+                    android:layout_width="@dimen/blocking_error_inner_size"
+                    android:layout_height="@dimen/blocking_error_inner_size"
+                    android:layout_gravity="center"
+                    android:background="@drawable/bg_blocking_error_inner">
+
+                    <!-- alert-octagon icon  20×20, white strokes -->
+                    <ImageView
+                        android:id="@+id/iv_alert_icon"
+                        android:layout_width="@dimen/blocking_alert_icon_size"
+                        android:layout_height="@dimen/blocking_alert_icon_size"
+                        android:layout_gravity="center"
+                        android:src="@drawable/ic_blocking_alert_octagon"
+                        android:contentDescription="@null" />
+                </FrameLayout>
+
+                <!-- "SECURITY ALERT"  –  14sp Bold, #F22A3D -->
+                <TextView
+                    android:id="@+id/security_alert_text"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:text="@string/blocking_security_alert"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/blocking_error" />
+            </LinearLayout>
+
+            <!-- ── Divider  ───────────────────────────────────────────
+                 Line 1 – color #C2C5CD, height 1dp
+                 ─────────────────────────────────────────────────────── -->
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="@color/blocking_divider"
+                android:layout_marginBottom="@dimen/blocking_section_spacing" />
+
+            <!-- ── Main content (Frame 1000002688) ───────────────────
+                 Two groups stacked with 32dp gap:
+                   1. Text block + URL bar  (Frame 1000002687)
+                   2. Buttons               (Frame 1000002686)
+                 ─────────────────────────────────────────────────────── -->
+
+            <!-- Group 1 – title / description / URL bar ─────────────── -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_marginBottom="@dimen/blocking_buttons_spacing">
+
+                <!-- Frame 1000002685: title + description  (gap=8dp) -->
+
+                <!-- "High Risk: Scam Detected"  –  20sp Bold, #1C1D22, lh≈28dp -->
+                <TextView
+                    android:id="@+id/tv_blocking_title"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/blocking_high_risk_title"
+                    android:textSize="20sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/blocking_text_title"
+                    android:lineSpacingMultiplier="1.4"
+                    android:layout_marginBottom="@dimen/blocking_text_spacing" />
+
+                <!-- Description  –  14sp Regular, #454955, lh≈20dp -->
+                <TextView
+                    android:id="@+id/tv_blocking_description"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/blocking_description"
+                    android:textSize="14sp"
+                    android:textColor="@color/blocking_text_body"
+                    android:lineSpacingMultiplier="1.43"
+                    android:layout_marginBottom="@dimen/blocking_content_spacing" />
+
+                <!-- URL bar  –  Overlay+Border  (bg white, corners 12dp, padding 16dp) -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:background="@drawable/bg_blocking_url_bar"
+                    android:paddingLeft="@dimen/blocking_url_bar_padding"
+                    android:paddingTop="@dimen/blocking_url_bar_padding"
+                    android:paddingRight="@dimen/blocking_url_bar_padding"
+                    android:paddingBottom="@dimen/blocking_url_bar_padding">
+
+                    <!-- Globe icon  16×16 -->
+                    <ImageView
+                        android:layout_width="@dimen/blocking_globe_icon_size"
+                        android:layout_height="@dimen/blocking_globe_icon_size"
+                        android:src="@drawable/ic_blocking_globe"
+                        android:contentDescription="@null" />
+
+                    <!-- Blocked URL text  –  14sp Regular Inter, #454955 -->
+                    <TextView
+                        android:id="@+id/tv_blocked_url"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginStart="8dp"
+                        android:text="@string/blocking_url_placeholder"
+                        android:textSize="14sp"
+                        android:textColor="@color/blocking_text_body"
+                        android:singleLine="true"
+                        android:ellipsize="end"
+                        android:lineSpacingMultiplier="1.43" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- Group 2 – Buttons (Frame 1000002686, gap=16dp) ──────── -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <!-- Primary CTA – "Go back to Safety"
+                     h=56dp, bg #4F46E5 pill, text white 16sp Bold -->
+                <Button
+                    android:id="@+id/btn_go_back"
+                    android:layout_width="match_parent"
+                    android:layout_height="@dimen/blocking_primary_button_height"
+                    android:background="@drawable/bg_blocking_primary_button"
+                    android:text="@string/blocking_go_back"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/blocking_primary_text"
+                    android:textAllCaps="false"
+                    android:paddingLeft="@dimen/blocking_primary_button_padding_h"
+                    android:paddingRight="@dimen/blocking_primary_button_padding_h"
+                    android:stateListAnimator="@null"
+                    android:layout_marginBottom="@dimen/blocking_button_gap" />
+
+                <!-- Secondary – "I understand the risk, proceed anyway"
+                     h=40dp, transparent, text #454955 14sp Medium, centered -->
+                <TextView
+                    android:id="@+id/tv_proceed_anyway"
+                    android:layout_width="match_parent"
+                    android:layout_height="@dimen/blocking_secondary_button_height"
+                    android:text="@string/blocking_proceed"
+                    android:textSize="14sp"
+                    android:textColor="@color/blocking_text_body"
+                    android:gravity="center"
+                    android:paddingLeft="@dimen/blocking_secondary_button_padding_h"
+                    android:paddingRight="@dimen/blocking_secondary_button_padding_h"
+                    android:paddingTop="@dimen/blocking_secondary_button_padding_v"
+                    android:paddingBottom="@dimen/blocking_secondary_button_padding_v" />
+            </LinearLayout>
+
+        </LinearLayout><!-- /card -->
+
+        <!-- ════════════════════════════════════════════════════════════
+             FOOTER  –  12sp Regular, #84899A, centered, lh≈16dp
+             ════════════════════════════════════════════════════════════ -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/blocking_footer"
+            android:textSize="12sp"
+            android:textColor="@color/blocking_text_footer"
+            android:gravity="center"
+            android:lineSpacingMultiplier="1.33" />
+
+</LinearLayout>
+</ScrollView>

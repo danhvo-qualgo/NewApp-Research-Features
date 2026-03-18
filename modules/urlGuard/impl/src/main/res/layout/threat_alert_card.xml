@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Threat Alert Card – internal content layout.
+    Root is <merge> so its children are inflated directly into QuickActionCardView
+    (which is a vertical LinearLayout that sets its own background, elevation and padding).
+
+    Structure (all spacing 20dp):
+      ┌───────────────────────────────────────┐
+      │  [●] SMS IS SUSPICIOUS                │  ← header row (32dp)
+      │  ─────────────────────────────────── │  ← divider (1dp)
+      │  [icon]  Scam detail                  │  ← action rows
+      │  [icon]  View SMS                     │    (dynamic, added by QuickActionCardView)
+      └───────────────────────────────────────┘
+-->
+<merge xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- ══ Header row ══════════════════════════════════════════════════
+         Horizontal: [error icon cluster] [8dp gap] [alert label]
+         Height: 32dp  |  marginBottom: 20dp (section spacing)
+         ═══════════════════════════════════════════════════════════════ -->
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="@dimen/threat_card_alert_outer_size"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="@dimen/threat_card_section_spacing">
+
+        <!-- Inner circle  23×23, fill #F22A3D, stroke #FCD4D8 @ 50% -->
+        <FrameLayout
+            android:id="@+id/frame_threat_alert_inner"
+            android:layout_width="@dimen/threat_card_alert_inner_size"
+            android:layout_height="@dimen/threat_card_alert_inner_size"
+            android:layout_gravity="center"
+            android:background="@drawable/bg_blocking_error_inner">
+
+            <!-- Alert icon  13×13, white strokes -->
+            <ImageView
+                android:id="@+id/iv_threat_alert_icon"
+                android:layout_width="@dimen/threat_card_alert_icon_size"
+                android:layout_height="@dimen/threat_card_alert_icon_size"
+                android:layout_gravity="center"
+                android:src="@drawable/ic_threat_alert_circle"
+                android:contentDescription="@null" />
+        </FrameLayout>
+
+        <!-- Alert label  –  14sp Bold, #F22A3D -->
+        <TextView
+            android:id="@+id/tv_threat_alert_label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:text="@string/threat_card_default_label"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textColor="@color/blocking_error" />
+    </LinearLayout>
+
+    <!-- ══ Divider ═════════════════════════════════════════════════════
+         1dp line in #C2C5CD, marginBottom 20dp → 20dp gap to first action
+         ═══════════════════════════════════════════════════════════════ -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/blocking_divider"
+        android:layout_marginBottom="@dimen/threat_card_section_spacing" />
+
+    <!-- ══ Actions container ══════════════════════════════════════════
+         Items added programmatically by QuickActionCardView.
+         Each item after the first carries a 20dp topMargin.
+         ═══════════════════════════════════════════════════════════════ -->
+    <LinearLayout
+        android:id="@+id/ll_threat_actions"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical" />
+
+</merge>

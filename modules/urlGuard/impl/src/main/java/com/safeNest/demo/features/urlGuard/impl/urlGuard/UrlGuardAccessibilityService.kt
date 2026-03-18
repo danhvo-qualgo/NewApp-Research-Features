@@ -1,63 +1,38 @@
 package com.safeNest.demo.features.urlGuard.impl.urlGuard
 
 import android.accessibilityservice.AccessibilityService
-import android.annotation.SuppressLint
-import android.app.Activity
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
-import android.content.ContentValues
 import android.content.Intent
-import android.content.pm.ApplicationInfo
-import android.graphics.Bitmap
-import android.graphics.Color
-import android.graphics.PixelFormat
-import android.graphics.Typeface
-import android.hardware.display.DisplayManager
-import android.hardware.display.VirtualDisplay
-import android.media.ImageReader
-import android.media.projection.MediaProjection
-import android.media.projection.MediaProjectionManager
-import android.net.Uri
 import android.os.Build
-import android.os.Bundle
-import android.os.Environment
 import android.os.Handler
 import android.os.Looper
-import android.provider.MediaStore
 import android.util.Log
 import android.view.Display
-import android.view.Gravity
-import android.view.MotionEvent
-import android.view.View
-import android.view.WindowManager
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
-import android.widget.Button
-import android.widget.LinearLayout
-import android.widget.TextView
 import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
-import androidx.core.content.res.ResourcesCompat
-import androidx.core.graphics.createBitmap
 import com.safeNest.demo.features.urlGuard.impl.R
-import com.safeNest.demo.features.urlGuard.impl.urlGuard.UrlGuardAccessibilityService.Companion.URL_CACHE_TTL_MS
 import com.safeNest.demo.features.urlGuard.impl.urlGuard.networking.ScamApiClient
+import com.safeNest.demo.features.urlGuard.impl.urlGuard.util.UserAllowedDomainGuard
+import com.safeNest.demo.features.urlGuard.impl.urlGuard.view.SecureView
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.io.File
-import java.io.FileOutputStream
-import java.lang.ref.WeakReference
 
 /**
- * Listens to browser windows, extracts the URL from the address bar via the accessibility tree,
- * runs it through the threat engine, and triggers blocking (Activity or overlay) when malicious.
+ * Accessibility service responsible for detecting what is on screen and reacting accordingly.
  *
- * Also exposes a floating overlay button whose text can be updated dynamically via [showFloatingButton].
+ * ── What it detects ──────────────────────────────────────────────────────────
+ *   2.1  Browser is in the foreground  → [ScreenSurface.Browser]  + URL scan
+ *   2.2  Phone call is active          → [ScreenSurface.ActiveCall]
+ *   2.3  A notification was posted     → [ScreenSurface.Notification]
+ *   2.4  Any other user-installed app  → [ScreenSurface.App]       + trust check
  */
 class UrlGuardAccessibilityService : AccessibilityService() {
 
@@ -65,901 +40,487 @@ class UrlGuardAccessibilityService : AccessibilityService() {
     private val threatEngine: ThreatEngine = DefaultThreatEngine()
     private val mainHandler = Handler(Looper.getMainLooper())
 
-    /** Debounce: wait for content changes to settle before reading URL (TYPE_WINDOW_CONTENT_CHANGED fires very often). */
+    // ── Helpers ───────────────────────────────────────────────────────────────
+    private lateinit var screenshotHelper: ScreenshotHelper
+    private lateinit var appTrustChecker: AppTrustChecker
+    private lateinit var formInspector: FormInspectorWebView
+
+    // ── UI layer ──────────────────────────────────────────────────────────────
+    private lateinit var secureView: SecureView
+
+    // ── Debounce handles ──────────────────────────────────────────────────────
     private var pendingUrlCheck: Runnable? = null
-    private val debounceDelayMs = 400L
-
-    /** Last browser package that sent an event (so we can grant it content URI permission before navigating). */
-    @Volatile
-    private var lastBrowserPackage: String? = null
-
-    /** Debounce for app-trust checks — avoids re-checking the same package on rapid events. */
     private var pendingAppCheck: Runnable? = null
-    private val appCheckDebounceMs = 600L
+    private var pendingCallCheck: Runnable? = null
 
-    /**
-     * Cache of packages already verified this session.
-     * Key   = package name
-     * Value = overlay text to show (so switching back to the same app restores it instantly)
-     */
-    private val appTrustCache = mutableMapOf<String, String>()
-
-    /** Holds one cached API result for a URL. */
+    // ── URL result cache ──────────────────────────────────────────────────────
     private data class UrlCacheEntry(
-        val overlayText: String,
+        val status: DetectionStatus,
         val isMalicious: Boolean,
         val cachedAt: Long = System.currentTimeMillis()
     )
 
-    /**
-     * LRU cache for URL scan results.
-     * - Max 50 entries (eldest auto-evicted).
-     * - Each entry is valid for [URL_CACHE_TTL_MS] (5 minutes).
-     */
     private val urlCache = object : LinkedHashMap<String, UrlCacheEntry>(64, 0.75f, true) {
         override fun removeEldestEntry(eldest: Map.Entry<String, UrlCacheEntry>) =
             size > URL_CACHE_MAX_SIZE
     }
 
-    private lateinit var formInspector: FormInspectorWebView
-
-    // URLs the user explicitly allowed this session — never re-warn
+    // ── Form scan ─────────────────────────────────────────────────────────────
     private val userAllowedUrls = mutableSetOf<String>()
-
-    // Cache of form scan results: normalizedUrl → hasSensitiveForm
     private val formScanCache = object : LinkedHashMap<String, Boolean>(32, 0.75f, true) {
         override fun removeEldestEntry(eldest: Map.Entry<String, Boolean>) = size > 30
     }
 
+    // ── User-allowed domain guard ─────────────────────────────────────────────
 
-    // -------------------------------------------------------------------------
-    // Floating overlay state
-    // -------------------------------------------------------------------------
-    private var windowManager: WindowManager? = null
-    private var floatingContainer: View? = null
-    private var floatingLabel: TextView? = null
-    private var recordBtn: Button? = null
+    /**
+     * Tracks domains the user has explicitly proceeded through on the blocking
+     * page. [shouldBlock] returns false for those domains for the rest of the
+     * current session so the page never re-appears on the same site.
+     */
+    private val allowedDomainGuard = UserAllowedDomainGuard()
 
-    // -------------------------------------------------------------------------
-    // Frame-interception state
-    // -------------------------------------------------------------------------
-    private var isCapturing = false
-    private var capturingProjection: MediaProjection? = null
-    private var capturingVirtualDisplay: VirtualDisplay? = null
-    private var capturingImageReader: ImageReader? = null
-    private var frameCount = 0L
-    private var lastFrameTimeMs = 0L
+    /** URL that triggered the most recent blocking-page display. */
+    private var lastBlockedUrl: String? = null
 
-    /** Minimum gap between processed frames. Increase to reduce CPU/memory pressure. */
-    private val frameIntervalMs = 1_000L  // 1 frame per second
+    @Volatile
+    private var lastCheckedUrl: String? = null
 
-    /** WebSocket streamer — created when capture starts, torn down when it stops. */
-    private var frameStreamClient: FrameStreamClient? = null
+    // ── Misc state ────────────────────────────────────────────────────────────
+    @Volatile
+    private var lastBrowserPackage: String? = null
 
-    // -------------------------------------------------------------------------
+    /** True once [secureView] has been added to WindowManager for the first time. */
+    private var isOverlayShown = false
+
+    /**
+     * All launcher/home packages on this device.
+     * Resolved lazily once so we don't hit PackageManager on every event.
+     */
+    private val launcherPackages: Set<String> by lazy {
+        val homeIntent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME)
+        packageManager.queryIntentActivities(homeIntent, 0)
+            .mapNotNull { it.activityInfo?.packageName }
+            .toSet()
+            .also { Log.d(TAG, "Launcher packages: $it") }
+    }
+
+    // =========================================================================
     // Lifecycle
-    // -------------------------------------------------------------------------
+    // =========================================================================
 
     override fun onServiceConnected() {
         Log.i(TAG, "UrlGuard accessibility service connected")
-        weakInstance = WeakReference(this)
-        windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
-        formInspector = FormInspectorWebView(this, windowManager!!)
-        createNotificationChannel()
-        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.P) {
-            startForeground(
-                1, buildNotification())
-        } else {
-            startForeground(1, buildNotification())
+
+        // Initialise helpers
+        screenshotHelper = ScreenshotHelper(this, serviceScope, mainHandler)
+        appTrustChecker = AppTrustChecker(packageManager)
+        formInspector = FormInspectorWebView(
+            this, getSystemService(WINDOW_SERVICE)
+                    as android.view.WindowManager
+        )
+
+        // Initialise UI overlay — not shown yet.
+        // Shown lazily via ACTION_SHOW_FLOATING sent from UrlGuardActivity.
+        secureView = SecureView(this).apply {
+            onGoBackClick = { hideBlockingPage() }
+            onProceedAnywayClick = {
+                // User consciously chose to proceed → whitelist the domain for
+                // this session so the blocking page won't re-trigger on the same site.
+                lastBlockedUrl
+                    ?.let { url -> UrlExtractor.extractDomain(url) }
+                    ?.let { domain -> allowedDomainGuard.allow(domain) }
+                hideBlockingPage()
+            }
         }
 
-        //showFloatingButton("chrome")
+        createNotificationChannel()
+        startForeground(NOTIFICATION_ID, buildNotification())
+
+        // Start in Idle state
+        SurfaceDetector.update(ScreenSurface.Idle)
     }
 
     override fun onDestroy() {
         super.onDestroy()
+        Log.i(TAG, "UrlGuard accessibility service disconnected")
+        SurfaceDetector.update(ScreenSurface.Idle)
+        if (isOverlayShown) secureView.dismiss()
         formInspector.cleanup()
-        Log.i(TAG, "UrlGuard accessibility service disconnect")
-        weakInstance = null
-        if (isCapturing) stopFrameCapture()
-        hideFloatingButton()
+        allowedDomainGuard.clear()
     }
 
     override fun onUnbind(intent: Intent?): Boolean {
-        Log.i(TAG, "UrlGuard accessibility service unbind")
+        Log.i(TAG, "UrlGuard accessibility service unbound")
         return super.onUnbind(intent)
     }
 
-    // -------------------------------------------------------------------------
-    // Floating overlay – public API
-    // -------------------------------------------------------------------------
+    override fun onInterrupt() {}
 
     /**
-     * Show a floating button on screen with [text].
-     * If the button is already visible, only the text is updated.
-     * Safe to call from any thread.
+     * Called when an external component sends:
+     *   startService(Intent(context, UrlGuardAccessibilityService::class.java)
+     *       .apply { action = ACTION_SHOW_FLOATING / ACTION_HIDE_FLOATING })
+     *
+     * Because the service is already running (bound by the system as an
+     * AccessibilityService), Android routes this call to the **same** instance,
+     * so we can safely touch [secureView] here.
      */
-    fun showFloatingButton(text: String) {
-        mainHandler.post {
-            if (floatingContainer == null) {
-                createFloatingOverlay(text)
-            } else {
-                floatingLabel?.text = text
-            }
-        }
-    }
-
-    /**
-     * Update the text shown in the floating button without recreating it.
-     * No-op if the button is not currently shown.
-     */
-    fun updateFloatingText(text: String) {
-        mainHandler.post {
-            floatingLabel?.text = text
-        }
-    }
-
-    /**
-     * Remove the floating button from the screen.
-     * Safe to call from any thread, no-op if already hidden.
-     */
-    fun hideFloatingButton() {
-        mainHandler.post {
-            floatingContainer?.let { view ->
-                try {
-                    windowManager?.removeView(view)
-                } catch (e: Exception) {
-                    Log.w(TAG, "hideFloatingButton: removeView failed", e)
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        when (intent?.action) {
+            ACTION_SHOW_FLOATING -> {
+                Log.d(TAG, "onStartCommand: SHOW_FLOATING")
+                if (!isOverlayShown) {
+                    secureView.showFirstTime()
+                    isOverlayShown = true
                 }
             }
-            floatingContainer = null
-            floatingLabel = null
-            recordBtn = null
-        }
-    }
 
-    // -------------------------------------------------------------------------
-    // Floating overlay – internal construction
-    // -------------------------------------------------------------------------
-
-    @SuppressLint("ClickableViewAccessibility")
-    private fun createFloatingOverlay(initialText: String) {
-        val wm = windowManager ?: return
-
-        // ── outer card ────────────────────────────────────────────────────────
-        val container = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            background = ResourcesCompat.getDrawable(
-                resources, R.drawable.floating_button_bg, theme
-            )
-            elevation = 8f
-        }
-
-        // ── info text ─────────────────────────────────────────────────────────
-        val label = TextView(this).apply {
-            text = initialText
-            textSize = 13f
-            typeface = Typeface.DEFAULT_BOLD
-            setTextColor(Color.WHITE)
-            val hpad = dpToPx(12)
-            setPadding(hpad, dpToPx(8), hpad, dpToPx(4))
-            maxLines = 10
-        }
-        floatingLabel = label
-        container.addView(label)
-
-        // ── screenshot button ─────────────────────────────────────────────────
-        val screenshotBtn = Button(this).apply {
-            text = "📷 Screenshot"
-            textSize = 11f
-            setTextColor(Color.WHITE)
-            setBackgroundColor(Color.TRANSPARENT)
-            val hpad = dpToPx(12)
-            setPadding(hpad, dpToPx(2), hpad, dpToPx(6))
-        }
-        screenshotBtn.setOnClickListener { takeScreenshot() }
-        container.addView(screenshotBtn)
-
-        // ── frame-capture button ──────────────────────────────────────────────
-        val recBtn = Button(this).apply {
-            text = "📹 Capture"
-            textSize = 11f
-            setTextColor(Color.WHITE)
-            setBackgroundColor(Color.TRANSPARENT)
-            val hpad = dpToPx(12)
-            setPadding(hpad, dpToPx(2), hpad, dpToPx(6))
-        }
-        recBtn.setOnClickListener { toggleFrameCapture() }
-        recordBtn = recBtn
-        container.addView(recBtn)
-
-        floatingContainer = container
-
-        // ── window params ─────────────────────────────────────────────────────
-        val overlayType = WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
-
-        val params = WindowManager.LayoutParams(
-            WindowManager.LayoutParams.WRAP_CONTENT,
-            WindowManager.LayoutParams.WRAP_CONTENT,
-            overlayType,
-            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
-                    WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
-            PixelFormat.TRANSLUCENT
-        ).apply {
-            gravity = Gravity.TOP or Gravity.START
-            x = dpToPx(16)
-            y = dpToPx(100)
-        }
-
-        // ── drag support ──────────────────────────────────────────────────────
-        var startParamX = 0
-        var startParamY = 0
-        var startRawX = 0f
-        var startRawY = 0f
-        var moved = false
-
-        container.setOnTouchListener { _, event ->
-            when (event.action) {
-                MotionEvent.ACTION_DOWN -> {
-                    startParamX = params.x
-                    startParamY = params.y
-                    startRawX = event.rawX
-                    startRawY = event.rawY
-                    moved = false
-                    true
+            ACTION_HIDE_FLOATING -> {
+                Log.d(TAG, "onStartCommand: HIDE_FLOATING")
+                if (isOverlayShown) {
+                    secureView.dismiss()
+                    isOverlayShown = false
                 }
-
-                MotionEvent.ACTION_MOVE -> {
-                    val dx = (event.rawX - startRawX).toInt()
-                    val dy = (event.rawY - startRawY).toInt()
-                    if (Math.abs(dx) > 4 || Math.abs(dy) > 4) moved = true
-                    params.x = startParamX + dx
-                    params.y = startParamY + dy
-                    wm.updateViewLayout(container, params)
-                    true
-                }
-
-                MotionEvent.ACTION_UP -> {
-                    // If it was a tap (not a drag), hide the overlay
-                    if (!moved) hideFloatingButton()
-                    true
-                }
-
-                else -> false
             }
         }
-
-        wm.addView(container, params)
-        Log.i(TAG, "Floating overlay shown: $initialText")
+        return START_NOT_STICKY
     }
 
-    private fun dpToPx(dp: Int): Int =
-        (dp * resources.displayMetrics.density + 0.5f).toInt()
-
-    // -------------------------------------------------------------------------
-    // Accessibility event handling (unchanged)
-    // -------------------------------------------------------------------------
+    // =========================================================================
+    // Accessibility events — dispatch
+    // =========================================================================
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         if (event == null) return
         val pkg = event.packageName?.toString() ?: return
         if (pkg == packageName) return  // ignore our own overlay events
-        Log.d("xxx", "Event : $event")
+        Log.d(TAG, "current event: $event")
+
         when (event.eventType) {
+            // ── A new window / screen came to the foreground ──────────────────
             AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED -> {
-                if (BROWSER_PACKAGES.contains(pkg)) {
-                    // Entering a browser — reset app-trust tracking and check URL
-                    // (browser — no app-trust reset needed)
-                    lastBrowserPackage = pkg
-                    scheduleUrlCheck()
-                } else {
-                    // Entering any other app — check its trust level
-                    scheduleAppTrustCheck(pkg)
+                when {
+                    pkg in AppTrustChecker.BROWSER_PACKAGES -> onBrowserForeground(pkg)
+                    pkg in AppTrustChecker.CALL_PACKAGES -> onCallForeground(pkg, event)
+                    else -> onAppForeground(pkg)
                 }
             }
 
-            AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED,
+            // ── Content inside an already-visible window changed ──────────────
+            //AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED,
             AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED -> {
-                if (BROWSER_PACKAGES.contains(pkg)) {
-                    lastBrowserPackage = pkg
-                    scheduleUrlCheck()
+                when {
+                    pkg in AppTrustChecker.BROWSER_PACKAGES -> {
+                        lastBrowserPackage = pkg
+                        scheduleUrlCheck()
+                    }
+
+                    pkg in AppTrustChecker.CALL_PACKAGES -> scheduleCallInfoExtraction(pkg)
                 }
             }
 
-            else -> {}
+            // ── A notification appeared in the status bar ─────────────────────
+            AccessibilityEvent.TYPE_NOTIFICATION_STATE_CHANGED -> {
+                onNotificationPosted(pkg, event)
+            }
+
+            else -> Unit
         }
     }
 
+    // =========================================================================
+    // 2.1 Browser detection
+    // =========================================================================
+
+    private fun onBrowserForeground(pkg: String) {
+        // Blocking page is a fullscreen overlay on top of the browser — while it is
+        // visible the browser is still technically "in the foreground" from the A11y
+        // perspective and keeps firing events. Ignore those so the blocking page state
+        // (button colour, scan result) is not overwritten by a re-scan of the same URL.
+        if (secureView.isBlockingPageVisible) return
+
+        if (pkg != lastBrowserPackage) lastCheckedUrl = null
+        lastBrowserPackage = pkg
+        SurfaceDetector.update(ScreenSurface.Browser(pkg, null, DetectionStatus.UNKNOWN))
+        secureView.updateButton(FloatingButtonFeature.SAFE_BROWSING, DetectionStatus.UNKNOWN)
+        secureView.updateActionCard(FloatingButtonFeature.SAFE_BROWSING, DetectionStatus.UNKNOWN)
+        scheduleUrlCheck()
+    }
+
     private fun scheduleUrlCheck() {
+        // While the blocking page is shcown, rootInActiveWindow points to the bloking
+        // page's own view tree. UlExtractor would find the displayed blocked-URL textr
+        // inside tv_blocked_url and re-scan it, potentially flipping the floating
+        // button to SAFE. Drop all pending and incoming checks until the page is gone.
+        if (secureView.isBlockingPageVisible) {
+            pendingUrlCheck?.let { mainHandler.removeCallbacks(it) }
+            pendingUrlCheck = null
+            return
+        }
+
         pendingUrlCheck?.let { mainHandler.removeCallbacks(it) }
         pendingUrlCheck = Runnable {
             pendingUrlCheck = null
             serviceScope.launch {
-                val url = extractUrlFromRoot(rootInActiveWindow)
-                if (!url.isNullOrBlank()) checkAndBlockIfNeeded(url)
+                val url = UrlExtractor.extract(rootInActiveWindow)
+                if (!url.isNullOrBlank() && url != lastCheckedUrl) {
+                    lastCheckedUrl = url
+                    checkAndBlockIfNeeded(url)
+                }
             }
-        }.also { mainHandler.postDelayed(it, debounceDelayMs) }
-    }
-
-    private fun scheduleAppTrustCheck(pkg: String) {
-        // Skip system apps entirely — no overlay, no API call needed
-        if (isSystemApp(pkg)) {
-            Log.d(TAG, "AppTrust skipped — system app [$pkg]")
-            return
-        }
-
-        // Already verified this session — restore cached overlay instantly, no API call
-        val cached = appTrustCache[pkg]
-        if (cached != null) {
-            Log.d(TAG, "AppTrust cache hit [$pkg]")
-            updateFloatingText(cached)
-            return
-        }
-        pendingAppCheck?.let { mainHandler.removeCallbacks(it) }
-        pendingAppCheck = Runnable {
-            pendingAppCheck = null
-            serviceScope.launch { checkAppTrust(pkg) }
-        }.also { mainHandler.postDelayed(it, appCheckDebounceMs) }
-    }
-
-    override fun onInterrupt() {}
-
-    // -------------------------------------------------------------------------
-    // Notification helpers (unchanged)
-    // -------------------------------------------------------------------------
-
-    private fun createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                "url_guard_channel",
-                "URL Guard Service",
-                NotificationManager.IMPORTANCE_LOW
-            )
-            val manager = getSystemService(NotificationManager::class.java)
-            manager.createNotificationChannel(channel)
-        }
-    }
-
-    private fun buildNotification(): Notification {
-        val pendingIntentFlags = PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
-
-        val contentPendingIntent = packageManager.getLaunchIntentForPackage(packageName)?.let {
-            it.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED)
-            it.action = Intent.ACTION_MAIN
-            it.addCategory(Intent.CATEGORY_LAUNCHER)
-            PendingIntent.getActivity(this, 0, it, pendingIntentFlags)
-        }
-
-        return NotificationCompat.Builder(this, "url_guard_channel")
-            .setContentTitle("SafeBrowsing")
-            .setContentText("this is tittle")
-            .setSmallIcon(R.drawable.ic_launcher_foreground)
-            .setPriority(NotificationCompat.PRIORITY_LOW)
-            .setOngoing(true)
-            .setContentIntent(contentPendingIntent)
-            .build()
-    }
-
-    // -------------------------------------------------------------------------
-    // URL extraction (unchanged)
-    // -------------------------------------------------------------------------
-
-    private fun extractUrlFromRoot(root: AccessibilityNodeInfo?): String? {
-        if (root == null) return null
-        return try {
-            extractByViewId(root) ?: extractByTraversing(root)
-        } finally {
-            root.recycle()
-        }
-    }
-
-    private fun extractByViewId(root: AccessibilityNodeInfo): String? {
-        val chromeNodes = root.findAccessibilityNodeInfosByViewId("com.android.chrome:id/url_bar")
-        val chromeText = chromeNodes.firstOrNull()?.text?.toString()?.trim()
-        chromeNodes.forEach { it.recycle() }
-        if (!chromeText.isNullOrBlank() && looksLikeUrl(chromeText)) return chromeText
-        val ffNodes =
-            root.findAccessibilityNodeInfosByViewId("org.mozilla.fenix:id/mozac_browser_toolbar_url_view")
-        val ffText = ffNodes.firstOrNull()?.text?.toString()?.trim()
-        ffNodes.forEach { it.recycle() }
-        if (!ffText.isNullOrBlank() && looksLikeUrl(ffText)) return ffText
-        return null
-    }
-
-    private fun extractByTraversing(node: AccessibilityNodeInfo): String? {
-        val text = node.text?.toString()?.trim()
-        if (!text.isNullOrBlank() && looksLikeUrl(text)) return text
-        for (i in 0 until node.childCount) {
-            val child = node.getChild(i) ?: continue
-            val found = extractByTraversing(child)
-            child.recycle()
-            if (found != null) return found
-        }
-        return null
-    }
-
-    private fun looksLikeUrl(s: String): Boolean =
-        s.startsWith("http://") || s.startsWith("https://") || s.contains(".")
-
-    private fun normalizeUrl(raw: String): String {
-        return try {
-            var s = raw.trim()
-            if (!s.startsWith("http://") && !s.startsWith("https://")) s = "https://$s"
-            s
-        } catch (_: Exception) {
-            raw
-        }
+        }.also { mainHandler.postDelayed(it, URL_DEBOUNCE_MS) }
     }
 
     private suspend fun checkAndBlockIfNeeded(url: String) {
-        val malicious = withContext(Dispatchers.Default) { threatEngine.isMalicious(url) }
-        val normalUrl = normalizeUrl(url)
+        val browserPkg = lastBrowserPackage ?: return
+        val normalUrl = UrlExtractor.normalize(url)
 
-        // ── Cache look-up ─────────────────────────────────────────────────────
+        // Publish scanning state
+        SurfaceDetector.update(
+            ScreenSurface.Browser(
+                browserPkg,
+                normalUrl,
+                DetectionStatus.UNKNOWN
+            )
+        )
+
+        // Cache hit
         val cached = urlCache[normalUrl]
         if (cached != null && System.currentTimeMillis() - cached.cachedAt < URL_CACHE_TTL_MS) {
-            Log.d(TAG, "URL cache hit [$normalUrl]")
-            updateFloatingText(cached.overlayText)
-            if (cached.isMalicious) {
-                Log.w(TAG, "Blocking malicious URL (cached): $url")
-                triggerBlocking(blockedUrl = url, browserPackage = lastBrowserPackage)
-            }
+            Log.d(TAG, "URL cache hit [$normalUrl] -> detectStatus ${cached.status}")
+            applyUrlResult(normalUrl, cached.status,  browserPkg)
             return
         }
 
-        // ── Cache miss — call API ─────────────────────────────────────────────
-        updateFloatingText("🔍 Checking…")
-        Log.d(TAG, "URL cache miss, calling API [$normalUrl]")
+        // Cache miss — API call
+        Log.d(TAG, "URL cache miss [$normalUrl]")
         val reputation = withContext(Dispatchers.IO) { ScamApiClient.checkUrl(normalUrl) }
 
-        val overlayText = if (reputation != null) {
-            val isScam = reputation.isScam || malicious
-            val riskLevel = reputation.riskLevel.replaceFirstChar { it.uppercase() }
-            val confidence = (reputation.confidence * 100).toInt()
-            val domain = Uri.parse(url).host ?: url
-            val category = reputation.scamCategories
-                .firstOrNull()
-                ?.replace("_", " ")
-                ?.replaceFirstChar { it.uppercase() }
-            val topEvidence = reputation.evidence.firstOrNull()
+        val detectedStatus: DetectionStatus
+        val isMalicious: Boolean
 
-            val statusIcon = when {
-                isScam -> "🚫 Scam Detected"
-                reputation.riskLevel == "high" -> "⚠️ High Risk"
-                reputation.riskLevel == "medium" -> "⚠️ Medium Risk"
-                else -> "✅ Safe"
+        if (reputation != null) {
+
+            val isScam = reputation.data.riskScore > 0.8
+
+            detectedStatus = when {
+                reputation.data.riskScore > 0.8 -> DetectionStatus.DANGEROUS
+                reputation.data.riskScore > 0.6 -> DetectionStatus.WARNING
+                else -> DetectionStatus.SAFE
             }
-
-            buildString {
-                appendLine(statusIcon)
-                appendLine("→ $domain")
-                appendLine("Risk       : ${riskLevel.ifBlank { "Unknown" }}")
-                appendLine("Confidence : $confidence%")
-                if (!category.isNullOrBlank()) appendLine("Category   : $category")
-                if (!topEvidence.isNullOrBlank()) appendLine("Evidence   : $topEvidence")
-            }.trimEnd()
+            isMalicious = isScam
+            Log.d(TAG, "URL [$normalUrl] → ${reputation.data.riskScore} isScam=$isScam")
         } else {
-            if (malicious) "🚫 Blocked\n$url" else "🔗 ${Uri.parse(url).host ?: url}"
+            detectedStatus = DetectionStatus.UNKNOWN
+            isMalicious = false
         }
 
-        // ── Store in cache ────────────────────────────────────────────────────
-        urlCache[normalUrl] = UrlCacheEntry(
-            overlayText = overlayText,
-            isMalicious = malicious || reputation?.isScam == true
+        Log.d(TAG, "urlCache: $normalUrl -> $detectedStatus")
+
+        urlCache[normalUrl] = UrlCacheEntry(status = detectedStatus, isMalicious = isMalicious)
+        applyUrlResult(normalUrl, detectedStatus, browserPkg)
+        //triggerFormInspection(normalUrl)
+    }
+
+    /**
+     * Applies the URL scan result to [SurfaceDetector] and [SecureView].
+     */
+    private fun applyUrlResult(
+        normalUrl: String,
+        status: DetectionStatus,
+        browserPkg: String
+    ) {
+
+        SurfaceDetector.update(ScreenSurface.Browser(browserPkg, normalUrl, status))
+        secureView.updateButton(FloatingButtonFeature.SAFE_BROWSING, status)
+        secureView.updateActionCard(FloatingButtonFeature.SAFE_BROWSING, status)
+
+        when (status) {
+            DetectionStatus.DANGEROUS,
+            DetectionStatus.WARNING -> {
+                val domain = UrlExtractor.extractDomain(normalUrl)
+                if (domain == null || !allowedDomainGuard.isAllowed(domain)) {
+                    lastBlockedUrl = normalUrl
+                    secureView.updateBLockingPage(FloatingButtonFeature.SAFE_BROWSING, status, normalUrl)
+                    secureView.showBlockingPage()
+                } else {
+                    Log.d(TAG, "Blocking page suppressed — domain user-allowed: $domain")
+                }
+            }
+            DetectionStatus.SAFE    -> { /* no action */ }
+            DetectionStatus.UNKNOWN -> { /* no action */ }
+        }
+    }
+
+    // =========================================================================
+    // 2.2 Call detection
+    // =========================================================================
+
+    private fun onCallForeground(pkg: String, event: AccessibilityEvent) {
+        val quickNumber = event.text
+            .mapNotNull { it?.toString() }
+            .firstOrNull { looksLikePhoneNumber(it) }
+
+        SurfaceDetector.update(ScreenSurface.ActiveCall(quickNumber, DetectionStatus.UNKNOWN))
+        secureView.updateButton(FloatingButtonFeature.CALL_PROTECTION, DetectionStatus.UNKNOWN)
+        secureView.updateActionCard(FloatingButtonFeature.CALL_PROTECTION, DetectionStatus.UNKNOWN)
+
+        if (quickNumber == null) scheduleCallInfoExtraction(pkg)
+    }
+
+    private fun scheduleCallInfoExtraction(pkg: String) {
+        pendingCallCheck?.let { mainHandler.removeCallbacks(it) }
+        pendingCallCheck = Runnable {
+            pendingCallCheck = null
+            val number = extractPhoneNumberFromTree(rootInActiveWindow)
+            val current = SurfaceDetector.getCurrent()
+            if (current is ScreenSurface.ActiveCall) {
+                SurfaceDetector.update(current.copy(phoneNumber = number))
+            }
+        }.also { mainHandler.postDelayed(it, CALL_DEBOUNCE_MS) }
+    }
+
+    private fun extractPhoneNumberFromTree(root: AccessibilityNodeInfo?): String? {
+        root ?: return null
+        val text = root.text?.toString()
+        if (text != null && looksLikePhoneNumber(text)) return text
+        for (i in 0 until root.childCount) {
+            val child = root.getChild(i) ?: continue
+            val result = extractPhoneNumberFromTree(child)
+            child.recycle()
+            if (result != null) return result
+        }
+        return null
+    }
+
+    private fun looksLikePhoneNumber(text: String): Boolean =
+        PHONE_NUMBER_REGEX.matches(text.trim())
+
+    // =========================================================================
+    // 2.3 Notification detection
+    // =========================================================================
+
+    private fun onNotificationPosted(pkg: String, event: AccessibilityEvent) {
+        val texts = event.text
+        val title = texts.getOrNull(0)?.toString()?.takeIf { it.isNotBlank() }
+        val content = texts.drop(1)
+            .mapNotNull { it?.toString() }
+            .filter { it.isNotBlank() }
+            .joinToString(" ")
+            .takeIf { it.isNotBlank() }
+
+        Log.d(TAG, "Notification from [$pkg] title=$title")
+        SurfaceDetector.update(
+            ScreenSurface.Notification(
+                pkg,
+                title,
+                content,
+                DetectionStatus.UNKNOWN
+            )
         )
+        secureView.updateButton(FloatingButtonFeature.SMS_CHECK, DetectionStatus.UNKNOWN)
+        secureView.updateActionCard(FloatingButtonFeature.SMS_CHECK, DetectionStatus.UNKNOWN)
+    }
 
-        Log.d(TAG, "Overlay [${if (malicious) "MALICIOUS" else "safe"}]: $overlayText")
-        updateFloatingText(overlayText)
+    // =========================================================================
+    // 2.4 Any other user-installed app
+    // =========================================================================
 
-        if (malicious) {
-            Log.w(TAG, "Blocking malicious URL: $url")
-            triggerBlocking(blockedUrl = url, browserPackage = lastBrowserPackage)
+    private fun onAppForeground(pkg: String) {
+        if (appTrustChecker.isSystemApp(pkg)) {
+            Log.d(TAG, "AppTrust skipped — system app [$pkg]")
+            SurfaceDetector.update(ScreenSurface.Idle)
+            return
         }
 
-        triggerFormInspection(url)
+        SurfaceDetector.update(ScreenSurface.App(pkg, DetectionStatus.UNKNOWN))
+        secureView.updateButton(FloatingButtonFeature.DEFAULT, DetectionStatus.UNKNOWN)
+        secureView.updateActionCard(FloatingButtonFeature.DEFAULT, DetectionStatus.UNKNOWN)
+        scheduleAppTrustCheck(pkg)
     }
 
-    // -------------------------------------------------------------------------
-    // App trust check
-    // -------------------------------------------------------------------------
-
-    private suspend fun checkAppTrust(pkg: String) {
-        val appName = getAppName(pkg)
-        val installSrc = withContext(Dispatchers.Default) { getInstallSource(pkg) }
-        Log.d(TAG, "installSrc $installSrc")
-        val isPlayStore = installSrc == "com.android.vending"
-        val isDangerous = DANGEROUS_PACKAGES.contains(pkg)
-        val isKnownSafe = TRUSTED_PACKAGES.contains(pkg)
-
-        val trust = when {
-            isDangerous -> TrustLevel.DANGEROUS
-            isKnownSafe -> TrustLevel.TRUSTED
-            isPlayStore -> TrustLevel.VERIFIED
-            else -> TrustLevel.UNKNOWN
+    private fun scheduleAppTrustCheck(pkg: String) {
+        val cached = appTrustChecker.cache[pkg]
+        if (cached != null) {
+            Log.d(TAG, "AppTrust cache hit [$pkg]")
+            SurfaceDetector.update(ScreenSurface.App(pkg, cached))
+            secureView.updateButton(FloatingButtonFeature.DEFAULT, cached)
+            secureView.updateActionCard(FloatingButtonFeature.DEFAULT, cached)
+            return
         }
 
-        val srcLabel = when {
-            isPlayStore -> "Google Play Store"
-            installSrc != null -> installSrc
-            else -> "Unknown source"
-        }
-
-        // Helper to build the overlay text with an optional category line
-        fun buildOverlay(category: String?) = buildString {
-            appendLine("${trust.icon} ${trust.label}")
-            appendLine(appName)
-            if (!category.isNullOrBlank()) appendLine("🏷 $category")
-            appendLine("Src : $srcLabel")
-        }.trimEnd()
-
-        // ── Show basic info immediately while category is being fetched ───────
-        updateFloatingText(buildOverlay(null))
-
-        // ── Fetch Play Store category (only for Play Store apps) ──────────────
-        val category = if (isPlayStore) {
-            withContext(Dispatchers.IO) { ScamApiClient.fetchPlayStoreCategory(pkg) }
-        } else null
-
-        val finalText = buildOverlay(category)
-        appTrustCache[pkg] = finalText    // cache full result for instant restore on revisit
-        Log.d(TAG, "AppTrust [$pkg] → $trust | src=$srcLabel | category=$category")
-        updateFloatingText(finalText)
+        pendingAppCheck?.let { mainHandler.removeCallbacks(it) }
+        pendingAppCheck = Runnable {
+            pendingAppCheck = null
+            serviceScope.launch {
+                val status = appTrustChecker.evaluate(pkg)
+                val current = SurfaceDetector.getCurrent()
+                if (current is ScreenSurface.App && current.packageName == pkg) {
+                    SurfaceDetector.update(current.copy(status = status))
+                    secureView.updateButton(FloatingButtonFeature.DEFAULT, status)
+                    secureView.updateActionCard(FloatingButtonFeature.DEFAULT, status)
+                }
+            }
+        }.also { mainHandler.postDelayed(it, APP_DEBOUNCE_MS) }
     }
 
-    private fun getAppName(pkg: String): String = try {
-        packageManager.getApplicationLabel(
-            packageManager.getApplicationInfo(pkg, 0)
-        ).toString()
-    } catch (_: Exception) {
-        pkg
-    }
+    // =========================================================================
+    // Screenshot — bridges the A11y API to ScreenshotHelper
+    // =========================================================================
 
-    private fun isSystemApp(pkg: String): Boolean = try {
-        (packageManager.getApplicationInfo(pkg, 0).flags and ApplicationInfo.FLAG_SYSTEM) != 0
-    } catch (_: Exception) {
-        false
-    }
-
-    private fun getInstallSource(pkg: String): String? = try {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            packageManager.getInstallSourceInfo(pkg).installingPackageName
-        } else {
-            @Suppress("DEPRECATION")
-            packageManager.getInstallerPackageName(pkg)
-        }
-    } catch (_: Exception) {
-        null
-    }
-
-    private enum class TrustLevel(val icon: String, val label: String) {
-        TRUSTED("✅", "Trusted"),
-        VERIFIED("🔵", "Verified (Play Store)"),
-        UNKNOWN("⚠️", "Unknown source"),
-        DANGEROUS("🚫", "Dangerous app")
-    }
-
-    // -------------------------------------------------------------------------
-    // Screenshot
-    // -------------------------------------------------------------------------
-
-    private fun takeScreenshot() {
+    fun takeScreenshot() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             takeScreenshotViaA11y()
         } else {
-            takeScreenshotViaMediaProjection()
+            screenshotHelper.takeViaMediaProjection()
         }
     }
 
-    /** API 30+: use the built-in AccessibilityService screenshot API — no extra permissions needed. */
     @RequiresApi(Build.VERSION_CODES.R)
     private fun takeScreenshotViaA11y() {
         takeScreenshot(
-            Display.DEFAULT_DISPLAY, mainExecutor,
+            Display.DEFAULT_DISPLAY,
+            mainExecutor,
             object : TakeScreenshotCallback {
-                override fun onSuccess(result: ScreenshotResult) {
-                    val hardware = Bitmap.wrapHardwareBuffer(
-                        result.hardwareBuffer, result.colorSpace
-                    )
-                    result.hardwareBuffer.close()
-                    // Hardware bitmaps can't be compressed directly — copy to software first
-                    val bitmap = hardware?.copy(Bitmap.Config.ARGB_8888, false)
-                    hardware?.recycle()
-                    if (bitmap != null) {
-                        serviceScope.launch(Dispatchers.IO) { saveToGallery(bitmap) }
-                    }
-                }
+                override fun onSuccess(result: ScreenshotResult) =
+                    screenshotHelper.onA11yScreenshotSuccess(result)
 
-                override fun onFailure(errorCode: Int) {
-                    Log.e(TAG, "takeScreenshotViaA11y failed: errorCode=$errorCode")
-                    updateFloatingText("📷 Failed ($errorCode)")
-                }
+                override fun onFailure(errorCode: Int) =
+                    screenshotHelper.onA11yScreenshotFailure(errorCode)
             }
         )
     }
 
-    /** Stored when the user grants screen-capture permission in MainActivity. */
-    var mediaProjectionResultCode: Int = Activity.RESULT_CANCELED
-    var mediaProjectionData: Intent? = null
 
-    /** API 24-29: use MediaProjection with the token obtained in MainActivity. */
-    private fun takeScreenshotViaMediaProjection() {
+    // =========================================================================
+    // Form inspection
+    // =========================================================================
 
-        val metrics = resources.displayMetrics
-        val width = metrics.widthPixels
-        val height = metrics.heightPixels
-        val density = metrics.densityDpi
+    private fun triggerFormInspection(normalUrl: String) {
+        if (normalUrl in userAllowedUrls) return
+        if (formScanCache[normalUrl] == false) return
 
-        val projMgr = getSystemService(MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
-        val projection = try {
-            projMgr.getMediaProjection(mediaProjectionResultCode, mediaProjectionData!!)
-        } catch (e: Exception) {
-            e.printStackTrace()
-            Log.e(TAG, "getMediaProjection failed: ${e.message}")
-            updateFloatingText("📷 Permission expired\nReopen app")
-            return
-        }
-
-        val imageReader = ImageReader.newInstance(width, height, PixelFormat.RGBA_8888, 2)
-        val vDisplay = projection?.createVirtualDisplay(
-            "safenest_screenshot", width, height, density,
-            DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,
-            imageReader.surface, null, null
-        )
-
-        // Allow one frame to render before reading
-        mainHandler.postDelayed({
-            val image = imageReader.acquireLatestImage()
-            if (image != null) {
-                val plane = image.planes[0]
-                val rowPadding = plane.rowStride - plane.pixelStride * width
-                val raw = Bitmap.createBitmap(
-                    width + rowPadding / plane.pixelStride, height, Bitmap.Config.ARGB_8888
-                )
-                raw.copyPixelsFromBuffer(plane.buffer)
-                image.close()
-                vDisplay?.release()
-                projection?.stop()
-                imageReader.close()
-                val bitmap = Bitmap.createBitmap(raw, 0, 0, width, height)
-                raw.recycle()
-                serviceScope.launch(Dispatchers.IO) { saveToGallery(bitmap) }
-            } else {
-                vDisplay?.release()
-                projection?.stop()
-                imageReader.close()
-                updateFloatingText("📷 Capture failed")
+        formInspector.inspect(normalUrl) { hasSensitiveForm, detectedFields ->
+            formScanCache[normalUrl] = hasSensitiveForm
+            if (hasSensitiveForm) {
+                Log.w(TAG, "Sensitive form detected at $normalUrl: $detectedFields")
+                userAllowedUrls += normalUrl
+                triggerFormWarning(normalUrl, detectedFields)
             }
-        }, 300L)
-    }
-
-    /** Saves [bitmap] to the Pictures/SafeNest gallery folder. Must be called on an IO thread. */
-    private fun saveToGallery(bitmap: Bitmap) {
-        val filename = "SafeNest_${System.currentTimeMillis()}.png"
-        try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                val values = ContentValues().apply {
-                    put(MediaStore.Images.Media.DISPLAY_NAME, filename)
-                    put(MediaStore.Images.Media.MIME_TYPE, "image/png")
-                    put(
-                        MediaStore.Images.Media.RELATIVE_PATH,
-                        "${Environment.DIRECTORY_PICTURES}/SafeNest"
-                    )
-                }
-                val uri = contentResolver.insert(
-                    MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values
-                )
-                uri?.let {
-                    contentResolver.openOutputStream(it)?.use { out ->
-                        bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
-                    }
-                }
-            } else {
-                val dir = File(
-                    Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES),
-                    "SafeNest"
-                )
-                dir.mkdirs()
-                FileOutputStream(File(dir, filename)).use { out ->
-                    bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
-                }
-                // Notify the gallery scanner
-                sendBroadcast(
-                    Intent(
-                        Intent.ACTION_MEDIA_SCANNER_SCAN_FILE,
-                        Uri.fromFile(File(dir, filename))
-                    )
-                )
-            }
-            bitmap.recycle()
-            Log.i(TAG, "Screenshot saved: $filename")
-            mainHandler.post { updateFloatingText("📷 Saved to gallery!") }
-        } catch (e: Exception) {
-            e.printStackTrace()
-            Log.e(TAG, "saveToGallery failed: ${e.message}", e)
-            mainHandler.post { updateFloatingText("📷 Save failed") }
         }
     }
 
-    // -------------------------------------------------------------------------
-    // Frame interception
-    // -------------------------------------------------------------------------
-
-    private fun toggleFrameCapture() {
-        if (isCapturing) stopFrameCapture() else startFrameCapture()
-    }
-
-    /**
-     * Entry point: launches the transparent [ScreenCapturePermissionActivity] which shows
-     * the system capture-consent dialog. When the user accepts,
-     * [onProjectionReady] is called back on the main thread to start frame interception.
-     */
-    private fun startFrameCapture() {
-        updateFloatingText("📹 Requesting…")
-        val intent = Intent(this, ScreenCapturePermissionActivity::class.java).apply {
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        }
-        startActivity(intent)
-    }
-
-    /** Called by [ScreenCapturePermissionActivity] after the user grants capture consent. */
-    fun onProjectionReady(resultCode: Int, data: Intent) {
-        mediaProjectionResultCode = resultCode
-        mediaProjectionData = data
-        mainHandler.post { startFrameCaptureInternal() }
-    }
-
-    /** Called by [ScreenCapturePermissionActivity] when the user denies or cancels. */
-    fun onProjectionDenied() {
-        mainHandler.post {
-            updateFloatingText("📹 Permission denied")
-            recordBtn?.text = "📹 Capture"
-            recordBtn?.setTextColor(Color.WHITE)
-        }
-    }
-
-    /**
-     * Starts the frame-interception pipeline using [ImageReader] + [VirtualDisplay].
-     * Every time the display produces a new frame [onFrameCaptured] is called
-     * with a software [Bitmap] you can analyse, process, or forward as needed.
-     */
-    private fun startFrameCaptureInternal() {
-        val projMgr = getSystemService(MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
-        val projection = try {
-            projMgr.getMediaProjection(mediaProjectionResultCode, mediaProjectionData!!)
-        } catch (e: Exception) {
-            Log.e(TAG, "getMediaProjection for frame capture failed: ${e.message}")
-            updateFloatingText("📹 Permission expired\nReopen app")
-            return
-        }
-
-        val metrics = resources.displayMetrics
-        val width = metrics.widthPixels
-        val height = metrics.heightPixels
-        val density = metrics.densityDpi
-
-        // ── ImageReader: buffer size 2 so the producer is never stalled ───────
-        val imageReader = ImageReader.newInstance(width, height, PixelFormat.RGBA_8888, 2)
-
-        imageReader.setOnImageAvailableListener({ reader ->
-            val image = reader.acquireLatestImage() ?: return@setOnImageAvailableListener
-            image.use { image ->
-                val plane = image.planes[0]
-                val rowPadding = plane.rowStride - plane.pixelStride * width
-                val raw = createBitmap(width + rowPadding / plane.pixelStride, height)
-                raw.copyPixelsFromBuffer(plane.buffer)
-                // Crop to exact screen dimensions (strip row padding)
-                val bitmap = if (rowPadding == 0) raw
-                else Bitmap.createBitmap(raw, 0, 0, width, height).also { raw.recycle() }
-                onFrameCaptured(bitmap)
-            }
-        }, mainHandler)
-
-        projection?.registerCallback(object : MediaProjection.Callback() {
-            override fun onStop() {
-                super.onStop()
-                stopFrameCapture()
-            }
-        }, mainHandler)
-
-        // ── VirtualDisplay → ImageReader surface ──────────────────────────────
-        val vDisplay = projection?.createVirtualDisplay(
-            "safenest_frame_capture", width, height, density,
-            DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,
-            imageReader.surface, null, null
-        )
-
-        capturingProjection = projection
-        capturingVirtualDisplay = vDisplay
-        capturingImageReader = imageReader
-        frameCount = 0L
-        lastFrameTimeMs = 0L
-        isCapturing = true
-
-        // ── Start WebSocket stream to backend ─────────────────────────────────
-        frameStreamClient = FrameStreamClient(FrameStreamClient.DEFAULT_URL).also { it.start() }
-
-        mainHandler.post {
-            recordBtn?.text = "⏹ Stop"
-            recordBtn?.setTextColor(Color.RED)
-        }
-        Log.i(TAG, "Frame capture started (${width}x${height})")
-    }
-
-    private fun stopFrameCapture() {
-        isCapturing = false
-
-        capturingImageReader?.setOnImageAvailableListener(null, null)
-        capturingImageReader?.close()
-        capturingImageReader = null
-
-        capturingVirtualDisplay?.release()
-        capturingVirtualDisplay = null
-
-        capturingProjection?.stop()
-        capturingProjection = null
-
-        frameStreamClient?.stop()
-        frameStreamClient = null
-
-        mainHandler.post {
-            recordBtn?.text = "📹 Capture"
-            recordBtn?.setTextColor(Color.WHITE)
-        }
-        Log.i(TAG, "Frame capture stopped — total frames intercepted: $frameCount")
-    }
-
-    /**
-     * Called on the main thread for every new frame produced by the display.
-     *
-     * The [bitmap] is a full-resolution software [Bitmap] (ARGB_8888) that you own;
-     * **you must call [Bitmap.recycle] when you are done with it.**
-     *
-     * Override or extend this method to plug in your own analysis pipeline
-     * (e.g. OCR, phishing-screenshot detection, image hashing, etc.).
-     */
-    private fun onFrameCaptured(bitmap: Bitmap) {
-        val now = System.currentTimeMillis()
-        if (now - lastFrameTimeMs < frameIntervalMs) {
-            // Too soon — drop this frame and release it immediately
-            bitmap.recycle()
-            return
-        }
-        lastFrameTimeMs = now
-        frameCount++
-        Log.d(TAG, "Frame #$frameCount intercepted (${bitmap.width}x${bitmap.height})")
-        // Stream frame to backend over WebSocket (enqueueFrame recycles the bitmap)
-        frameStreamClient?.enqueueFrame(bitmap) ?: bitmap.recycle()
-    }
-
-    private fun triggerBlocking(blockedUrl: String, browserPackage: String?) {
-        val contentUri = BlockedPageContentProvider.buildBlockedUri(blockedUrl)
-        val pkg = browserPackage?.takeIf { it in BROWSER_PACKAGES } ?: "com.android.chrome"
-        val intent = Intent(Intent.ACTION_VIEW).apply {
-            setDataAndType(contentUri, "text/html")
-            setPackage(pkg)
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION)
-        }
-        Log.d(TAG, "triggerBlocking: launching browser with content:// uri=$contentUri pkg=$pkg")
-        try {
-            startActivity(intent)
-        } catch (e: Exception) {
-            Log.e(TAG, "triggerBlocking: startActivity failed", e)
-        }
-    }
-
-    private fun triggerFormWarning(
-        originalUrl: String,
-        detectedFields: List<String>,
-        browserPackage: String?
-    ) {
+    private fun triggerFormWarning(originalUrl: String, detectedFields: List<String>) {
         val warningUri = FormWarningPageContentProvider.buildWarningUri(originalUrl, detectedFields)
-        val pkg = browserPackage?.takeIf { it in BROWSER_PACKAGES } ?: "com.android.chrome"
+        val pkg = lastBrowserPackage
+            ?.takeIf { it in AppTrustChecker.BROWSER_PACKAGES }
+            ?: "com.android.chrome"
         val intent = Intent(Intent.ACTION_VIEW).apply {
             setDataAndType(warningUri, "text/html")
             setPackage(pkg)
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
-        Log.d(TAG, "triggerWarning: launching browser with content:// uri=$warningUri pkg=$pkg")
         try {
             startActivity(intent)
         } catch (e: Exception) {
@@ -967,137 +528,59 @@ class UrlGuardAccessibilityService : AccessibilityService() {
         }
     }
 
-    private fun triggerFormInspection(url: String) {
-        val normalized = normalizeUrl(url)
-        if (normalized in userAllowedUrls) return
-        if (formScanCache[normalized] == false) return
+    // =========================================================================
+    // Foreground notification
+    // =========================================================================
 
-        formInspector.inspect(normalized) { hasSensitiveForm, detectedFields ->
-            formScanCache[normalized] = hasSensitiveForm
-            if (hasSensitiveForm) {
-                Log.w(TAG, "Sensitive form detected at $normalized: $detectedFields")
-                userAllowedUrls += normalized
-                triggerFormWarning(normalized, detectedFields, lastBrowserPackage)
-            }
+    private fun createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(
+                NOTIFICATION_CHANNEL_ID,
+                "URL Guard Service",
+                NotificationManager.IMPORTANCE_LOW
+            )
+            getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
         }
     }
 
-    private fun findUrlBarNode(root: AccessibilityNodeInfo): AccessibilityNodeInfo? {
-        val chromeNodes = root.findAccessibilityNodeInfosByViewId("com.android.chrome:id/url_bar")
-        val node = chromeNodes.firstOrNull()
-        chromeNodes.filter { it !== node }.forEach { it.recycle() }
-        if (node != null) return node
-        val ffNodes =
-            root.findAccessibilityNodeInfosByViewId("org.mozilla.fenix:id/mozac_browser_toolbar_url_view")
-        val ffNode = ffNodes.firstOrNull()
-        ffNodes.filter { it !== ffNode }.forEach { it.recycle() }
-        return ffNode
+    private fun buildNotification(): Notification {
+        val flags = PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        val contentIntent = packageManager.getLaunchIntentForPackage(packageName)?.let {
+            it.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED)
+            it.action = Intent.ACTION_MAIN
+            it.addCategory(Intent.CATEGORY_LAUNCHER)
+            PendingIntent.getActivity(this, 0, it, flags)
+        }
+        return NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID)
+            .setContentTitle("SafeBrowsing")
+            .setContentText("URL Guard is active")
+            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setOngoing(true)
+            .setContentIntent(contentIntent)
+            .build()
     }
 
-    private fun setUrlBarText(urlBar: AccessibilityNodeInfo, text: String) {
-        val args = Bundle().apply {
-            putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, text)
-        }
-        urlBar.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, args)
-    }
-
-    private fun findAndClickGoButton(root: AccessibilityNodeInfo) {
-        val goDescriptions = listOf("Go", "Load", "Submit", "Navigate", "Open")
-        findClickableWithContentDescription(root, goDescriptions)?.let {
-            it.performAction(AccessibilityNodeInfo.ACTION_CLICK)
-            it.recycle()
-        }
-    }
-
-    private fun findClickableWithContentDescription(
-        root: AccessibilityNodeInfo,
-        descriptions: List<String>
-    ): AccessibilityNodeInfo? {
-        val desc = root.contentDescription?.toString()?.trim()
-        if (desc != null && descriptions.any {
-                desc.equals(
-                    it,
-                    ignoreCase = true
-                )
-            } && root.isClickable) {
-            return AccessibilityNodeInfo.obtain(root)
-        }
-        val text = root.text?.toString()?.trim()
-        if (text != null && descriptions.any {
-                text.equals(
-                    it,
-                    ignoreCase = true
-                )
-            } && root.isClickable) {
-            return AccessibilityNodeInfo.obtain(root)
-        }
-        for (i in 0 until root.childCount) {
-            val child = root.getChild(i) ?: continue
-            val found = findClickableWithContentDescription(child, descriptions)
-            child.recycle()
-            if (found != null) return found
-        }
-        return null
-    }
-
-    // -------------------------------------------------------------------------
+    // =========================================================================
     // Companion
-    // -------------------------------------------------------------------------
+    // =========================================================================
 
     companion object {
         private const val TAG = "UrlGuardA11y"
+        private const val NOTIFICATION_ID = 1
+        private const val NOTIFICATION_CHANNEL_ID = "url_guard_channel"
 
-        // ── Live service reference (used by ScreenCapturePermissionActivity) ──
-        @Volatile
-        private var weakInstance: WeakReference<UrlGuardAccessibilityService>? = null
-        fun getInstance(): UrlGuardAccessibilityService? = weakInstance?.get()
-
-        // ── URL cache settings ────────────────────────────────────────────────
-        private const val URL_CACHE_TTL_MS = 5 * 60 * 1000L  // 5 minutes
+        private const val URL_CACHE_TTL_MS = 5 * 60 * 1000L
         private const val URL_CACHE_MAX_SIZE = 50
 
-        private val BROWSER_PACKAGES = setOf(
-            "com.android.chrome",
-            "org.mozilla.firefox",
-            "org.mozilla.fenix",
-            "com.opera.browser",
-            "com.microsoft.emmx"
-        )
+        private const val URL_DEBOUNCE_MS = 400L
+        private const val APP_DEBOUNCE_MS = 600L
+        private const val CALL_DEBOUNCE_MS = 300L
 
-        /** Well-known apps treated as trusted regardless of install source. */
-        private val TRUSTED_PACKAGES = setOf(
-            // Google
-            "com.google.android.gm",
-            "com.google.android.apps.maps",
-            "com.google.android.youtube",
-            "com.google.android.apps.docs",
-            "com.google.android.keep",
-            // Social / messaging
-            "com.whatsapp",
-            "com.facebook.katana",
-            "com.instagram.android",
-            "com.twitter.android",
-            "com.telegram.messenger",
-            "org.telegram.messenger",
-            // Entertainment
-            "com.netflix.mediaclient",
-            "com.spotify.music",
-            // Shopping / finance
-            "com.amazon.mShop.android.shopping",
-            "com.paypal.android.p2pmobile",
-            // Vietnamese apps
-            "vn.momo.party",
-            "com.vnpay.hdbank",
-            "com.zalopay.wallet",
-            "vn.tiki.app.tikishopping"
-        )
+        private val PHONE_NUMBER_REGEX = Regex("""^\+?[\d\s\-().]{6,20}$""")
 
-        /**
-         * Packages known to be malicious or high-risk.
-         * Extend this list with threat intelligence data as needed.
-         */
-        private val DANGEROUS_PACKAGES = setOf<String>(
-            // Add known malicious package names here
-        )
+        // ── Intent actions for startService() control ────────────────────────
+        const val ACTION_SHOW_FLOATING = "com.safeNest.ACTION_SHOW_FLOATING"
+        const val ACTION_HIDE_FLOATING = "com.safeNest.ACTION_HIDE_FLOATING"
     }
 }
