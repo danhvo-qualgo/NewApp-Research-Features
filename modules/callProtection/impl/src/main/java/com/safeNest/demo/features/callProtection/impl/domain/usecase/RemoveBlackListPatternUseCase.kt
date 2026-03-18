@@ -4,5 +4,5 @@ import com.safeNest.demo.features.callProtection.impl.domain.repository.Blacklis
 import javax.inject.Inject
 
 class RemoveBlackListPatternUseCase @Inject constructor(private val repo: BlacklistPatternRepository) {
-    suspend operator fun invoke(number: String) = repo.remove(number)
+    suspend operator fun invoke(pattern: String) = repo.remove(pattern)
 }

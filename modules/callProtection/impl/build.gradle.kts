@@ -28,6 +28,7 @@ dependencies {
     implementation(libsCustom.kotlinx.serialization.core)
     implementation(libs.androidx.media3.common.ktx)
     implementation(libs.core.storage.api)
+    implementation(project(":modules:designSystem"))
     implementation("androidx.compose.material:material-icons-extended:1.6.3")
 
     ksp(libs.room.compiler)

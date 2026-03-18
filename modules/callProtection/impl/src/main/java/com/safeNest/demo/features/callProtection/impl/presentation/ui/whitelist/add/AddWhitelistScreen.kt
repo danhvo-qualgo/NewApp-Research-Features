@@ -1,4 +1,5 @@
 package com.safeNest.demo.features.callProtection.impl.presentation.ui.whitelist.add
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -15,12 +16,20 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import com.safeNest.demo.features.callProtection.impl.R
+import com.safeNest.demo.features.callProtection.impl.presentation.ui.component.Toolbar
 import com.safeNest.demo.features.callProtection.impl.presentation.ui.whitelist.WhitelistViewModel
+import com.safeNest.demo.features.designSystem.component.gradientBackground
+import com.safeNest.demo.features.designSystem.theme.DSSpacing
+import com.safeNest.demo.features.designSystem.theme.DSTypography
+import com.safeNest.demo.features.designSystem.theme.color.DSColors
 
 // Reusing our custom colors
 val PrimaryPurple = Color(0xFF5A4FCF)
@@ -35,162 +44,126 @@ fun AddWhitelistScreen(
 ) {
     var phoneNumber by remember { mutableStateOf("") }
     var name by remember { mutableStateOf("") }
-
-    Scaffold(
-        containerColor = BackgroundLight,
-        bottomBar = {
-            // Bottom section with the Add button and Cancel text
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Button(
-                    onClick = {
-                        viewModel.add(number = phoneNumber, name = name)
-                        phoneNumber = ""
-                        name = ""
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(56.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryPurple),
-                    shape = RoundedCornerShape(28.dp)
-                ) {
-                    Icon(Icons.Rounded.Add, contentDescription = "Add")
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Add to Whitelist", fontSize = 18.sp, fontWeight = FontWeight.Medium)
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-            }
-        }
-    ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-        ) {
-            // Header Section
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(Color.White)
-            ) {
-                Spacer(modifier = Modifier.height(16.dp))
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Rounded.ArrowBack,
-                        contentDescription = "Back",
-                        tint = PrimaryPurple,
-                        modifier = Modifier
-                            .size(28.dp)
-                            .clickable {
-                                onBack()
-                            }
-                    )
-                    Spacer(modifier = Modifier.width(16.dp))
-                    Text(
-                        text = "Add Allowed Contact",
-                        fontSize = 26.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = PrimaryPurple
-                    )
-                }
-                Spacer(modifier = Modifier.height(16.dp))
-            }
-
-            // Main Content Body
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(gradientBackground)
+    ) {
+        Scaffold(
+            containerColor = Color.Transparent,
+            contentWindowInsets = WindowInsets(0),
+        ) { paddingValues ->
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(20.dp)
-                    .verticalScroll(rememberScrollState())
+                    .padding(paddingValues)
             ) {
-                // Header Description (You probably want to change this copy!)
-                Text(
-                    text = "Define a pattern to automatically block matching incoming calls or messages. Use asterisks (*) as wildcards.",
-                    color = TextDark,
-                    fontSize = 15.sp,
-                    lineHeight = 22.sp
-                )
+                Column(modifier = Modifier.background(DSColors.surface1)) {
 
-                Spacer(modifier = Modifier.height(24.dp))
+                    Spacer(modifier = Modifier.statusBarsPadding())
+                    Toolbar(
+                        text = "Add Allow Contact",
+                        onActionClick = onBack
+                    )
+                }
 
-                // Phone Number Input
-                Text(
-                    text = "Phone number",
-                    color = TextDark,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Medium
-                )
-                Spacer(modifier = Modifier.height(8.dp))
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
+                        .padding(DSSpacing.s6)
+                        .verticalScroll(rememberScrollState())
+                ) {
+                    // Header Description (You probably want to change this copy!)
+                    Text(
+                        text = "Define a pattern to automatically block matching incoming calls or messages. Use asterisks (*) as wildcards.",
+                        style = DSTypography.body2.medium,
+                        color = DSColors.textBody
+                    )
 
-                // Reusing the custom pill text field from the previous screen
-                CustomPillTextField(
-                    value = phoneNumber,
-                    onValueChange = { phoneNumber = it },
-                    placeholder = "+1 (555) 000-0000"
-                )
+                    Spacer(modifier = Modifier.height(DSSpacing.s6))
 
-                Spacer(modifier = Modifier.height(24.dp))
+                    Text(
+                        text = "Phone number",
+                        style = DSTypography.caption1.regular,
+                        color = DSColors.textBody
+                    )
+                    Spacer(modifier = Modifier.height(DSSpacing.s3))
 
-                // Phone Number Input
-                Text(
-                    text = "Name",
-                    color = TextDark,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Medium
-                )
-                Spacer(modifier = Modifier.height(8.dp))
+                    // Reusing the custom pill text field from the previous screen
+                    CustomPillTextField(
+                        value = phoneNumber,
+                        onValueChange = { phoneNumber = it },
+                        placeholder = "+1 (555) 000-0000"
+                    )
 
-                // Reusing the custom pill text field from the previous screen
-                CustomPillTextField(
-                    value = name,
-                    onValueChange = { name = it },
-                    placeholder = "Name"
-                )
+                    Spacer(modifier = Modifier.height(DSSpacing.s6))
+
+                    Text(
+                        text = "Name",
+                        style = DSTypography.caption1.regular,
+                        color = DSColors.textBody
+                    )
+                    Spacer(modifier = Modifier.height(DSSpacing.s3))
+
+                    CustomPillTextField(
+                        value = name,
+                        onValueChange = { name = it },
+                        placeholder = "Hint name"
+                    )
+                }
+                Spacer(modifier = Modifier.height(DSSpacing.s6))
+                Button(
+                    onClick = {
+                        viewModel.add(name = name, number = phoneNumber)
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .navigationBarsPadding()
+                        .padding(horizontal = DSSpacing.s6, vertical = DSSpacing.s4),
+                    contentPadding = PaddingValues(DSSpacing.s4),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = DSColors.surfaceAction
+                    ),
+                    shape = RoundedCornerShape(32.dp)
+                ) {
+                    Icon(ImageVector.vectorResource(R.drawable.ic_plus), contentDescription = "Add")
+                    Spacer(modifier = Modifier.width(DSSpacing.s3))
+                    Text("Add to whitelist", style = DSTypography.body2.bold, color = DSColors.textOnAction)
+                }
             }
         }
     }
 }
 
-// Custom composable for the pill-shaped text field
-@Composable
-fun CustomPillTextField(
-    value: String,
-    onValueChange: (String) -> Unit,
-    placeholder: String
-) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(Color.White, RoundedCornerShape(24.dp))
-            .padding(horizontal = 20.dp, vertical = 16.dp)
+    // Custom composable for the pill-shaped text field
+    @Composable
+    fun CustomPillTextField(
+        value: String,
+        onValueChange: (String) -> Unit,
+        placeholder: String
     ) {
-        BasicTextField(
-            value = value,
-            onValueChange = onValueChange,
-            textStyle = TextStyle(
-                color = TextDark,
-                fontSize = 16.sp
-            ),
-            cursorBrush = SolidColor(PrimaryPurple),
-            modifier = Modifier.fillMaxWidth(),
-            decorationBox = { innerTextField ->
-                if (value.isEmpty()) {
-                    Text(
-                        text = placeholder,
-                        color = LightTextGray,
-                        fontSize = 16.sp
-                    )
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(DSColors.surface1, RoundedCornerShape(24.dp))
+                .padding(horizontal = DSSpacing.s5, vertical = DSSpacing.s4)
+        ) {
+            BasicTextField(
+                value = value,
+                onValueChange = onValueChange,
+                textStyle = DSTypography.body2.regular.copy(color = DSColors.textBody),
+                modifier = Modifier.fillMaxWidth(),
+                decorationBox = { innerTextField ->
+                    if (value.isEmpty()) {
+                        Text(
+                            text = placeholder,
+                            style = DSTypography.body2.regular,
+                            color = DSColors.textNeutral
+                        )
+                    }
+                    innerTextField()
                 }
-                innerTextField()
-            }
-        )
+            )
+        }
     }
-}

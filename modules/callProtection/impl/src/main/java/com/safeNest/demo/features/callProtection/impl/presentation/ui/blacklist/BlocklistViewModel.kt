@@ -32,9 +32,9 @@ class BlocklistViewModel @Inject constructor(
         }
     }
 
-    fun remove(number: String) {
+    fun remove(pattern: String) {
         viewModelScope.launch {
-            removeBlackListPatternUseCase(number)
+            removeBlackListPatternUseCase(pattern)
         }
     }
 

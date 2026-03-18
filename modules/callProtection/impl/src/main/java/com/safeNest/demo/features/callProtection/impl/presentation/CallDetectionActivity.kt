@@ -21,14 +21,10 @@ import dagger.hilt.android.AndroidEntryPoint
 class CallDetectionActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-
         setContent {
             AppNav3Host()
         }
     }
-
-    var isFirst = false
     override fun onResume() {
         super.onResume()
 

@@ -1,22 +1,24 @@
 package com.safeNest.demo.features.callProtection.impl.presentation.ui.home
+
 import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.safeNest.demo.features.callProtection.impl.presentation.ui.blacklist.BlocklistScreen
+import com.safeNest.demo.features.callProtection.impl.presentation.ui.component.Toolbar
 import com.safeNest.demo.features.callProtection.impl.presentation.ui.whitelist.WhitelistScreen
+import com.safeNest.demo.features.designSystem.component.gradientBackground
+import com.safeNest.demo.features.designSystem.theme.DSSpacing
+import com.safeNest.demo.features.designSystem.theme.DSTypography
+import com.safeNest.demo.features.designSystem.theme.color.DSColors
 
 // Custom Colors
 val PrimaryPurple = Color(0xFF5A4FCF)
@@ -31,97 +33,69 @@ val PurpleIconBg = Color(0xFFF0F0FA)
 
 @Composable
 fun CallProtectionScreen(
+    tabName: String = "Blocklist",
     onBack: () -> Unit = {},
     onAddToWhitelist: () -> Unit = {},
     onAddToBlacklist: () -> Unit = {}
 ) {
-    // State to track which tab is currently selected (0 = Blocklist, 1 = Whitelist)
-    var selectedTabIndex by remember { mutableIntStateOf(0) }
+    var selectedTab by rememberSaveable { mutableStateOf(Tab.from(tabName)) }
 
-    Scaffold(
-        containerColor = Color.White,
-        bottomBar = {
-            Button(
-                onClick = {
-                    when (selectedTabIndex) {
-                        0 -> {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(gradientBackground)
+    ) {
+        Scaffold(
+            containerColor = Color.Transparent,
+            contentWindowInsets = WindowInsets(0)
+        ) { paddingValues ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+            ) {
+                // Header & Tabs Section
+                Column(modifier = Modifier.background(DSColors.surface1)) {
+
+                    Spacer(modifier = Modifier.statusBarsPadding())
+                    Toolbar(
+                        text = "Call Protection"
+                    ) {
+                        onBack()
+                    }
+
+                    Row(modifier = Modifier.fillMaxWidth()) {
+                        Spacer(modifier = Modifier.width(DSSpacing.s6))
+                        CustomTab(
+                            title = "Blocklist",
+                            isSelected = selectedTab == Tab.Blocklist,
+                            onClick = { selectedTab = Tab.Blocklist },
+                            modifier = Modifier.weight(1f)
+                        )
+                        Spacer(modifier = Modifier.width(DSSpacing.s6))
+                        CustomTab(
+                            title = "Whitelist",
+                            isSelected = selectedTab == Tab.Whitelist,
+                            onClick = { selectedTab = Tab.Whitelist },
+                            modifier = Modifier.weight(1f)
+                        )
+                        Spacer(modifier = Modifier.width(DSSpacing.s6))
+                    }
+                }
+
+                Crossfade(
+                    targetState = selectedTab,
+                    label = "Tab Transition",
+                    modifier = Modifier.fillMaxSize().background(BackgroundLight)
+                ) { tabIndex ->
+                    when (tabIndex) {
+                        Tab.Blocklist -> BlocklistScreen {
                             onAddToBlacklist()
                         }
-                        1 -> {
+                        Tab.Whitelist -> WhitelistScreen(paddingValues = paddingValues) {
                             onAddToWhitelist()
                         }
                     }
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp)
-                    .height(56.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = PrimaryPurple),
-                shape = RoundedCornerShape(28.dp)
-            ) {
-                Icon(Icons.Rounded.Add, contentDescription = "Add")
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Add", fontSize = 18.sp, fontWeight = FontWeight.Medium)
-            }
-        }
-    ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-        ) {
-            // Header & Tabs Section
-            Column(modifier = Modifier.background(Color.White)) {
-                Spacer(modifier = Modifier.height(16.dp))
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(horizontal = 16.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Rounded.ArrowBack,
-                        contentDescription = "Back",
-                        tint = PrimaryPurple,
-                        modifier = Modifier.size(28.dp).clickable {
-                            onBack()
-                        }
-                    )
-                    Spacer(modifier = Modifier.width(16.dp))
-                    Text(
-                        text = "Call protection",
-                        fontSize = 26.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = PrimaryPurple
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                // Tab Row
-                Row(modifier = Modifier.fillMaxWidth()) {
-                    CustomTab(
-                        title = "Blocklist",
-                        isSelected = selectedTabIndex == 0,
-                        onClick = { selectedTabIndex = 0 },
-                        modifier = Modifier.weight(1f)
-                    )
-                    CustomTab(
-                        title = "Whitelist",
-                        isSelected = selectedTabIndex == 1,
-                        onClick = { selectedTabIndex = 1 },
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-            }
-
-            // Crossfade for smooth animation when switching tabs
-            Crossfade(
-                targetState = selectedTabIndex,
-                label = "Tab Transition",
-                modifier = Modifier.fillMaxSize().background(BackgroundLight)
-            ) { tabIndex ->
-                when (tabIndex) {
-                    0 -> BlocklistScreen()
-                    1 -> WhitelistScreen()
                 }
             }
         }
@@ -129,26 +103,31 @@ fun CallProtectionScreen(
 }
 
 @Composable
-fun CustomTab(title: String, isSelected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
+fun CustomTab(
+    title: String,
+    isSelected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
     Column(
         modifier = modifier.clickable { onClick() },
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
 
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(DSSpacing.s3))
         Text(
             text = title,
-            color = if (isSelected) PrimaryPurple else TextGray,
-            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-            fontSize = 16.sp
+            color = if (isSelected) DSColors.textAction else DSColors.textNeutral,
+            style = if (isSelected) DSTypography.body2.bold else DSTypography.body2.medium
         )
-        Spacer(modifier = Modifier.height(12.dp))
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(3.dp)
-                .background(if (isSelected) PrimaryPurple else Color.Transparent)
-        )
+        Spacer(modifier = Modifier.height(DSSpacing.s3))
+        if (isSelected)
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(3.dp)
+                    .background(DSColors.borderAction)
+            )
     }
 }
 
@@ -156,4 +135,18 @@ fun CustomTab(title: String, isSelected: Boolean, onClick: () -> Unit, modifier:
 @Composable
 fun CallProtectionScreenPreview() {
     CallProtectionScreen()
+}
+
+enum class Tab(val tabName: String) {
+    Blocklist("Blocklist"), Whitelist("Whitelist");
+
+    companion object {
+        fun from(tabName: String): Tab {
+            return when (tabName) {
+                "Blocklist" -> Blocklist
+                "Whitelist" -> Whitelist
+                else -> Blocklist
+            }
+        }
+    }
 }
