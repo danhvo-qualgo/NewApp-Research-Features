@@ -31,6 +31,18 @@ android {
 dependencies {
     implementation(project(":modules:phishingDetection:api"))
     implementation(libs.core.router)
+    implementation(libs.mlkit.text.recognition)
+    implementation(libs.libphonenumber)
+
+    val ktorVersion = "2.3.7"
+    implementation("io.ktor:ktor-client-android:$ktorVersion")
+    implementation("io.ktor:ktor-client-content-negotiation:$ktorVersion")
+    implementation("io.ktor:ktor-serialization-kotlinx-json:$ktorVersion")
+    implementation("io.ktor:ktor-client-logging:$ktorVersion")
+
+    implementation("org.tensorflow:tensorflow-lite:2.14.0")
+    implementation("org.tensorflow:tensorflow-lite-select-tf-ops:2.14.0")
+    implementation("androidx.compose.material:material-icons-extended:1.6.3")
 }
 
 uneyPublishing {

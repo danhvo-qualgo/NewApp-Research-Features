@@ -1,13 +1,9 @@
-package com.safeNest.demo.features.notificationInterceptor.impl.presentation
+package net.qualgo.safeNest.features.notificationInterceptor.impl.presentation
 
-import android.Manifest
 import android.app.Notification
 import android.content.ComponentName
-import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.graphics.Color
-import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import androidx.activity.ComponentActivity
@@ -39,7 +35,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -53,10 +48,13 @@ import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.content.ContextCompat
+import androidx.core.net.toUri
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import com.safeNest.demo.features.notificationInterceptor.impl.data.NotificationRecord
+import com.safeNest.demo.features.notificationInterceptor.impl.presentation.NotificationInterceptorService
+import com.safeNest.demo.features.notificationInterceptor.impl.presentation.NotificationInterceptorViewModel
+import com.safeNest.demo.features.notificationInterceptor.impl.presentation.NotificationUiState
 import com.uney.core.router.RouterManager
 import com.uney.core.router.compose.LocalRouterManager
 import dagger.hilt.android.AndroidEntryPoint
@@ -81,14 +79,14 @@ class NotificationInterceptorActivity : ComponentActivity() {
         )
 
         setContent {
-            CompositionLocalProvider(LocalRouterManager provides routerManager) {
+            androidx.compose.runtime.CompositionLocalProvider(LocalRouterManager provides routerManager) {
                 NotificationInterceptorScreen(viewModel)
             }
         }
     }
 }
 
-private fun isNotificationListenerEnabled(context: Context): Boolean {
+private fun isNotificationListenerEnabled(context: android.content.Context): Boolean {
     val flat = Settings.Secure.getString(context.contentResolver, "enabled_notification_listeners")
     if (flat.isNullOrEmpty()) return false
     val componentName = ComponentName(context, NotificationInterceptorService::class.java)
@@ -108,16 +106,10 @@ fun NotificationInterceptorScreen(viewModel: NotificationInterceptorViewModel) {
     val uiState by viewModel.uiState.collectAsState()
 
     var listenerEnabled by remember { mutableStateOf(isNotificationListenerEnabled(context)) }
-    var postNotifGranted by remember {
+
+    var overlayPermissionGranted by remember {
         mutableStateOf(
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                ContextCompat.checkSelfPermission(
-                    context,
-                    Manifest.permission.POST_NOTIFICATIONS
-                ) == PackageManager.PERMISSION_GRANTED
-            } else {
-                true
-            }
+            Settings.canDrawOverlays(context)
         )
     }
 
@@ -126,6 +118,7 @@ fun NotificationInterceptorScreen(viewModel: NotificationInterceptorViewModel) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
                 listenerEnabled = isNotificationListenerEnabled(context)
+                overlayPermissionGranted = Settings.canDrawOverlays(context)
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
@@ -159,6 +152,20 @@ fun NotificationInterceptorScreen(viewModel: NotificationInterceptorViewModel) {
                 ) {
                     context.startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
                     listenerEnabled = isNotificationListenerEnabled(context)
+                }
+                return@Column
+            }
+
+            if (!overlayPermissionGranted) {
+                PermissionCard(
+                    message = "\"Display over other apps\" permission is required to show scam warnings on top of other apps.",
+                    buttonText = "Grant Overlay Permission"
+                ) {
+                    val intent = Intent(
+                        Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                        "package:${context.packageName}".toUri()
+                    )
+                    context.startActivity(intent)
                 }
                 return@Column
             }

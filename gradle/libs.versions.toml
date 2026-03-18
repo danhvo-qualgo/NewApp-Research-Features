@@ -7,12 +7,15 @@ appUpdate = "2.1.0"
 appcompat = "1.7.1"
 appsFlyer = "6.17.5"
 barcodeScanning = "17.3.0"
+textRecognition = "16.0.1"
 binaryCompatibilityValidator = "0.18.1"
 browser = "1.9.0"
+call = "0.0.0.2-main-02-03-2026-15-40-55-SNAPSHOT"
 cameraCore = "1.5.2"
 coil = "3.3.0"
 composeBom = "2026.01.00"
 composeNavigation = "2.9.6"
+coreFeatures = "0.0.0.13-main-03-03-2026-17-52-05-SNAPSHOT"
 coreKtx = "1.17.0"
 coreVersion = "0.0.0.42-feature-SAF-0-multipart-19-03-2026-15-55-15-SNAPSHOT"
 coroutines = "1.10.2"
@@ -73,6 +76,9 @@ app-update = { module = "com.google.android.play:app-update", version.ref = "app
 app-update-ktx = { module = "com.google.android.play:app-update-ktx", version.ref = "appUpdate" }
 appsflyer = { module = "com.appsflyer:af-android-sdk", version.ref = "appsFlyer" }
 barcode-scanning = { module = "com.google.mlkit:barcode-scanning", version.ref = "barcodeScanning" }
+mlkit-text-recognition = { module = "com.google.mlkit:text-recognition", version.ref = "textRecognition" }
+call-home-api = { module = "net.qualgo.safeNest.call:home-api", version.ref = "call" }
+call-home-impl = { module = "net.qualgo.safeNest.call:home-impl", version.ref = "call" }
 camera-camera2 = { module = "androidx.camera:camera-camera2", version.ref = "cameraCore" }
 camera-core = { module = "androidx.camera:camera-core", version.ref = "cameraCore" }
 camera-lifecycle = { module = "androidx.camera:camera-lifecycle", version.ref = "cameraCore" }
@@ -96,6 +102,28 @@ core-build-config-ksp = { module = "com.uney.core:build-config-ksp", version.ref
 core-crypto-api = { module = "com.uney.core:crypto-api", version.ref = "coreVersion" }
 core-crypto-impl = { module = "com.uney.core:crypto-impl", version.ref = "coreVersion" }
 core-dependencies = { module = "com.uney.core:dependencies", version.ref = "coreVersion" }
+core-features-authChallenge-api = { module = "net.qualgo.safeNest.core:auth-challenge-api", version.ref = "coreFeatures" }
+core-features-authChallenge-impl = { module = "net.qualgo.safeNest.core:auth-challenge-impl", version.ref = "coreFeatures" }
+core-features-baseapp = { module = "net.qualgo.safeNest.core:base-app", version.ref = "coreFeatures" }
+core-features-designSystem = { module = "net.qualgo.safeNest.core:design-system", version.ref = "coreFeatures" }
+core-features-home-api = { module = "net.qualgo.safeNest.core:home-api", version.ref = "coreFeatures" }
+core-features-home-impl = { module = "net.qualgo.safeNest.core:home-impl", version.ref = "coreFeatures" }
+core-features-member-authChallenge-api = { module = "net.qualgo.safeNest.core:member-auth-challenge-api", version.ref = "coreFeatures" }
+core-features-member-authChallenge-impl = { module = "net.qualgo.safeNest.core:member-auth-challenge-impl", version.ref = "coreFeatures" }
+core-features-member-intro-api = { module = "net.qualgo.safeNest.core:member-intro-api", version.ref = "coreFeatures" }
+core-features-member-intro-impl = { module = "net.qualgo.safeNest.core:member-intro-impl", version.ref = "coreFeatures" }
+core-features-member-splash-api = { module = "net.qualgo.safeNest.core:member-splash-api", version.ref = "coreFeatures" }
+core-features-member-splash-impl = { module = "net.qualgo.safeNest.core:member-splash-impl", version.ref = "coreFeatures" }
+core-features-owner-authChallenge-api = { module = "net.qualgo.safeNest.core:owner-auth-challenge-api", version.ref = "coreFeatures" }
+core-features-owner-authChallenge-impl = { module = "net.qualgo.safeNest.core:owner-auth-challenge-impl", version.ref = "coreFeatures" }
+core-features-owner-intro-api = { module = "net.qualgo.safeNest.core:owner-intro-api", version.ref = "coreFeatures" }
+core-features-owner-intro-impl = { module = "net.qualgo.safeNest.core:owner-intro-impl", version.ref = "coreFeatures" }
+core-features-owner-signIn-api = { module = "net.qualgo.safeNest.core:owner-sign-in-api", version.ref = "coreFeatures" }
+core-features-owner-signIn-impl = { module = "net.qualgo.safeNest.core:owner-sign-in-impl", version.ref = "coreFeatures" }
+core-features-owner-splash-api = { module = "net.qualgo.safeNest.core:owner-splash-api", version.ref = "coreFeatures" }
+core-features-owner-splash-impl = { module = "net.qualgo.safeNest.core:owner-splash-impl", version.ref = "coreFeatures" }
+core-features-signIn-api = { module = "net.qualgo.safeNest.core:sign-in-api", version.ref = "coreFeatures" }
+core-features-signIn-impl = { module = "net.qualgo.safeNest.core:sign-in-impl", version.ref = "coreFeatures" }
 core-logger = { module = "com.uney.core:logger", version.ref = "coreVersion" }
 core-network-api = { module = "com.uney.core:network-api", version.ref = "coreVersion" }
 core-network-impl = { module = "com.uney.core:network-impl", version.ref = "coreVersion" }

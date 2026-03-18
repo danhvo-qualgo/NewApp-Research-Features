@@ -1,4 +1,5 @@
 package com.safeNest.demo.features.scamAnalyzer.impl.domain.models
+
 import kotlinx.serialization.Serializable
 
 @Serializable

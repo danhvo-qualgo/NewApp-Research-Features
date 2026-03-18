@@ -1,0 +1,227 @@
+---
+description: Compose screen architecture and design system usage patterns
+globs: **/presentation/screen/**/*.kt
+alwaysApply: false
+---
+
+# Compose Screen Architecture
+
+## 0. CRITICAL: Ask for Clarification First
+
+**ALWAYS ask questions if requirements are unclear before doing anything:**
+
+- If the Figma JSON is ambiguous or missing details → Ask what should be displayed
+- If menu items/actions are not specified → Ask what options should be in the menu
+- If navigation destinations are unclear → Ask where clicking should navigate to
+- If data source is unclear → Ask where the data comes from (hardcoded, API, state?)
+- If button actions are unclear → Ask what should happen on click
+
+**Example Questions to Ask:**
+- "The JSON shows a dots icon - what menu items should appear when clicked?"
+- "Where should the 'Edit Country' button navigate to?"
+- "Should the email be hardcoded or come from user session?"
+- "What should happen when the user clicks 'Sign Out'?"
+
+**Do NOT make assumptions or implement default behaviors without asking first.**
+
+---
+
+## 1. Design System First
+
+When generating UI from Figma JSON nodes, ALWAYS check the design system module first:
+
+**Check these locations:**
+- `modules/design-system/src/main/java/net/qualgo/kinshield/core/designsystem/component/`
+- `modules/design-system/src/main/java/net/qualgo/kinshield/core/designsystem/theme/`
+
+**Use existing components instead of creating custom ones:**
+```kotlin
+// ❌ BAD - Custom implementation
+OutlinedTextField(
+    value = value,
+    onValueChange = onChange,
+    modifier = Modifier.fillMaxWidth().height(56.dp),
+    shape = RoundedCornerShape(24.dp),
+    colors = OutlinedTextFieldDefaults.colors(...)
+)
+
+// ✅ GOOD - Use design system component
+DSTextField(
+    value = value,
+    onValueChange = onChange,
+    placeholder = "Enter text"
+)
+```
+
+**Always use design system tokens:**
+- `DSTypography` - for text styles (h1, h2, h3, body1, body2, caption1, etc.)
+- `DSColors` - for colors (textAction, textBody, surfacePrimary, etc.)
+- `DSSpacing` - for spacing (s1-s10)
+- `DSRadius` - for corner radius (small, medium, large, xxLarge)
+
+**For icons:**
+- If the icon exists in the design system or project resources, use `painterResource()`
+- If the icon doesn't exist, use a placeholder: `painterResource(net.qualgo.kinShield.core.designSystem.R.drawable.ic_refresh)`
+- Add a TODO comment to replace with the actual icon later
+- DO NOT use Material Icons as fallback unless specifically requested
+
+```kotlin
+// ✅ GOOD - Use placeholder for missing icons
+Icon(
+    painter = painterResource(net.qualgo.kinshield.core.designsystem.R.drawable.ic_refresh),
+    contentDescription = "Share",  // TODO: Replace with ic_share icon
+    tint = DSColors.iconAction
+)
+
+// ❌ BAD - Don't use Material Icons as fallback
+Icon(
+    imageVector = Icons.Outlined.Share,  // Should use painterResource
+    contentDescription = "Share",
+    tint = DSColors.iconAction
+)
+```
+
+---
+
+## 2. Screen Structure Pattern
+
+Every screen must follow this architecture:
+
+```kotlin
+// Screen (Stateful) - Receives ViewModel
+@Composable
+fun ExampleScreen(
+    viewModel: ExampleViewModel = hiltViewModel()
+) {
+    val uiState = viewModel.uiState.collectAsState()
+
+    Scaffold { paddingValues ->
+        ExampleContent(
+            // Pass state as parameters
+            data = uiState.value.data,
+            // Pass callbacks
+            onAction = viewModel::onAction
+        )
+    }
+}
+
+// Content (Stateless) - Pure UI
+@Composable
+private fun ExampleContent(
+    data: String,
+    onAction: () -> Unit
+) {
+    Column {
+        // Render UI
+    }
+}
+```
+
+**Required files for each screen:**
+- `ScreenName.kt` - Screen composable with ViewModel
+- `ScreenNameViewModel.kt` - Business logic and state management
+- `ScreenNameUiState.kt` - State data class
+
+---
+
+## 3. Content Component Structure
+
+Divide content UI into logical sections based on the actual screen structure. The number and type of sections should match the design, not a hardcoded pattern.
+
+**Analyze the screen and create sections that make sense:**
+
+```kotlin
+// Example 1: Sign-in screen with social + email sections
+@Composable
+private fun SignInContent(
+    email: String,
+    onEmailChange: (String) -> Unit,
+    onAppleClick: () -> Unit,
+    onGoogleClick: () -> Unit,
+    onNextClick: () -> Unit
+) {
+    Column {
+        SignInHeader()
+        SocialSignInButtons(onAppleClick, onGoogleClick)
+        EmailSignInSection(email, onEmailChange, onNextClick)
+        SignInFooter()
+    }
+}
+
+// Example 2: Home screen with just title + input + country selector
+@Composable
+private fun HomeContent(
+    familyName: String,
+    selectedCountry: String,
+    onFamilyNameChange: (String) -> Unit,
+    onEditCountryClick: () -> Unit
+) {
+    Column {
+        // Simple inline components - no need to extract
+        Text("Create family", style = DSTypography.h3.bold)
+        FamilyNameInput(familyName, onFamilyNameChange)
+        CountrySelector(selectedCountry, onEditCountryClick)
+    }
+}
+```
+
+**Move sections to components folder:**
+```
+screen/
+  signin/
+    SignInScreen.kt
+    SignInViewModel.kt
+    SignInUiState.kt
+    components/
+      SignInHeader.kt
+      SocialSignInButtons.kt
+      EmailSignInSection.kt
+      SignInFooter.kt
+```
+
+**Guidelines:**
+- Extract components that are complex or reusable
+- Keep simple inline UI in the Content composable
+- Name components based on what they do, not position (e.g., `SocialSignInButtons` not `SignInMiddle`)
+- All extracted components go in `{screenname}/components/` folder
+
+---
+
+## Complete Example
+
+```kotlin
+// ✅ GOOD - Following all patterns
+@Composable
+fun SignInScreen(
+    viewModel: SignInViewModel = hiltViewModel()
+) {
+    val uiState = viewModel.uiState.collectAsState()
+
+    Scaffold { paddingValues ->
+        SignInContent(
+            email = uiState.value.email,
+            onEmailChange = viewModel::onEmailChange,
+            onAppleClick = viewModel::signInApple,
+            onGoogleClick = viewModel::signInGoogle,
+            onNextClick = viewModel::signInEmail
+        )
+    }
+}
+
+@Composable
+private fun SignInContent(
+    email: String,
+    onEmailChange: (String) -> Unit,
+    onAppleClick: () -> Unit,
+    onGoogleClick: () -> Unit,
+    onNextClick: () -> Unit
+) {
+    Column {
+        // Sections based on actual screen structure
+        SignInHeader()
+        SocialSignInButtons(onAppleClick, onGoogleClick)
+        EmailSignInSection(email, onEmailChange, onNextClick)
+        SignInFooter()
+    }
+}
+```

@@ -1,7 +1,11 @@
 package com.safeNest.demo.features.scamAnalyzer.impl.presentation.di
 
 import com.safeNest.demo.features.scamAnalyzer.api.useCase.AnalyzeUseCase
+import com.safeNest.demo.features.scamAnalyzer.api.useCase.GetAnalysisResultUseCase
+import com.safeNest.demo.features.scamAnalyzer.api.useCase.ManageAnalyzeModeUseCase
 import com.safeNest.demo.features.scamAnalyzer.impl.domain.useCase.AnalyzeUseCaseImpl
+import com.safeNest.demo.features.scamAnalyzer.impl.domain.useCase.GetCachedAnalyzeUseCase
+import com.safeNest.demo.features.scamAnalyzer.impl.domain.useCase.ManageAnalyzeModeUseCaseImpl
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -20,4 +24,14 @@ abstract class UseCaseModule {
     abstract fun bindAnalyzeUrlUseCase(
         impl: AnalyzeUseCaseImpl
     ): AnalyzeUseCase
+
+    @Binds
+    abstract fun bindGetAnalysisResultUseCase(
+        impl: GetCachedAnalyzeUseCase
+    ): GetAnalysisResultUseCase
+
+    @Binds
+    abstract fun bindManageAnalyzeModeUseCase(
+        impl: ManageAnalyzeModeUseCaseImpl
+    ): ManageAnalyzeModeUseCase
 }

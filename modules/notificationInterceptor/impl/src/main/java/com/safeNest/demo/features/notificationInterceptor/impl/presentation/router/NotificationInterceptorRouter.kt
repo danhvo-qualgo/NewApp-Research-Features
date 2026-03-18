@@ -2,10 +2,10 @@ package com.safeNest.demo.features.notificationInterceptor.impl.presentation.rou
 
 import android.content.Context
 import com.safeNest.demo.features.notificationInterceptor.api.presentation.router.NotificationInterceptorRouterConst
-import com.safeNest.demo.features.notificationInterceptor.impl.presentation.NotificationInterceptorActivity
 import com.uney.core.router.InternalRouter
 import dagger.hilt.android.qualifiers.ApplicationContext
 import jakarta.inject.Inject
+import net.qualgo.safeNest.features.notificationInterceptor.impl.presentation.NotificationInterceptorActivity
 
 class NotificationInterceptorRouter @Inject constructor(
     @param:ApplicationContext

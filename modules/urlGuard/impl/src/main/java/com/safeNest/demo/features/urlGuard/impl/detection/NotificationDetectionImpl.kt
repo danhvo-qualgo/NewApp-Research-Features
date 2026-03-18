@@ -8,11 +8,11 @@ import javax.inject.Inject
 
 class NotificationDetectionImpl @Inject constructor(
     private val analyzeUseCase: AnalyzeUseCase
-): NotificationDetection {
+) : NotificationDetection {
     override suspend fun detectNotificationContent(text: String): DetectionStatus {
-        val analyzerResult = analyzeUseCase(AnalysisInput.Text(text))
+        val analyzerResult = analyzeUseCase(AnalysisInput.Text("", "", text))
         Log.d(TAG, "NotificationDetection result: $analyzerResult")
-        return if(text.contains("scam")) {
+        return if (text.contains("scam")) {
             DetectionStatus.DANGEROUS
         } else {
             DetectionStatus.SAFE

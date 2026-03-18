@@ -14,23 +14,19 @@ android {
 }
 
 dependencies {
-    implementation(project(":modules:home:api"))
-    implementation(libs.core.router)
-    implementation(project(":modules:baseApp"))
     implementation(project(":modules:designSystem"))
     implementation(project(":modules:callProtection:impl"))
+    implementation(project(":modules:home:api"))
+    implementation(libs.core.router)
     implementation(project(":modules:urlGuard:api"))
-    implementation(project(":modules:permissionManager:api"))
-    implementation(project(":modules:phishingDetection:api"))
     implementation(project(":modules:scamAnalyzer:api"))
     implementation(project(":modules:notificationInterceptor:api"))
     implementation("androidx.compose.material:material-icons-extended:1.6.3")
-
-    implementation("androidx.compose.material:material-icons-extended:1.6.3")
-    implementation(libs.androidx.compose.ui)
+    implementation("androidx.navigation:navigation-compose:2.7.7")
+    implementation(libs.coil.compose)
 }
 
 uneyPublishing {
-    groupId = "com.safeNest.demo.features"
+    groupId = "net.qualgo.safeNest.core"
     artifactId = "home-impl"
 }
