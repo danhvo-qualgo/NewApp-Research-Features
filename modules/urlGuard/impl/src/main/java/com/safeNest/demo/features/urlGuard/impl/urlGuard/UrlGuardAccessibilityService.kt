@@ -364,7 +364,7 @@ class UrlGuardAccessibilityService : AccessibilityService() {
     private fun onCallForeground(pkg: String, event: AccessibilityEvent) {
         val quickNumber = event.text
             .mapNotNull { it?.toString() }
-            .firstOrNull { looksLikePhoneNumber(it) }
+            .firstNotNullOfOrNull { extractPhoneNumber(it) }
 
         SurfaceDetector.update(ScreenSurface.ActiveCall(quickNumber, DetectionStatus.UNKNOWN))
         secureView.updateButton(FloatingButtonFeature.CALL_PROTECTION, DetectionStatus.UNKNOWN)
@@ -378,6 +378,7 @@ class UrlGuardAccessibilityService : AccessibilityService() {
         pendingCallCheck = Runnable {
             pendingCallCheck = null
             val number = extractPhoneNumberFromTree(rootInActiveWindow)
+            Log.d(TAG, "Incomming phone number: $number")
             val current = SurfaceDetector.getCurrent()
             if (current is ScreenSurface.ActiveCall) {
                 SurfaceDetector.update(current.copy(phoneNumber = number))
@@ -388,7 +389,11 @@ class UrlGuardAccessibilityService : AccessibilityService() {
     private fun extractPhoneNumberFromTree(root: AccessibilityNodeInfo?): String? {
         root ?: return null
         val text = root.text?.toString()
-        if (text != null && looksLikePhoneNumber(text)) return text
+
+        if (text != null) {
+            val extracted = extractPhoneNumber(text)
+            if (extracted != null) return extracted
+        }
         for (i in 0 until root.childCount) {
             val child = root.getChild(i) ?: continue
             val result = extractPhoneNumberFromTree(child)
@@ -398,8 +403,17 @@ class UrlGuardAccessibilityService : AccessibilityService() {
         return null
     }
 
-    private fun looksLikePhoneNumber(text: String): Boolean =
-        PHONE_NUMBER_REGEX.matches(text.trim())
+    /**
+     * Returns a phone number found anywhere within [text], or null if none is present.
+     * Uses [containsMatchIn] so numbers embedded alongside labels (e.g. "Incoming\n0812345678")
+     * are still detected, whereas [matches] would require the entire string to be a number.
+     */
+    private fun extractPhoneNumber(text: String): String? {
+        val cleaned = text
+            .replace(Regex("\\p{Cf}"), "") // remove hidden chars
+            .trim()
+        return PHONE_NUMBER_REGEX.find(cleaned)?.value
+    }
 
     // =========================================================================
     // 2.3 Notification detection
@@ -439,8 +453,8 @@ class UrlGuardAccessibilityService : AccessibilityService() {
         }
 
         SurfaceDetector.update(ScreenSurface.App(pkg, DetectionStatus.UNKNOWN))
-        secureView.updateButton(FloatingButtonFeature.DEFAULT, DetectionStatus.UNKNOWN)
-        secureView.updateActionCard(FloatingButtonFeature.DEFAULT, DetectionStatus.UNKNOWN)
+//        secureView.updateButton(FloatingButtonFeature.APP_CHECK, DetectionStatus.UNKNOWN)
+//        secureView.updateActionCard(FloatingButtonFeature.APP_CHECK, DetectionStatus.UNKNOWN)
         scheduleAppTrustCheck(pkg)
     }
 
@@ -449,8 +463,8 @@ class UrlGuardAccessibilityService : AccessibilityService() {
         if (cached != null) {
             Log.d(TAG, "AppTrust cache hit [$pkg]")
             SurfaceDetector.update(ScreenSurface.App(pkg, cached))
-            secureView.updateButton(FloatingButtonFeature.DEFAULT, cached)
-            secureView.updateActionCard(FloatingButtonFeature.DEFAULT, cached)
+            secureView.updateButton(FloatingButtonFeature.APP_CHECK, cached)
+            secureView.updateActionCard(FloatingButtonFeature.APP_CHECK, cached)
             return
         }
 
@@ -462,8 +476,8 @@ class UrlGuardAccessibilityService : AccessibilityService() {
                 val current = SurfaceDetector.getCurrent()
                 if (current is ScreenSurface.App && current.packageName == pkg) {
                     SurfaceDetector.update(current.copy(status = status))
-                    secureView.updateButton(FloatingButtonFeature.DEFAULT, status)
-                    secureView.updateActionCard(FloatingButtonFeature.DEFAULT, status)
+                    secureView.updateButton(FloatingButtonFeature.APP_CHECK, status)
+                    secureView.updateActionCard(FloatingButtonFeature.APP_CHECK, status)
                 }
             }
         }.also { mainHandler.postDelayed(it, APP_DEBOUNCE_MS) }

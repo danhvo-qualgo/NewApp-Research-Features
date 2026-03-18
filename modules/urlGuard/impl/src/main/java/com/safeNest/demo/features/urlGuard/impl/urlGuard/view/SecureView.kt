@@ -14,7 +14,7 @@ import com.safeNest.demo.features.urlGuard.impl.urlGuard.DetectionStatus
 import com.safeNest.demo.features.urlGuard.impl.urlGuard.FloatingButtonFeature
 import com.safeNest.demo.features.urlGuard.impl.urlGuard.util.CardPositionCalculator
 import com.safeNest.demo.features.urlGuard.impl.urlGuard.view.floatingbutton.FloatingView
-import com.safeNest.demo.features.urlGuard.impl.urlGuard.view.model.toActionCarViewIconBgColor
+import com.safeNest.demo.features.urlGuard.impl.urlGuard.view.model.toActionCarViewIconBgColorRes
 import com.safeNest.demo.features.urlGuard.impl.urlGuard.view.model.toActionCardViewIcon
 import com.safeNest.demo.features.urlGuard.impl.urlGuard.view.model.toActionCardViewLabel
 import com.safeNest.demo.features.urlGuard.impl.urlGuard.view.model.toActionCardViewListAction
@@ -150,19 +150,16 @@ class SecureView(private val context: Context) {
         feature.toActionCardViewLabel(context)?.let {
             actionCard.setAlertLabel(it)
         }
-        feature.toActionCardViewListAction(context)
-            .let {
-                if(it.isNotEmpty()) {
-                    actionCard.setActions(it)
-                }
-            }
-
+        feature.toActionCardViewListAction(context, status).let {
+            if (it.isNotEmpty()) actionCard.setActions(it)
+        }
         feature.toActionCardViewIcon(context).let {
             actionCard.setAlertIconDrawable(it)
         }
-
-        status.toActionCarViewIconBgColor().let {
-            actionCard.setAlertInnerBackground(it)
+        status.toActionCarViewIconBgColorRes().let { colorRes ->
+            val color = ContextCompat.getColor(context, colorRes)
+            actionCard.setAlertInnerBackground(color)
+            actionCard.setAlertLabelColor(color)
         }
     }
 

@@ -12,73 +12,77 @@ import com.safeNest.demo.features.urlGuard.impl.urlGuard.view.QuickActionCardVie
 // ── Public API: action card view mapper ─────────────────────────────────────────────
 fun FloatingButtonFeature.toActionCardViewLabel(context: Context): CharSequence? {
     return when(this) {
-        FloatingButtonFeature.DEFAULT -> null
+        FloatingButtonFeature.DEFAULT -> context.getString(R.string.blocking_security_alert)
+        FloatingButtonFeature.APP_CHECK -> context.getString(R.string.blocking_security_alert)
         FloatingButtonFeature.SAFE_BROWSING -> context.getString(R.string.blocking_security_alert)
-        FloatingButtonFeature.CALL_PROTECTION -> null
+        FloatingButtonFeature.CALL_PROTECTION -> context.getString(R.string.blocking_security_alert)
         FloatingButtonFeature.SMS_CHECK -> context.getString(R.string.sms_is_suspicious)
     }
 }
 
-fun FloatingButtonFeature.toActionCardViewListAction(context: Context): List<Action> {
-    return when(this) {
-        FloatingButtonFeature.DEFAULT, FloatingButtonFeature.CALL_PROTECTION -> emptyList()
-        FloatingButtonFeature.SAFE_BROWSING -> listOf(
-            Action(
-                icon = ContextCompat.getDrawable(context, R.drawable.ic_shield_zap)?.apply {
-                    val color = ContextCompat.getColor(context, R.color.blocking_primary)
-                    setTint(color)
-                }!!,
-                title = context.getString(R.string.check_scam_intent),
-                onClick = {}
-            ),
-            Action(
-                icon = ContextCompat.getDrawable(context, R.drawable.ic_camera_01)?.apply {
-                    val color = ContextCompat.getColor(context, R.color.blocking_primary)
-                    setTint(color)
-                }!!,
-                title = context.getString(R.string.screenshot),
-                onClick = {}
-            ),
-            Action(
-                icon = ContextCompat.getDrawable(context, R.drawable.ic_video_recorder)?.apply {
-                    val color = ContextCompat.getColor(context, R.color.blocking_primary)
-                    setTint(color)
-                }!!,
-                title = context.getString(R.string.record),
-                onClick = {}
-            ),
-        )
+fun FloatingButtonFeature.toActionCardViewListAction(
+    context: Context,
+    status: DetectionStatus
+): List<Action> {
+    fun detailsAction() = Action(
+        icon = ContextCompat.getDrawable(context, R.drawable.ic_shield_zap)?.apply {
+            setTint(ContextCompat.getColor(context, R.color.blocking_primary))
+        }!!,
+        title = context.getString(R.string.action_view_details),
+        onClick = {}
+    )
+    fun openKinShieldAction() = Action(
+        icon = ContextCompat.getDrawable(context, R.drawable.ic_shield_zap)?.apply {
+            setTint(ContextCompat.getColor(context, R.color.blocking_primary))
+        }!!,
+        title = context.getString(R.string.action_open_kinshield),
+        onClick = {}
+    )
 
-        FloatingButtonFeature.SMS_CHECK -> listOf(
-            Action(
-                icon = ContextCompat.getDrawable(context, R.drawable.ic_threat_alert_octagon_indigo)?.apply {
-                    val color = ContextCompat.getColor(context, R.color.blocking_primary)
-                    setTint(color)
-                }!!,
-                title = context.getString(R.string.scam_detail),
-                onClick = {}
-            ),
-            Action(
-                icon = ContextCompat.getDrawable(context, R.drawable.ic_threat_eye)?.apply {
-                    val color = ContextCompat.getColor(context, R.color.blocking_primary)
-                    setTint(color)
-                }!!,
-                title = context.getString(R.string.view_sms),
-                onClick = {}
+    return when (this) {
+        FloatingButtonFeature.SAFE_BROWSING -> when (status) {
+            DetectionStatus.DANGEROUS,
+            DetectionStatus.WARNING,
+            DetectionStatus.UNKNOWN -> listOf(detailsAction())
+            DetectionStatus.SAFE    -> listOf(openKinShieldAction())
+        }
+
+        FloatingButtonFeature.SMS_CHECK -> when (status) {
+            DetectionStatus.DANGEROUS -> listOf(
+                detailsAction(),
+                Action(
+                    icon = ContextCompat.getDrawable(context, R.drawable.ic_threat_eye)?.apply {
+                        setTint(ContextCompat.getColor(context, R.color.blocking_primary))
+                    }!!,
+                    title = context.getString(R.string.action_view_notification),
+                    onClick = {}
+                )
             )
-        )
+            else -> listOf(openKinShieldAction())
+        }
+
+        FloatingButtonFeature.CALL_PROTECTION -> listOf(openKinShieldAction())
+
+        FloatingButtonFeature.APP_CHECK,
+        FloatingButtonFeature.DEFAULT -> when (status) {
+            DetectionStatus.DANGEROUS -> listOf(
+                Action(
+                    icon = ContextCompat.getDrawable(context, R.drawable.ic_threat_alert_octagon_indigo)?.apply {
+                        setTint(ContextCompat.getColor(context, R.color.blocking_primary))
+                    }!!,
+                    title = context.getString(R.string.action_open_system_settings),
+                    onClick = {}
+                )
+            )
+            else -> listOf(openKinShieldAction())
+        }
     }
 }
 
 fun FloatingButtonFeature.toActionCardViewIcon(context: Context): Drawable? {
-    return when(this) {
-        FloatingButtonFeature.DEFAULT -> null
-        FloatingButtonFeature.SAFE_BROWSING -> ContextCompat.getDrawable(context,this.iconRes)
-        FloatingButtonFeature.CALL_PROTECTION -> null
-        FloatingButtonFeature.SMS_CHECK -> ContextCompat.getDrawable(context,this.iconRes)
-    }
+    return ContextCompat.getDrawable(context,this.iconRes)
 }
 
-fun DetectionStatus.toActionCarViewIconBgColor(): Int {
+fun DetectionStatus.toActionCarViewIconBgColorRes(): Int {
     return this.colorRes
 }

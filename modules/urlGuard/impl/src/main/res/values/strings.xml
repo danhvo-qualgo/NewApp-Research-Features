@@ -20,6 +20,10 @@
     <string name="record">Record</string>
     <string name="scam_detail">Scam detail</string>
     <string name="view_sms">View SMS</string>
+    <string name="action_view_details">View details</string>
+    <string name="action_open_kinshield">Open kinShield</string>
+    <string name="action_view_notification">View notification</string>
+    <string name="action_open_system_settings">Open settings</string>
     <string name="high_risk_scam_detected">High Risk: Scam Detected</string>
     <string name="high_risk_suspicious_form_detected">High Risk: Suspicious Form Detected</string>
     <string name="high_risk_scam_content">SafeNest has blocked this site because it may be a scam. It appears to be an unauthorized imitation designed to steal your credentials or
