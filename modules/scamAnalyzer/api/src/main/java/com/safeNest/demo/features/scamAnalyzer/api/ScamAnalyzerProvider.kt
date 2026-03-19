@@ -1,3 +1,7 @@
 package com.safeNest.demo.features.scamAnalyzer.api
 
-interface ScamAnalyzerProvider
+import android.content.Context
+
+interface ScamAnalyzerProvider {
+    fun openActivity(context: Context)
+}

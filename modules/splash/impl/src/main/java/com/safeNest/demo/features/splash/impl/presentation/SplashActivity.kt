@@ -9,7 +9,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.core.net.toUri
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
-import androidx.navigation.activity
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -57,6 +56,7 @@ internal class SplashActivity : BaseActivity() {
                     PermissionsScreen(
                         onStartClick = {
                             routerManager.navigate(activity, "internal://featureHome".toUri())
+                            this@SplashActivity.finish()
                         }
                     )
                 }

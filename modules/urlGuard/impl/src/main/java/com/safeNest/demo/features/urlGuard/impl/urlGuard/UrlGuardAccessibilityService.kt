@@ -13,6 +13,7 @@ import android.util.Log
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import androidx.core.app.NotificationCompat
+import com.safeNest.demo.features.scamAnalyzer.api.ScamAnalyzerProvider
 import com.safeNest.demo.features.urlGuard.impl.R
 import com.safeNest.demo.features.urlGuard.impl.detection.NotificationDetection
 import com.safeNest.demo.features.urlGuard.impl.detection.PhoneDetection
@@ -58,7 +59,8 @@ class UrlGuardAccessibilityService : AccessibilityService() {
     lateinit var phoneDetection: PhoneDetection
     @Inject
     lateinit var notificationDetection: NotificationDetection
-
+    @Inject
+    lateinit var scamAnalyzerProvider: ScamAnalyzerProvider
     @Inject
     lateinit var appTrustChecker: AppTrustChecker
     // ── UI layer ──────────────────────────────────────────────────────────────
@@ -137,7 +139,10 @@ class UrlGuardAccessibilityService : AccessibilityService() {
 
         // Initialise UI overlay — not shown yet.
         // Shown lazily via ACTION_SHOW_FLOATING sent from UrlGuardActivity.
-        secureView = SecureView(this).apply {
+        secureView = SecureView(this) {
+            secureView.hideBlockingPage()
+            scamAnalyzerProvider.openActivity(this)
+        }.apply {
             onGoBackClick = { hideBlockingPage() }
             onProceedAnywayClick = {
                 // User consciously chose to proceed → whitelist the domain for
@@ -483,7 +488,9 @@ class UrlGuardAccessibilityService : AccessibilityService() {
     private fun onAppForeground(pkg: String) {
         if (appTrustChecker.isSystemApp(pkg)) {
             Log.d(TAG, "AppTrust skipped — system app [$pkg]")
-            //SurfaceDetector.update(ScreenSurface.Idle)
+//            secureView.updateButton(FloatingButtonFeature.APP_CHECK, DetectionStatus.SAFE)
+//            secureView.updateActionCard(FloatingButtonFeature.APP_CHECK, DetectionStatus.SAFE)
+//            SurfaceDetector.update(ScreenSurface.Idle)
             return
         }
 
@@ -512,7 +519,7 @@ class UrlGuardAccessibilityService : AccessibilityService() {
                 if (current is ScreenSurface.App && current.packageName == pkg) {
                     SurfaceDetector.update(current.copy(status = status))
                     secureView.updateButton(FloatingButtonFeature.APP_CHECK, status)
-                    secureView.updateActionCard(FloatingButtonFeature.APP_CHECK, status)
+                    secureView.updateActionCard(FloatingButtonFeature.APP_CHECK, status, pkg)
                 }
             }
         }.also { mainHandler.postDelayed(it, APP_DEBOUNCE_MS) }

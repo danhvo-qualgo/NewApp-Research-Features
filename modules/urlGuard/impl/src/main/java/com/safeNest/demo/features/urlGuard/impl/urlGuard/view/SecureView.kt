@@ -40,7 +40,9 @@ import com.safeNest.demo.features.urlGuard.impl.urlGuard.view.model.toActionCard
  * appears on the opposite side of the screen so it never goes off-screen.
  *
  */
-class SecureView(private val context: Context) {
+class SecureView(
+    private val context: Context,
+    private val onDetailAction: () -> Unit) {
 
     private val windowManager: WindowManager =
         context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
@@ -146,13 +148,19 @@ class SecureView(private val context: Context) {
 
     // ── Public API: quick action card ─────────────────────────────────────────────
 
-    fun updateActionCard(feature: FloatingButtonFeature, status: DetectionStatus) {
+    fun updateActionCard(
+        feature: FloatingButtonFeature,
+        status: DetectionStatus,
+        data: Any? = null) {
         feature.toActionCardViewLabel(context)?.let {
             actionCard.setAlertLabel(it)
         }
-        feature.toActionCardViewListAction(context, status).let {
+        feature.toActionCardViewListAction(context, status, data) {
+            onDetailAction()
+        }.let {
             if (it.isNotEmpty()) actionCard.setActions(it)
         }
+
         feature.toActionCardViewIcon(context).let {
             actionCard.setAlertIconDrawable(it)
         }
