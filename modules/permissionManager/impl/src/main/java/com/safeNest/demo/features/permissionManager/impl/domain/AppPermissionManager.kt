@@ -6,11 +6,11 @@ import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
 import android.os.Build
 import android.util.Log
-import com.safeNest.demo.features.permissionManager.impl.domain.model.AppCategory
-import com.safeNest.demo.features.permissionManager.impl.domain.model.AppInfo
-import com.safeNest.demo.features.permissionManager.impl.domain.model.InstallSource
-import com.safeNest.demo.features.permissionManager.impl.domain.model.PermissionInfo
-import com.safeNest.demo.features.permissionManager.impl.domain.model.PermissionProtectionLevel
+import com.safeNest.demo.features.permissionManager.api.domain.model.AppCategory
+import com.safeNest.demo.features.permissionManager.api.domain.model.AppInfo
+import com.safeNest.demo.features.permissionManager.api.domain.model.InstallSource
+import com.safeNest.demo.features.permissionManager.api.domain.model.PermissionInfo
+import com.safeNest.demo.features.permissionManager.api.domain.model.PermissionProtectionLevel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -35,6 +35,15 @@ class AppPermissionManager @Inject constructor(
      *
      * Must be called off the main thread; suspends on [Dispatchers.IO].
      */
+    @Suppress("DEPRECATION")
+    suspend fun getPermissionsForPackage(packageName: String): List<PermissionInfo> = withContext(Dispatchers.IO) {
+        val pm = context.packageManager
+        val pkgInfo = runCatching {
+            pm.getPackageInfo(packageName, PackageManager.GET_PERMISSIONS)
+        }.getOrNull() ?: return@withContext emptyList()
+        buildAppInfo(pm, pkgInfo).permissions
+    }
+
     @Suppress("DEPRECATION")
     suspend fun getInstalledAppsWithPermissions(): List<AppInfo> = withContext(Dispatchers.IO) {
         val pm = context.packageManager

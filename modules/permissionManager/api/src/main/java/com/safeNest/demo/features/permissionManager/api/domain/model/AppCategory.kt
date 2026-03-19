@@ -1,4 +1,4 @@
-package com.safeNest.demo.features.permissionManager.impl.domain.model
+package com.safeNest.demo.features.permissionManager.api.domain.model
 
 import android.content.pm.ApplicationInfo
 import android.os.Build

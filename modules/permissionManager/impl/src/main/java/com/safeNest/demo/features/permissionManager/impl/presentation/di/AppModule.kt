@@ -22,3 +22,4 @@ internal class AppModule {
     @Provides
     fun providerFeatureRouter(impl: PermissionManagerRouter): Router = impl
 }
+

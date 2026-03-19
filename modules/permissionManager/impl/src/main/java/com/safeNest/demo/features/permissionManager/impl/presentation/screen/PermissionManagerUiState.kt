@@ -1,6 +1,6 @@
 package com.safeNest.demo.features.permissionManager.impl.presentation.screen
 
-import com.safeNest.demo.features.permissionManager.impl.domain.model.AppInfo
+import com.safeNest.demo.features.permissionManager.api.domain.model.AppInfo
 
 data class PermissionManagerUiState(
     val isLoading: Boolean = true,
