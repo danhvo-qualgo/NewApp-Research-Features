@@ -14,6 +14,7 @@ import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import androidx.core.app.NotificationCompat
 import com.safeNest.demo.features.urlGuard.impl.R
+import com.safeNest.demo.features.urlGuard.impl.detection.PhoneDetection
 import com.safeNest.demo.features.urlGuard.impl.detection.UrlDetection
 import com.safeNest.demo.features.urlGuard.impl.detection.model.ModelDetectStatus
 import com.safeNest.demo.features.urlGuard.impl.urlGuard.mapper.toModelDetectionStatus
@@ -52,6 +53,8 @@ class UrlGuardAccessibilityService : AccessibilityService() {
 
     @Inject
     lateinit var urlDetection: UrlDetection
+    @Inject
+    lateinit var phoneDetection: PhoneDetection
     @Inject
     lateinit var appTrustChecker: AppTrustChecker
     // ── UI layer ──────────────────────────────────────────────────────────────
@@ -371,8 +374,8 @@ class UrlGuardAccessibilityService : AccessibilityService() {
             .firstNotNullOfOrNull { extractPhoneNumber(it) }
 
         SurfaceDetector.update(ScreenSurface.ActiveCall(quickNumber, DetectionStatus.UNKNOWN))
-        secureView.updateButton(FloatingButtonFeature.CALL_PROTECTION, DetectionStatus.UNKNOWN)
-        secureView.updateActionCard(FloatingButtonFeature.CALL_PROTECTION, DetectionStatus.UNKNOWN)
+//        secureView.updateButton(FloatingButtonFeature.CALL_PROTECTION, DetectionStatus.UNKNOWN)
+//        secureView.updateActionCard(FloatingButtonFeature.CALL_PROTECTION, DetectionStatus.UNKNOWN)
 
         if (quickNumber == null) scheduleCallInfoExtraction(pkg)
     }
@@ -383,11 +386,20 @@ class UrlGuardAccessibilityService : AccessibilityService() {
             pendingCallCheck = null
             val number = extractPhoneNumberFromTree(rootInActiveWindow)
             Log.d(TAG, "Incomming phone number: $number")
-            val current = SurfaceDetector.getCurrent()
-            if (current is ScreenSurface.ActiveCall) {
-                SurfaceDetector.update(current.copy(phoneNumber = number))
+            serviceScope.launch {
+                number?.let {
+                    schedulePhoneNumberCheck(number)
+                }
             }
         }.also { mainHandler.postDelayed(it, CALL_DEBOUNCE_MS) }
+    }
+
+    private suspend fun schedulePhoneNumberCheck(phoneNumber: String) {
+        val detectionStatus = phoneDetection.detectPhone(phoneNumber)
+
+        secureView.updateButton(FloatingButtonFeature.CALL_PROTECTION, detectionStatus)
+        secureView.updateActionCard(FloatingButtonFeature.CALL_PROTECTION, detectionStatus)
+        SurfaceDetector.update(ScreenSurface.ActiveCall(phoneNumber, detectionStatus))
     }
 
     private fun extractPhoneNumberFromTree(root: AccessibilityNodeInfo?): String? {
