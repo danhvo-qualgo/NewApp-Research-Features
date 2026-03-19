@@ -44,7 +44,7 @@ class CallDetectionReceiver : BroadcastReceiver() {
 
                 TelephonyManager.EXTRA_STATE_OFFHOOK -> {
                     if (TelephonyManager.EXTRA_STATE_RINGING == lastState) {
-                        callDetectionHandler.onCallAnswer()
+                        callDetectionHandler.onCallAnswer(phoneNumber)
                     }
                     lastState = state
                 }
@@ -61,7 +61,9 @@ class CallDetectionReceiver : BroadcastReceiver() {
                         }
                     }
                     lastState = state
-                    callDetectionHandler.onCallEnd()
+                    coroutineScope.launch {
+                        callDetectionHandler.onCallEnd(phoneNumber)
+                    }
                 }
             }
         }.also {

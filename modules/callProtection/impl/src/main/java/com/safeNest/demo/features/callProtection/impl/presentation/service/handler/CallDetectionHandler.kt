@@ -2,8 +2,8 @@ package com.safeNest.demo.features.callProtection.impl.presentation.service.hand
 
 interface CallDetectionHandler {
     suspend fun onCallRing(phoneNumber: String): CallResult
-    fun onCallAnswer()
-    fun onCallEnd()
+    fun onCallAnswer(phoneNumber: String)
+    suspend fun onCallEnd(phoneNumber: String)
 }
 
 sealed interface CallResult {

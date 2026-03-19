@@ -2,13 +2,26 @@ package com.safeNest.demo.features.callProtection.impl.presentation.service.call
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.content.res.ColorStateList
 import android.graphics.PixelFormat
 import android.graphics.Point
 import android.os.Build
+import android.util.Log
 import android.util.Size
 import android.util.TypedValue
+import android.view.LayoutInflater
 import android.view.ViewGroup
 import android.view.WindowManager
+import android.widget.FrameLayout
+import android.widget.ImageView
+import android.widget.TextView
+import androidx.compose.ui.graphics.toArgb
+import com.safeNest.demo.features.callProtection.api.domain.model.CallerIdInfoType
+import com.safeNest.demo.features.callProtection.impl.R
+import com.safeNest.demo.features.designSystem.theme.color.colorAmber600
+import com.safeNest.demo.features.designSystem.theme.color.colorGray600
+import com.safeNest.demo.features.designSystem.theme.color.colorRed500
+import com.safeNest.demo.features.designSystem.theme.color.colorTeal600
 import kotlin.math.min
 
 @SuppressLint("StaticFieldLeak")
@@ -31,6 +44,7 @@ object CallDetectionPopup {
                 content = content
             ).also {
                 val params = getPopupLayoutParams(popupSize)
+                Log.d("CallDetectionPopup", "show popup $content")
                 windowManager.addView(it, params)
             }
         }.onFailure {
@@ -56,34 +70,45 @@ object CallDetectionPopup {
 
     private fun getPopupView(
         context: Context, content: PopupContent
-    ): ViewGroup? {
-        return null
-//        return LayoutInflater.from(context).inflate(R.layout.popup_call_detection, null) as ViewGroup
-//        val rootView = LayoutInflater.from(context).inflate(R.layout.popup_call_detection, null)
-
-//        rootView.findViewById<TextView>(R.id.label).text = content.label.ifBlank { content.emptyLabel }
-//        rootView.findViewById<TextView>(R.id.phoneNumber).text = content.phoneNumber
-//
-//        val callDetectionTag = CallDetectionTag.get()
-//        val tagBgColor = getTagBgColor(callDetectionTag.tagBgColor[content.originalLabel].orEmpty())
-//        val tagBgIcon = getTagBgIcon(callDetectionTag.tagBgIcon[content.originalLabel].orEmpty())
-//        val tagIcon = getTagIcon(callDetectionTag.tagIcon[content.originalLabel].orEmpty())
-//
-//        rootView.findViewById<ImageView>(R.id.avatar).let {
-//            if (tagIcon != 0) it.setImageResource(tagIcon)
-//            else it.isVisible = false
-//        }
-//
-//        rootView.findViewById<ImageView>(R.id.icon).let {
-//            if (tagBgIcon != 0) it.setImageResource(tagBgIcon)
-//            else it.isVisible = false
-//        }
-//        rootView.findViewById<TextView>(R.id.caption).setText(
-//            if (tagBgColor == R.drawable.bg_gradient_gray) R.string.call_detection_incoming_call_caption_unknown
-//            else R.string.call_detection_incoming_call_caption
-//        )
-//        rootView.setBackgroundResource(tagBgColor)
+    ): ViewGroup {
+        return (LayoutInflater.from(context).inflate(R.layout.popup_call_detection, null) as ViewGroup).apply {
+            val color = getColorByType(content.type)
+            findViewById<FrameLayout>(R.id.cardContainer).backgroundTintList =
+                ColorStateList.valueOf(color)
+            findViewById<TextView>(R.id.txtAlertLabel).setTextColor(color)
+            findViewById<TextView>(R.id.txtAlertTitle).text = getLabelByType(content.type)
+            findViewById<ImageView>(R.id.imgAlertIcon).setImageResource(getIconByType(content.type))
+        }
     }
+
+    private fun getColorByType(type: CallerIdInfoType) =
+        when (type) {
+            CallerIdInfoType.SPAM -> colorAmber600.toArgb()
+            CallerIdInfoType.SAFE -> colorTeal600.toArgb()
+            CallerIdInfoType.UNKNOW -> colorGray600.toArgb()
+            CallerIdInfoType.PHISHING -> colorRed500.toArgb()
+            else -> colorTeal600.toArgb()
+        }
+
+    private fun getIconByType(type: CallerIdInfoType) =
+        when (type) {
+            CallerIdInfoType.SPAM -> R.drawable.ic_alert_spam
+            CallerIdInfoType.SAFE -> R.drawable.ic_alert_safe
+            CallerIdInfoType.UNKNOW -> R.drawable.ic_alert_unverified
+            CallerIdInfoType.PHISHING -> R.drawable.ic_alert_phishing
+            else -> R.drawable.ic_alert_safe
+        }
+
+    private fun getLabelByType(type: CallerIdInfoType) =
+        when (type) {
+            CallerIdInfoType.SPAM -> "Spam - Financial Loan"
+            CallerIdInfoType.SAFE -> "Safe - Verified Caller"
+            CallerIdInfoType.UNKNOW -> "Unverified Caller"
+            CallerIdInfoType.PHISHING -> "Phishing - High Risk"
+            else ->  "Safe - Verified Caller"
+        }
+
+
 
     private fun dpToPx(context: Context, dp: Float): Int {
         return TypedValue.applyDimension(
@@ -117,10 +142,6 @@ object CallDetectionPopup {
 
     data class PopupContent(
         val phoneNumber: String,
-        val tag: String,
-        val label: String,
-        val originalLabel: String,
-        val emptyLabel: String,
-        val footer: String
+        val type: CallerIdInfoType
     )
 }

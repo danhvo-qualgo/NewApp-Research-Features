@@ -30,6 +30,7 @@ dependencies {
     implementation(libs.core.storage.api)
     implementation(project(":modules:designSystem"))
     implementation("androidx.compose.material:material-icons-extended:1.6.3")
+    implementation(libs.material)
 
     ksp(libs.room.compiler)
 }

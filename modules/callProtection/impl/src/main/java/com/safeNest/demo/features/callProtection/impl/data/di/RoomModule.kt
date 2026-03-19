@@ -42,4 +42,8 @@ internal object RoomModule {
     @Singleton
     @Provides
     fun masterWhitelistDao(database: CallDataBase) = database.masterWhitelistDao()
+
+    @Singleton
+    @Provides
+    fun callTrackingDao(database: CallDataBase) = database.callTrackingDao()
 }

@@ -2,11 +2,13 @@ package com.safeNest.demo.features.callProtection.impl.presentation.di
 
 import com.safeNest.demo.features.callProtection.impl.data.repository.BlacklistPatternRepositoryImpl
 import com.safeNest.demo.features.callProtection.impl.data.repository.CallDetectionRepositoryImpl
+import com.safeNest.demo.features.callProtection.impl.data.repository.CallTrackingRepositoryImpl
 import com.safeNest.demo.features.callProtection.impl.data.repository.MasterBlocklistRepositoryImpl
 import com.safeNest.demo.features.callProtection.impl.data.repository.MasterWhitelistRepositoryImpl
 import com.safeNest.demo.features.callProtection.impl.data.repository.WhitelistRepositoryImpl
 import com.safeNest.demo.features.callProtection.impl.domain.repository.BlacklistPatternRepository
 import com.safeNest.demo.features.callProtection.impl.domain.repository.CallDetectionRepository
+import com.safeNest.demo.features.callProtection.impl.domain.repository.CallTrackingRepository
 import com.safeNest.demo.features.callProtection.impl.domain.repository.MasterBlocklistRepository
 import com.safeNest.demo.features.callProtection.impl.domain.repository.MasterWhitelistRepository
 import com.safeNest.demo.features.callProtection.impl.domain.repository.WhitelistRepository
@@ -48,4 +50,10 @@ internal class DataModule {
     fun masterWhitelistRepository(
         impl: MasterWhitelistRepositoryImpl
     ): MasterWhitelistRepository = impl
+
+    @Singleton
+    @Provides
+    fun callTrackingRepository(
+        impl: CallTrackingRepositoryImpl
+    ): CallTrackingRepository = impl
 }

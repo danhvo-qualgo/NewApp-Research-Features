@@ -8,8 +8,7 @@ data class PhoneNumberInfo(
     val phoneNumber: String,
     val name: String = "",
     val label: String = "",
-    val normalizedNumber: String = "",
-    val type: PhoneNumberInfoType = PhoneNumberInfoType.SAFE
+    val normalizedNumber: String = ""
 ) {
     fun toWhitelistEntity(): WhitelistEntity {
         return WhitelistEntity(phoneNumber, name, label, normalizedNumber)
@@ -22,8 +21,4 @@ data class PhoneNumberInfo(
     fun toMasterBlocklistEntity(): MasterBlocklistEntity {
         return MasterBlocklistEntity(phoneNumber, name, label, normalizedNumber)
     }
-}
-
-enum class PhoneNumberInfoType {
-    SCAM, SPAM, PHISHING, SAFE, UNKNOW
 }
