@@ -2,7 +2,10 @@ package com.safeNest.demo.features.urlGuard.impl.urlGuard.view.model
 
 import android.content.Context
 import android.graphics.drawable.Drawable
+import android.util.Log
 import androidx.core.content.ContextCompat
+import com.safeNest.demo.features.commonAndroid.openApp
+import com.safeNest.demo.features.commonAndroid.openAppSettings
 import com.safeNest.demo.features.urlGuard.impl.R
 import com.safeNest.demo.features.urlGuard.impl.urlGuard.DetectionStatus
 import com.safeNest.demo.features.urlGuard.impl.urlGuard.FloatingButtonFeature
@@ -22,21 +25,29 @@ fun FloatingButtonFeature.toActionCardViewLabel(context: Context): CharSequence?
 
 fun FloatingButtonFeature.toActionCardViewListAction(
     context: Context,
-    status: DetectionStatus
+    status: DetectionStatus,
+    data: Any? = null,
+    openDetailAction: () -> Unit = {}
 ): List<Action> {
     fun detailsAction() = Action(
         icon = ContextCompat.getDrawable(context, R.drawable.ic_shield_zap)?.apply {
             setTint(ContextCompat.getColor(context, R.color.blocking_primary))
         }!!,
         title = context.getString(R.string.action_view_details),
-        onClick = {}
+        onClick = {
+            Log.d("FloatingAction", "Open detail")
+            openDetailAction()
+        }
     )
     fun openKinShieldAction() = Action(
         icon = ContextCompat.getDrawable(context, R.drawable.ic_shield_zap)?.apply {
             setTint(ContextCompat.getColor(context, R.color.blocking_primary))
         }!!,
         title = context.getString(R.string.action_open_kinshield),
-        onClick = {}
+        onClick = {
+            Log.d("FloatingAction", "Open kinShield app")
+            context.openApp()
+        }
     )
 
     return when (this) {
@@ -65,13 +76,20 @@ fun FloatingButtonFeature.toActionCardViewListAction(
 
         FloatingButtonFeature.APP_CHECK,
         FloatingButtonFeature.DEFAULT -> when (status) {
-            DetectionStatus.DANGEROUS -> listOf(
+            DetectionStatus.DANGEROUS,
+            DetectionStatus.WARNING-> listOf(
                 Action(
                     icon = ContextCompat.getDrawable(context, R.drawable.ic_threat_alert_octagon_indigo)?.apply {
                         setTint(ContextCompat.getColor(context, R.color.blocking_primary))
                     }!!,
                     title = context.getString(R.string.action_open_system_settings),
-                    onClick = {}
+                    onClick = {
+                        val pkg = data as? String
+                        pkg?.let {
+                            Log.d("FloatingAction", "Open app setting")
+                            context.openAppSettings(pkg)
+                        }
+                    }
                 )
             )
             else -> listOf(openKinShieldAction())

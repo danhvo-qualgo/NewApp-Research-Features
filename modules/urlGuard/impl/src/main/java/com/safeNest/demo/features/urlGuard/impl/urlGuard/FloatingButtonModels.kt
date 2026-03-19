@@ -12,7 +12,7 @@ enum class FloatingButtonFeature(
     DEFAULT(R.drawable.icon_default, hasQuickActions = false),
     APP_CHECK(R.drawable.icon_default, hasQuickActions = true),
     SMS_CHECK(R.drawable.icon_message, hasQuickActions = true),
-    CALL_PROTECTION(R.drawable.icon_callprotection, hasQuickActions = false),
+    CALL_PROTECTION(R.drawable.icon_callprotection, hasQuickActions = true),
     SAFE_BROWSING(R.drawable.icon_safebrowsing, hasQuickActions = true)
 }
 
