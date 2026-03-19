@@ -253,7 +253,7 @@ class UrlGuardAccessibilityService : AccessibilityService() {
     }
 
     private fun scheduleUrlCheck() {
-        // While the blocking page is shcown, rootInActiveWindow points to the bloking
+        // While the blocking page is shown, rootInActiveWindow points to the bloking
         // page's own view tree. UlExtractor would find the displayed blocked-URL textr
         // inside tv_blocked_url and re-scan it, potentially flipping the floating
         // button to SAFE. Drop all pending and incoming checks until the page is gone.
@@ -299,31 +299,20 @@ class UrlGuardAccessibilityService : AccessibilityService() {
 
         // Cache miss — API call
         Log.d(TAG, "URL cache miss [$normalUrl]")
-        val reputation = withContext(Dispatchers.IO) { ScamApiClient.checkUrl(normalUrl) }
+        //val reputation = withContext(Dispatchers.IO) { ScamApiClient.checkUrl(normalUrl) }
 
         val detectedStatus: DetectionStatus
         val isMalicious: Boolean
 
-        if (reputation != null) {
+        val  modelDetectionStatus = urlDetection.detect(normalUrl)
 
-            val isScam = reputation.data.riskScore > 0.8
-
-            detectedStatus = when {
-                reputation.data.riskScore > 0.8 -> DetectionStatus.DANGEROUS
-                reputation.data.riskScore > 0.6 -> DetectionStatus.WARNING
-                else -> DetectionStatus.SAFE
-            }
-            isMalicious = isScam
-            Log.d(TAG, "URL [$normalUrl] → ${reputation.data.riskScore} isScam=$isScam")
-        } else {
-            detectedStatus = DetectionStatus.UNKNOWN
-            isMalicious = false
-        }
-
+        detectedStatus = modelDetectionStatus.toModelDetectionStatus()
+        isMalicious = modelDetectionStatus == ModelDetectStatus.Scam
         Log.d(TAG, "urlCache: $normalUrl -> $detectedStatus")
 
         urlCache[normalUrl] = UrlCacheEntry(status = detectedStatus, isMalicious = isMalicious)
         applyUrlResult(normalUrl, detectedStatus, browserPkg)
+
         //triggerFormInspection(normalUrl)
     }
 
