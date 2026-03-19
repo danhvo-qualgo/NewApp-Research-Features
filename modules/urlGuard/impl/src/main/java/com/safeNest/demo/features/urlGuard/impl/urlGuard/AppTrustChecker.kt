@@ -1,11 +1,12 @@
 package com.safeNest.demo.features.urlGuard.impl.urlGuard
 
+import android.content.Context
 import android.content.pm.ApplicationInfo
-import android.content.pm.PackageManager
 import android.os.Build
 import android.util.Log
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
+import com.safeNest.demo.features.permissionManager.api.domain.GetAppPermissionInfoUseCase
+import com.safeNest.demo.features.permissionManager.api.domain.model.PermissionProtectionLevel
+import javax.inject.Inject
 
 /**
  * Evaluates the trustworthiness of an installed app and maps the result to a [DetectionStatus].
@@ -13,7 +14,9 @@ import kotlinx.coroutines.withContext
  * Base on there permission have been granted
  * Results are stored in [cache] so the caller can skip re-evaluation on subsequent visits.
  */
-class AppTrustChecker(private val pm: PackageManager) {
+class AppTrustChecker @Inject constructor(
+    private val context: Context,
+    private val getAppPermissionInfoUseCase: GetAppPermissionInfoUseCase) {
 
     /** Session-scoped cache: package name → last evaluated [DetectionStatus]. */
     val cache = mutableMapOf<String, DetectionStatus>()
@@ -23,43 +26,37 @@ class AppTrustChecker(private val pm: PackageManager) {
      * Must be called from a coroutine (performs blocking PackageManager calls on Default dispatcher).
      */
     suspend fun evaluate(pkg: String): DetectionStatus {
-        val installSrc  = withContext(Dispatchers.Default) { getInstallSource(pkg) }
-        val isPlayStore = installSrc == "com.android.vending"
-        val isDangerous = DANGEROUS_PACKAGES.contains(pkg)
-        val isKnownSafe = TRUSTED_PACKAGES.contains(pkg)
-
-        val trust = when {
-            isDangerous  -> TrustLevel.DANGEROUS
-            isKnownSafe  -> TrustLevel.TRUSTED
-            isPlayStore  -> TrustLevel.VERIFIED
-            else         -> TrustLevel.UNKNOWN
+//        val installSrc  = withContext(Dispatchers.Default) { getInstallSource(pkg) }
+//        val isPlayStore = installSrc == "com.android.vending"
+//        val isDangerous = DANGEROUS_PACKAGES.contains(pkg)
+//        val isKnownSafe = TRUSTED_PACKAGES.contains(pkg)
+        val appPermission = getAppPermissionInfoUseCase.invoke(pkg)
+        Log.d(TAG, "App package [$pkg] → permission: $appPermission")
+        val containSensitivePermission = appPermission.any { it.protectionLevel == PermissionProtectionLevel.DANGEROUS}
+        val status = if (containSensitivePermission) {
+            DetectionStatus.WARNING
+        } else {
+            DetectionStatus.SAFE
         }
-
-        val status = when (trust) {
-            TrustLevel.DANGEROUS -> DetectionStatus.DANGEROUS
-            TrustLevel.TRUSTED   -> DetectionStatus.SAFE
-            TrustLevel.VERIFIED  -> DetectionStatus.SAFE
-            TrustLevel.UNKNOWN   -> DetectionStatus.UNKNOWN
-        }
-
         cache[pkg] = status
-        Log.d(TAG, "AppTrust [$pkg] → $trust → $status | src=$installSrc")
+
+        Log.d(TAG, "AppTrust [$pkg]  → status: $status ")
         return status
     }
 
     /** Returns true if [pkg] is a system app (skips evaluation in the service). */
     fun isSystemApp(pkg: String): Boolean = try {
-        (pm.getApplicationInfo(pkg, 0).flags and ApplicationInfo.FLAG_SYSTEM) != 0
+        (context.packageManager.getApplicationInfo(pkg, 0).flags and ApplicationInfo.FLAG_SYSTEM) != 0
     } catch (_: Exception) { false }
 
     // ── Private helpers ───────────────────────────────────────────────────────
 
     private fun getInstallSource(pkg: String): String? = try {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            pm.getInstallSourceInfo(pkg).installingPackageName
+            context.packageManager.getInstallSourceInfo(pkg).installingPackageName
         } else {
             @Suppress("DEPRECATION")
-            pm.getInstallerPackageName(pkg)
+            context.packageManager.getInstallerPackageName(pkg)
         }
     } catch (_: Exception) { null }
 

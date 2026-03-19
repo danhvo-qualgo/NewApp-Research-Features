@@ -60,12 +60,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.safeNest.demo.features.permissionManager.api.domain.model.AppCategory
+import com.safeNest.demo.features.permissionManager.api.domain.model.AppInfo
+import com.safeNest.demo.features.permissionManager.api.domain.model.InstallSource
+import com.safeNest.demo.features.permissionManager.api.domain.model.PermissionInfo
+import com.safeNest.demo.features.permissionManager.api.domain.model.PermissionProtectionLevel
 import com.safeNest.demo.features.permissionManager.impl.R
-import com.safeNest.demo.features.permissionManager.impl.domain.model.AppCategory
-import com.safeNest.demo.features.permissionManager.impl.domain.model.AppInfo
-import com.safeNest.demo.features.permissionManager.impl.domain.model.InstallSource
-import com.safeNest.demo.features.permissionManager.impl.domain.model.PermissionInfo
-import com.safeNest.demo.features.permissionManager.impl.domain.model.PermissionProtectionLevel
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Entry point

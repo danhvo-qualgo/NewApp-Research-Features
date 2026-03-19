@@ -1,4 +1,4 @@
-package com.safeNest.demo.features.permissionManager.impl.domain.model
+package com.safeNest.demo.features.permissionManager.api.domain.model
 
 data class AppInfo(
     val appName: String,

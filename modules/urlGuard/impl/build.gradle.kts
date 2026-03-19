@@ -16,6 +16,7 @@ android {
 dependencies {
     implementation(project(":modules:urlGuard:api"))
     implementation(project(":modules:gate1"))
+    implementation(project(":modules:permissionManager:api"))
     implementation(libs.core.router)
 
     // Ktor HTTP client

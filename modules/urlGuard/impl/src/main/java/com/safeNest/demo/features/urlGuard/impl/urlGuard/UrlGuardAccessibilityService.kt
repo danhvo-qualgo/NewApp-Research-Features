@@ -48,12 +48,12 @@ class UrlGuardAccessibilityService : AccessibilityService() {
 
     // ── Helpers ───────────────────────────────────────────────────────────────
     private lateinit var screenshotHelper: ScreenshotHelper
-    private lateinit var appTrustChecker: AppTrustChecker
     private lateinit var formInspector: FormInspectorWebView
 
     @Inject
     lateinit var urlDetection: UrlDetection
-
+    @Inject
+    lateinit var appTrustChecker: AppTrustChecker
     // ── UI layer ──────────────────────────────────────────────────────────────
     private lateinit var secureView: SecureView
 
@@ -123,7 +123,6 @@ class UrlGuardAccessibilityService : AccessibilityService() {
 
         // Initialise helpers
         screenshotHelper = ScreenshotHelper(this, serviceScope, mainHandler)
-        appTrustChecker = AppTrustChecker(packageManager)
         formInspector = FormInspectorWebView(
             this, getSystemService(WINDOW_SERVICE)
                     as android.view.WindowManager
