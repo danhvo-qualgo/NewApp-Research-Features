@@ -23,6 +23,10 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -294,6 +298,8 @@ class UrlGuardAccessibilityService : AccessibilityService() {
                 DetectionStatus.UNKNOWN
             )
         )
+        val detectedStatus: DetectionStatus
+        val isMalicious: Boolean
 
         // Cache hit
         val cached = urlCache[normalUrl]
@@ -302,24 +308,28 @@ class UrlGuardAccessibilityService : AccessibilityService() {
             applyUrlResult(normalUrl, cached.status,  browserPkg)
             return
         }
-
         // Cache miss — API call
         Log.d(TAG, "URL cache miss [$normalUrl]")
-        //val reputation = withContext(Dispatchers.IO) { ScamApiClient.checkUrl(normalUrl) }
 
-        val detectedStatus: DetectionStatus
-        val isMalicious: Boolean
+        val isHasSensitiveForm = triggerFormInspection(normalUrl).first()
+        if (isHasSensitiveForm) {
+            detectedStatus = DetectionStatus.WARNING
+            isMalicious = false
+        } else {
 
-        val  modelDetectionStatus = urlDetection.detect(normalUrl)
+            //val reputation = withContext(Dispatchers.IO) { ScamApiClient.checkUrl(normalUrl) }
 
-        detectedStatus = modelDetectionStatus.toModelDetectionStatus()
-        isMalicious = modelDetectionStatus == ModelDetectStatus.Scam
+            val  modelDetectionStatus = urlDetection.detect(normalUrl)
+
+            detectedStatus = modelDetectionStatus.toModelDetectionStatus()
+            isMalicious = modelDetectionStatus == ModelDetectStatus.Scam
+
+        }
         Log.d(TAG, "urlCache: $normalUrl -> $detectedStatus")
 
         urlCache[normalUrl] = UrlCacheEntry(status = detectedStatus, isMalicious = isMalicious)
         applyUrlResult(normalUrl, detectedStatus, browserPkg)
 
-        //triggerFormInspection(normalUrl)
     }
 
     /**
@@ -483,34 +493,34 @@ class UrlGuardAccessibilityService : AccessibilityService() {
     // Form inspection
     // =========================================================================
 
-    private fun triggerFormInspection(normalUrl: String) {
-        if (normalUrl in userAllowedUrls) return
-        if (formScanCache[normalUrl] == false) return
-
-        formInspector.inspect(normalUrl) { hasSensitiveForm, detectedFields ->
-            formScanCache[normalUrl] = hasSensitiveForm
-            if (hasSensitiveForm) {
-                Log.w(TAG, "Sensitive form detected at $normalUrl: $detectedFields")
-                userAllowedUrls += normalUrl
-                triggerFormWarning(normalUrl, detectedFields)
+    private fun triggerFormInspection(normalUrl: String): Flow<Boolean> {
+        return callbackFlow {
+            val domain = UrlExtractor.extractDomain(normalUrl)
+//            if (normalUrl in userAllowedUrls) {
+//                trySend(false)
+//                close()
+//                return@callbackFlow
+//            }
+            val cacheResult = formScanCache[normalUrl]
+            if (cacheResult != null) {
+                trySend(cacheResult)
+                close()
+                return@callbackFlow
             }
-        }
-    }
 
-    private fun triggerFormWarning(originalUrl: String, detectedFields: List<String>) {
-        val warningUri = FormWarningPageContentProvider.buildWarningUri(originalUrl, detectedFields)
-        val pkg = lastBrowserPackage
-            ?.takeIf { it in AppTrustChecker.BROWSER_PACKAGES }
-            ?: "com.android.chrome"
-        val intent = Intent(Intent.ACTION_VIEW).apply {
-            setDataAndType(warningUri, "text/html")
-            setPackage(pkg)
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION)
-        }
-        try {
-            startActivity(intent)
-        } catch (e: Exception) {
-            Log.e(TAG, "triggerFormWarning: startActivity failed", e)
+            formInspector.inspect(normalUrl) { hasSensitiveForm, detectedFields ->
+                if (hasSensitiveForm) {
+                    Log.w(TAG, "Sensitive form detected at $normalUrl: $detectedFields")
+
+                }
+                formScanCache[normalUrl] = hasSensitiveForm
+                trySend(hasSensitiveForm)
+                close()
+            }
+
+            awaitClose {
+                formInspector.cleanup()
+            }
         }
     }
 
