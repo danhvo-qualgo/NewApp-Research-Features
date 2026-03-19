@@ -1,0 +1,103 @@
+---
+description: Use DSTopbar from design system instead of custom top bars
+globs: **/*Screen.kt
+alwaysApply: false
+---
+
+# Use DSTopbar for Screen Top Bars
+
+Always use the `DSTopbar` component from the design system instead of creating custom top bar implementations.
+
+## Why
+
+- Maintains consistency across all screens
+- Reduces code duplication
+- Ensures proper spacing, styling, and behavior
+- Leverages tested and maintained design system component
+
+## Implementation
+
+**Import:**
+```kotlin
+import net.qualgo.kinshield.core.designsystem.component.topbar.DSTopbar
+```
+
+**Usage:**
+```kotlin
+// ✅ GOOD - Use DSTopbar
+DSTopbar(
+    showBack = true,
+    onBack = { /* handle back */ },
+    centerContent = {
+        Text("Title", style = DSTypography.h4.medium)
+    },
+    trailingContent = {
+        Icon(painter = painterResource(R.drawable.ic_close), ...)
+    }
+)
+
+// ❌ BAD - Don't create custom top bars
+Row(
+    modifier = Modifier.fillMaxWidth().padding(...),
+    horizontalArrangement = Arrangement.SpaceBetween
+) {
+    IconButton(onClick = onBack) { ... }
+    Text("Title")
+    IconButton(onClick = onAction) { ... }
+}
+```
+
+## DSTopbar Parameters
+
+- `showBack: Boolean` - Show/hide back button
+- `onBack: () -> Unit` - Back button click handler
+- `centerContent: @Composable () -> Unit` - Center slot for title/custom content
+- `trailingContent: @Composable () -> Unit` - Right side slot for actions
+- `onCenterClick: () -> Unit` - Optional center content click handler
+- `onTrailingClick: () -> Unit` - Optional trailing content click handler
+
+## Common Patterns
+
+**Basic screen with title:**
+```kotlin
+DSTopbar(
+    showBack = true,
+    onBack = viewModel::onBackClick,
+    centerContent = {
+        Text("Settings", style = DSTypography.h4.medium)
+    }
+)
+```
+
+**With action button:**
+```kotlin
+DSTopbar(
+    showBack = true,
+    onBack = viewModel::onBackClick,
+    trailingContent = {
+        DSButton(text = "Save", onClick = viewModel::onSave)
+    }
+)
+```
+
+**Close button only:**
+```kotlin
+DSTopbar(
+    showBack = false,
+    trailingContent = {
+        Box(
+            modifier = Modifier
+                .size(40.dp)
+                .background(DSColors.surface1, CircleShape)
+                .clickable(onClick = onClose),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                painter = painterResource(R.drawable.ic_close),
+                contentDescription = "Close",
+                tint = DSColors.iconAction
+            )
+        }
+    }
+)
+```

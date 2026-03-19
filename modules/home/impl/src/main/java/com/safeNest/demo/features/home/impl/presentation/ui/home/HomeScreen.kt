@@ -1,5 +1,6 @@
 package com.safeNest.demo.features.home.impl.presentation.ui.home
 
+import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -43,12 +44,16 @@ import com.safeNest.demo.features.designSystem.theme.DSSpacing
 import com.safeNest.demo.features.designSystem.theme.DSTypography
 import com.safeNest.demo.features.designSystem.theme.color.DSColors
 import com.safeNest.demo.features.home.impl.R
+import com.safeNest.demo.features.home.impl.presentation.ui.settings.SettingsScreen
 import com.safeNest.demo.features.home.impl.presentation.ui.tool.ScamAnalyzerScreen
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     onManageProtectionClick: () -> Unit,
+    onRecordAudioClick: () -> Unit = {},
+    onUploadAudioClick: (Uri) -> Unit = {},
+    onUploadImageClick: (Uri) -> Unit = {},
     onBlocklistClick: () -> Unit,
     onWhitelistClick: () -> Unit,
     onScamAnalyzerClick: () -> Unit
@@ -66,6 +71,7 @@ fun HomeScreen(
                 SafeNestBottomNavigation(
                     onHomeClick = { currentTab = BottomTab.Home },
                     onToolsClick = { currentTab = BottomTab.Tools },
+                    onSettingsClick = { currentTab = BottomTab.Settings },
                     currentTab
                 )
             }
@@ -87,8 +93,15 @@ fun HomeScreen(
 
                     BottomTab.Tools -> {
                         ScamAnalyzerScreen(
-                            onScamAnalyzerClick = onScamAnalyzerClick
+                            onScamAnalyzerClick = onScamAnalyzerClick,
+                            onRecordAudioClick = onRecordAudioClick,
+                            onUploadAudioClick = onUploadAudioClick,
+                            onUploadImageClick = onUploadImageClick
                         )
+                    }
+
+                    BottomTab.Settings -> {
+                        SettingsScreen(innerPadding = innerPadding)
                     }
                 }
             }
@@ -442,6 +455,7 @@ fun StatusChip(
 fun SafeNestBottomNavigation(
     onHomeClick: () -> Unit,
     onToolsClick: () -> Unit,
+    onSettingsClick: () -> Unit,
     bottomTab: BottomTab
 ) {
 
@@ -457,7 +471,7 @@ fun SafeNestBottomNavigation(
             horizontalArrangement = Arrangement.SpaceAround
         ) {
             Spacer(
-                modifier = Modifier.weight(0.8f)
+                modifier = Modifier.weight(0.5f)
             )
 
             CustomTabItem(
@@ -491,7 +505,24 @@ fun SafeNestBottomNavigation(
             )
 
             Spacer(
-                modifier = Modifier.weight(0.8f)
+                modifier = Modifier.weight(0.2f)
+            )
+
+            CustomTabItem(
+                icon = ImageVector.vectorResource(
+                    id = if (bottomTab == BottomTab.Settings) R.drawable.ic_settings_selected
+                    else R.drawable.ic_settings_unselected
+                ),
+                label = "Settings",
+                isSelected = bottomTab == BottomTab.Settings,
+                onClick = {
+                    onSettingsClick()
+                },
+                modifier = Modifier.weight(1f)
+            )
+
+            Spacer(
+                modifier = Modifier.weight(0.5f)
             )
         }
     }
@@ -542,4 +573,4 @@ fun CustomTabItem(
     }
 }
 
-enum class BottomTab { Home, Tools }
+enum class BottomTab { Home, Tools, Settings }
