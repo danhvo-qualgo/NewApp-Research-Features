@@ -14,6 +14,7 @@ import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import androidx.core.app.NotificationCompat
 import com.safeNest.demo.features.urlGuard.impl.R
+import com.safeNest.demo.features.urlGuard.impl.detection.NotificationDetection
 import com.safeNest.demo.features.urlGuard.impl.detection.PhoneDetection
 import com.safeNest.demo.features.urlGuard.impl.detection.UrlDetection
 import com.safeNest.demo.features.urlGuard.impl.detection.model.ModelDetectStatus
@@ -55,6 +56,9 @@ class UrlGuardAccessibilityService : AccessibilityService() {
     lateinit var urlDetection: UrlDetection
     @Inject
     lateinit var phoneDetection: PhoneDetection
+    @Inject
+    lateinit var notificationDetection: NotificationDetection
+
     @Inject
     lateinit var appTrustChecker: AppTrustChecker
     // ── UI layer ──────────────────────────────────────────────────────────────
@@ -444,7 +448,7 @@ class UrlGuardAccessibilityService : AccessibilityService() {
             .joinToString(" ")
             .takeIf { it.isNotBlank() }
 
-        Log.d(TAG, "Notification from [$pkg] title=$title")
+        Log.d(TAG, "Notification from [$pkg] content=${texts}")
         SurfaceDetector.update(
             ScreenSurface.Notification(
                 pkg,
@@ -453,13 +457,28 @@ class UrlGuardAccessibilityService : AccessibilityService() {
                 DetectionStatus.UNKNOWN
             )
         )
-        secureView.updateButton(FloatingButtonFeature.SMS_CHECK, DetectionStatus.UNKNOWN)
-        secureView.updateActionCard(FloatingButtonFeature.SMS_CHECK, DetectionStatus.UNKNOWN)
+        serviceScope.launch {
+            scheduleNotificationCheck(texts.joinToString("\n"))
+        }
+//        secureView.updateButton(FloatingButtonFeature.SMS_CHECK, DetectionStatus.UNKNOWN)
+//        secureView.updateActionCard(FloatingButtonFeature.SMS_CHECK, DetectionStatus.UNKNOWN)
     }
 
     // =========================================================================
     // 2.4 Any other user-installed app
     // =========================================================================
+
+    private suspend fun scheduleNotificationCheck(notificationContent: String) {
+        pendingCallCheck?.let { mainHandler.removeCallbacks(it) }
+        pendingCallCheck = Runnable {
+            pendingCallCheck = null
+            serviceScope.launch {
+                val result = notificationDetection.detectNotificationContent(notificationContent)
+                secureView.updateButton(FloatingButtonFeature.SMS_CHECK, result)
+                secureView.updateActionCard(FloatingButtonFeature.SMS_CHECK, result)
+            }
+        }.also { mainHandler.postDelayed(it, CALL_DEBOUNCE_MS) }
+    }
 
     private fun onAppForeground(pkg: String) {
         if (appTrustChecker.isSystemApp(pkg)) {

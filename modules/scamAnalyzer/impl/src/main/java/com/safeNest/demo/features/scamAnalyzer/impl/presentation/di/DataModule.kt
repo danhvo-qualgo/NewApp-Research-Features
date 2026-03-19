@@ -12,6 +12,8 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.components.ActivityRetainedComponent
 import dagger.hilt.android.scopes.ActivityRetainedScoped
+import dagger.hilt.components.SingletonComponent
+import javax.inject.Singleton
 
 @Module
 @InstallIn(ActivityRetainedComponent::class)
@@ -23,17 +25,17 @@ internal class DataModule {
 }
 
 @Module
-@InstallIn(ActivityRetainedComponent::class)
+@InstallIn(SingletonComponent::class)
 abstract class BindModule {
 
     @Binds
-    @ActivityRetainedScoped
+    @Singleton
     abstract fun bindAnalyzeRepository(
         impl: OnDeviceAnalyzerRepository
     ): AnalyzerRepository
 
     @Binds
-    @ActivityRetainedScoped
+    @Singleton
     abstract fun bindEntityExtractor(
         impl: RegexEntityExtractor
     ): EntityExtractor
