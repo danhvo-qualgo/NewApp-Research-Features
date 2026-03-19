@@ -79,6 +79,13 @@
                 <action android:name="android.telecom.CallRedirectionService" />
             </intent-filter>
         </service>
+        <receiver
+            android:name=".presentation.service.call.CallDetectionReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.PHONE_STATE" />
+            </intent-filter>
+        </receiver>
     </application>
 
 </manifest>

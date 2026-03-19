@@ -5,7 +5,7 @@ import com.safeNest.demo.features.callProtection.impl.domain.repository.MasterBl
 import javax.inject.Inject
 
 class GetMasterBlocklistNumberUseCase @Inject constructor(private val repo: MasterBlocklistRepository) {
-    suspend operator fun invoke(number: String) = normalizePhoneNumber(number).let {
+    operator fun invoke(number: String) = normalizePhoneNumber(number).let {
         repo.getPhoneNumber(it)
     }
 }

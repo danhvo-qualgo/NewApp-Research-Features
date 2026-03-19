@@ -2,6 +2,7 @@ package com.safeNest.demo.features.callProtection.api.domain.model
 
 data class CallerIdInfo(
     val phoneNumber: String,
+    val label: String,
     val type: CallerIdInfoType
 )
 
