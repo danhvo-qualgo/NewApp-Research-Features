@@ -9,7 +9,6 @@ import android.view.View
 import android.view.WindowManager
 import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
-import com.safeNest.demo.features.scamAnalyzer.api.ScamAnalyzerProvider
 import com.safeNest.demo.features.urlGuard.impl.R
 import com.safeNest.demo.features.urlGuard.impl.urlGuard.DetectionStatus
 import com.safeNest.demo.features.urlGuard.impl.urlGuard.FloatingButtonFeature
@@ -43,7 +42,7 @@ import com.safeNest.demo.features.urlGuard.impl.urlGuard.view.model.toActionCard
  */
 class SecureView(
     private val context: Context,
-    private val scamAnalyzerProvider: ScamAnalyzerProvider) {
+    private val onDetailAction: () -> Unit) {
 
     private val windowManager: WindowManager =
         context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
@@ -156,7 +155,9 @@ class SecureView(
         feature.toActionCardViewLabel(context)?.let {
             actionCard.setAlertLabel(it)
         }
-        feature.toActionCardViewListAction(context, status, data) { scamAnalyzerProvider.openActivity(context) }.let {
+        feature.toActionCardViewListAction(context, status, data) {
+            onDetailAction()
+        }.let {
             if (it.isNotEmpty()) actionCard.setActions(it)
         }
 

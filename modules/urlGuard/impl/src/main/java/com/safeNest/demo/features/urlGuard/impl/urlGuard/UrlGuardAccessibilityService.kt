@@ -139,7 +139,10 @@ class UrlGuardAccessibilityService : AccessibilityService() {
 
         // Initialise UI overlay — not shown yet.
         // Shown lazily via ACTION_SHOW_FLOATING sent from UrlGuardActivity.
-        secureView = SecureView(this, scamAnalyzerProvider).apply {
+        secureView = SecureView(this) {
+            secureView.hideBlockingPage()
+            scamAnalyzerProvider.openActivity(this)
+        }.apply {
             onGoBackClick = { hideBlockingPage() }
             onProceedAnywayClick = {
                 // User consciously chose to proceed → whitelist the domain for
