@@ -1,0 +1,280 @@
+{
+  "model": {
+    "architecture": "LateFusionURLClassifier",
+    "version": "1.0",
+    "date": "2026-03-18",
+    "vocab_size": 98,
+    "embed_dim": 64,
+    "conv_channels": 128,
+    "n_conv_layers": 2,
+    "kernel_size": 5,
+    "fc_dim": 256,
+    "max_len": 200,
+    "n_features": 30,
+    "threshold": 0.2,
+    "suspicious_confidence": 0.5,
+    "url_encoding": "min(ord(ch), 96) + 1"
+  },
+  "feature_names": [
+    "url_length",
+    "domain_length",
+    "path_length",
+    "path_depth",
+    "subdomain_count",
+    "has_ip_address",
+    "has_port",
+    "is_https",
+    "special_char_count",
+    "digit_ratio",
+    "vowel_ratio",
+    "consonant_ratio",
+    "entropy",
+    "has_suspicious_tld",
+    "tld_length",
+    "has_dash",
+    "consecutive_char_repeat",
+    "query_param_count",
+    "has_encoded_chars",
+    "suspicious_keyword_count",
+    "homograph_score",
+    "homograph_confusable_count",
+    "has_mixed_scripts",
+    "is_idn",
+    "typosquat_similarity",
+    "typosquat_distance",
+    "typosquat_is_match",
+    "typosquat_is_tld_swap",
+    "typosquat_sounds_alike",
+    "typosquat_containment"
+  ],
+  "suspicious_tlds": [
+    "xyz",
+    "top",
+    "buzz",
+    "click",
+    "fun",
+    "sbs",
+    "cfd",
+    "icu",
+    "gq",
+    "ml",
+    "tk",
+    "ga",
+    "cf",
+    "cam",
+    "rest",
+    "beauty",
+    "hair",
+    "quest",
+    "one",
+    "monster",
+    "today",
+    "world",
+    "life",
+    "live",
+    "surf",
+    "bar"
+  ],
+  "suspicious_keywords": [
+    "login",
+    "verify",
+    "secure",
+    "account",
+    "update",
+    "confirm",
+    "banking",
+    "password",
+    "credential",
+    "signin",
+    "auth",
+    "wallet",
+    "suspend",
+    "restore",
+    "unlock",
+    "alert",
+    "urgent",
+    "immediately",
+    "expire",
+    "unusual",
+    "limited",
+    "offer",
+    "free",
+    "prize",
+    "winner",
+    "gift",
+    "reward",
+    "bonus",
+    "claim",
+    "congratulation"
+  ],
+  "compound_tlds": [
+    "com.vn",
+    "com.au",
+    "com.br",
+    "com.cn",
+    "com.hk",
+    "com.mx",
+    "com.my",
+    "com.ng",
+    "com.ph",
+    "com.sg",
+    "com.tw",
+    "com.ua",
+    "co.uk",
+    "co.kr",
+    "co.jp",
+    "co.id",
+    "co.in",
+    "co.nz",
+    "co.za",
+    "co.th",
+    "org.vn",
+    "gov.vn",
+    "edu.vn",
+    "net.vn",
+    "ac.uk",
+    "org.uk",
+    "gov.uk",
+    "gob.mx",
+    "go.id",
+    "or.id"
+  ],
+  "confusables": {
+    "а": [
+      "a",
+      "Cyrillic"
+    ],
+    "е": [
+      "e",
+      "Cyrillic"
+    ],
+    "о": [
+      "o",
+      "Cyrillic"
+    ],
+    "р": [
+      "p",
+      "Cyrillic"
+    ],
+    "с": [
+      "c",
+      "Cyrillic"
+    ],
+    "у": [
+      "y",
+      "Cyrillic"
+    ],
+    "х": [
+      "x",
+      "Cyrillic"
+    ],
+    "ѕ": [
+      "s",
+      "Cyrillic"
+    ],
+    "і": [
+      "i",
+      "Cyrillic"
+    ],
+    "ј": [
+      "j",
+      "Cyrillic"
+    ],
+    "һ": [
+      "h",
+      "Cyrillic"
+    ],
+    "ԁ": [
+      "d",
+      "Cyrillic"
+    ],
+    "ԛ": [
+      "q",
+      "Cyrillic"
+    ],
+    "ԝ": [
+      "w",
+      "Cyrillic"
+    ],
+    "α": [
+      "a",
+      "Greek"
+    ],
+    "ο": [
+      "o",
+      "Greek"
+    ],
+    "ε": [
+      "e",
+      "Greek"
+    ],
+    "κ": [
+      "k",
+      "Greek"
+    ],
+    "ν": [
+      "v",
+      "Greek"
+    ],
+    "ρ": [
+      "p",
+      "Greek"
+    ],
+    "τ": [
+      "t",
+      "Greek"
+    ],
+    "υ": [
+      "u",
+      "Greek"
+    ],
+    "ω": [
+      "w",
+      "Greek"
+    ],
+    "ı": [
+      "i",
+      "Latin Extended"
+    ],
+    "ḅ": [
+      "b",
+      "Latin Extended"
+    ],
+    "ḷ": [
+      "l",
+      "Latin Extended"
+    ],
+    "ṃ": [
+      "m",
+      "Latin Extended"
+    ],
+    "ṇ": [
+      "n",
+      "Latin Extended"
+    ],
+    "đ": [
+      "d",
+      "Latin Extended"
+    ],
+    "ł": [
+      "l",
+      "Latin Extended"
+    ],
+    "0": [
+      "o",
+      "ASCII Homoglyph"
+    ],
+    "1": [
+      "l",
+      "ASCII Homoglyph"
+    ],
+    "3": [
+      "e",
+      "ASCII Homoglyph"
+    ],
+    "5": [
+      "s",
+      "ASCII Homoglyph"
+    ]
+  }
+}

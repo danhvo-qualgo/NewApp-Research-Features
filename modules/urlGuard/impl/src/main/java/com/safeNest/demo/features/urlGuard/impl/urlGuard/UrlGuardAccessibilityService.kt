@@ -10,20 +10,25 @@ import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
-import android.view.Display
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
-import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
 import com.safeNest.demo.features.urlGuard.impl.R
-import com.safeNest.demo.features.urlGuard.impl.urlGuard.networking.ScamApiClient
+import com.safeNest.demo.features.urlGuard.impl.detection.UrlDetection
+import com.safeNest.demo.features.urlGuard.impl.detection.model.ModelDetectStatus
+import com.safeNest.demo.features.urlGuard.impl.urlGuard.mapper.toModelDetectionStatus
 import com.safeNest.demo.features.urlGuard.impl.urlGuard.util.UserAllowedDomainGuard
 import com.safeNest.demo.features.urlGuard.impl.urlGuard.view.SecureView
+import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import javax.inject.Inject
 
 /**
  * Accessibility service responsible for detecting what is on screen and reacting accordingly.
@@ -34,6 +39,7 @@ import kotlinx.coroutines.withContext
  *   2.3  A notification was posted     → [ScreenSurface.Notification]
  *   2.4  Any other user-installed app  → [ScreenSurface.App]       + trust check
  */
+@AndroidEntryPoint
 class UrlGuardAccessibilityService : AccessibilityService() {
 
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
@@ -44,6 +50,9 @@ class UrlGuardAccessibilityService : AccessibilityService() {
     private lateinit var screenshotHelper: ScreenshotHelper
     private lateinit var appTrustChecker: AppTrustChecker
     private lateinit var formInspector: FormInspectorWebView
+
+    @Inject
+    lateinit var urlDetection: UrlDetection
 
     // ── UI layer ──────────────────────────────────────────────────────────────
     private lateinit var secureView: SecureView
@@ -249,11 +258,12 @@ class UrlGuardAccessibilityService : AccessibilityService() {
         SurfaceDetector.update(ScreenSurface.Browser(pkg, null, DetectionStatus.UNKNOWN))
 //        secureView.updateButton(FloatingButtonFeature.SAFE_BROWSING, DetectionStatus.UNKNOWN)
 //        secureView.updateActionCard(FloatingButtonFeature.SAFE_BROWSING, DetectionStatus.UNKNOWN)
+        if(isAddressBarFocused(pkg)) return
         scheduleUrlCheck()
     }
 
     private fun scheduleUrlCheck() {
-        // While the blocking page is shcown, rootInActiveWindow points to the bloking
+        // While the blocking page is shown, rootInActiveWindow points to the bloking
         // page's own view tree. UlExtractor would find the displayed blocked-URL textr
         // inside tv_blocked_url and re-scan it, potentially flipping the floating
         // button to SAFE. Drop all pending and incoming checks until the page is gone.
@@ -288,6 +298,8 @@ class UrlGuardAccessibilityService : AccessibilityService() {
                 DetectionStatus.UNKNOWN
             )
         )
+        val detectedStatus: DetectionStatus
+        val isMalicious: Boolean
 
         // Cache hit
         val cached = urlCache[normalUrl]
@@ -296,35 +308,28 @@ class UrlGuardAccessibilityService : AccessibilityService() {
             applyUrlResult(normalUrl, cached.status,  browserPkg)
             return
         }
-
         // Cache miss — API call
         Log.d(TAG, "URL cache miss [$normalUrl]")
-        val reputation = withContext(Dispatchers.IO) { ScamApiClient.checkUrl(normalUrl) }
 
-        val detectedStatus: DetectionStatus
-        val isMalicious: Boolean
-
-        if (reputation != null) {
-
-            val isScam = reputation.data.riskScore > 0.8
-
-            detectedStatus = when {
-                reputation.data.riskScore > 0.8 -> DetectionStatus.DANGEROUS
-                reputation.data.riskScore > 0.6 -> DetectionStatus.WARNING
-                else -> DetectionStatus.SAFE
-            }
-            isMalicious = isScam
-            Log.d(TAG, "URL [$normalUrl] → ${reputation.data.riskScore} isScam=$isScam")
-        } else {
-            detectedStatus = DetectionStatus.UNKNOWN
+        val isHasSensitiveForm = triggerFormInspection(normalUrl).first()
+        if (isHasSensitiveForm) {
+            detectedStatus = DetectionStatus.WARNING
             isMalicious = false
-        }
+        } else {
 
+            //val reputation = withContext(Dispatchers.IO) { ScamApiClient.checkUrl(normalUrl) }
+
+            val  modelDetectionStatus = urlDetection.detect(normalUrl)
+
+            detectedStatus = modelDetectionStatus.toModelDetectionStatus()
+            isMalicious = modelDetectionStatus == ModelDetectStatus.Scam
+
+        }
         Log.d(TAG, "urlCache: $normalUrl -> $detectedStatus")
 
         urlCache[normalUrl] = UrlCacheEntry(status = detectedStatus, isMalicious = isMalicious)
         applyUrlResult(normalUrl, detectedStatus, browserPkg)
-        //triggerFormInspection(normalUrl)
+
     }
 
     /**
@@ -483,66 +488,39 @@ class UrlGuardAccessibilityService : AccessibilityService() {
         }.also { mainHandler.postDelayed(it, APP_DEBOUNCE_MS) }
     }
 
-    // =========================================================================
-    // Screenshot — bridges the A11y API to ScreenshotHelper
-    // =========================================================================
-
-    fun takeScreenshot() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            takeScreenshotViaA11y()
-        } else {
-            screenshotHelper.takeViaMediaProjection()
-        }
-    }
-
-    @RequiresApi(Build.VERSION_CODES.R)
-    private fun takeScreenshotViaA11y() {
-        takeScreenshot(
-            Display.DEFAULT_DISPLAY,
-            mainExecutor,
-            object : TakeScreenshotCallback {
-                override fun onSuccess(result: ScreenshotResult) =
-                    screenshotHelper.onA11yScreenshotSuccess(result)
-
-                override fun onFailure(errorCode: Int) =
-                    screenshotHelper.onA11yScreenshotFailure(errorCode)
-            }
-        )
-    }
-
 
     // =========================================================================
     // Form inspection
     // =========================================================================
 
-    private fun triggerFormInspection(normalUrl: String) {
-        if (normalUrl in userAllowedUrls) return
-        if (formScanCache[normalUrl] == false) return
-
-        formInspector.inspect(normalUrl) { hasSensitiveForm, detectedFields ->
-            formScanCache[normalUrl] = hasSensitiveForm
-            if (hasSensitiveForm) {
-                Log.w(TAG, "Sensitive form detected at $normalUrl: $detectedFields")
-                userAllowedUrls += normalUrl
-                triggerFormWarning(normalUrl, detectedFields)
+    private fun triggerFormInspection(normalUrl: String): Flow<Boolean> {
+        return callbackFlow {
+            val domain = UrlExtractor.extractDomain(normalUrl)
+//            if (normalUrl in userAllowedUrls) {
+//                trySend(false)
+//                close()
+//                return@callbackFlow
+//            }
+            val cacheResult = formScanCache[normalUrl]
+            if (cacheResult != null) {
+                trySend(cacheResult)
+                close()
+                return@callbackFlow
             }
-        }
-    }
 
-    private fun triggerFormWarning(originalUrl: String, detectedFields: List<String>) {
-        val warningUri = FormWarningPageContentProvider.buildWarningUri(originalUrl, detectedFields)
-        val pkg = lastBrowserPackage
-            ?.takeIf { it in AppTrustChecker.BROWSER_PACKAGES }
-            ?: "com.android.chrome"
-        val intent = Intent(Intent.ACTION_VIEW).apply {
-            setDataAndType(warningUri, "text/html")
-            setPackage(pkg)
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION)
-        }
-        try {
-            startActivity(intent)
-        } catch (e: Exception) {
-            Log.e(TAG, "triggerFormWarning: startActivity failed", e)
+            formInspector.inspect(normalUrl) { hasSensitiveForm, detectedFields ->
+                if (hasSensitiveForm) {
+                    Log.w(TAG, "Sensitive form detected at $normalUrl: $detectedFields")
+
+                }
+                formScanCache[normalUrl] = hasSensitiveForm
+                trySend(hasSensitiveForm)
+                close()
+            }
+
+            awaitClose {
+                formInspector.cleanup()
+            }
         }
     }
 
@@ -600,5 +578,56 @@ class UrlGuardAccessibilityService : AccessibilityService() {
         // ── Intent actions for startService() control ────────────────────────
         const val ACTION_SHOW_FLOATING = "com.safeNest.ACTION_SHOW_FLOATING"
         const val ACTION_HIDE_FLOATING = "com.safeNest.ACTION_HIDE_FLOATING"
+
+        // ── Known address bar view IDs per browser package ───────────────────
+        val BROWSER_ADDRESS_BAR_IDS = mapOf(
+            "com.android.chrome"           to "com.android.chrome:id/url_bar",
+            "com.chrome.beta"              to "com.chrome.beta:id/url_bar",
+            "com.chrome.dev"               to "com.chrome.dev:id/url_bar",
+            "com.chrome.canary"            to "com.chrome.canary:id/url_bar",
+            "org.mozilla.firefox"          to "org.mozilla.firefox:id/mozac_browser_toolbar_url_view",
+            "org.mozilla.firefox_beta"     to "org.mozilla.firefox_beta:id/mozac_browser_toolbar_url_view",
+            "com.brave.browser"            to "com.brave.browser:id/url_bar",
+            "com.microsoft.emmx"           to "com.microsoft.emmx:id/url_bar",
+            "com.opera.browser"            to "com.opera.browser:id/url_field",
+            "com.opera.mini.native"        to "com.opera.mini.native:id/url_field",
+            "com.sec.android.app.sbrowser" to "com.sec.android.app.sbrowser:id/location_bar_edit_text",
+            "com.kiwibrowser.browser"      to "com.kiwibrowser.browser:id/url_bar",
+            "com.vivaldi.browser"          to "com.vivaldi.browser:id/url_bar",
+        )
+    }
+
+    // =========================================================================
+    // Address bar focus detection
+    // =========================================================================
+
+    /**
+     * Returns true if the browser address bar currently has input focus,
+     * meaning the user is actively editing the URL and has not yet navigated.
+     *
+     * Lookup order:
+     *   1. Known view ID for [pkg] → fast direct lookup
+     *   2. Fallback to [AccessibilityNodeInfo.findFocus] → works for unknown browsers
+     *      or when the browser updates its resource IDs between versions.
+     */
+    fun isAddressBarFocused(pkg: String): Boolean {
+        val root = rootInActiveWindow ?: return false
+
+        val knownId = BROWSER_ADDRESS_BAR_IDS[pkg]
+        if (knownId != null) {
+            val nodes = root.findAccessibilityNodeInfosByViewId(knownId)
+            if (nodes.isNotEmpty()) {
+                val focused = nodes.any { it.isFocused }
+                nodes.forEach { it.recycle() }
+                return focused
+            }
+            // ID didn't match — browser may have updated, fall through to generic check
+        }
+
+        val focused = root.findFocus(AccessibilityNodeInfo.FOCUS_INPUT)
+        val isFocused = focused?.isFocused == true &&
+                focused.className?.contains("EditText") == true
+        focused?.recycle()
+        return isFocused
     }
 }
