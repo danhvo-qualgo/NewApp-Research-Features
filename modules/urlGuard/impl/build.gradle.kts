@@ -18,6 +18,7 @@ dependencies {
     implementation(project(":modules:gate1"))
     implementation(project(":modules:permissionManager:api"))
     implementation(project(":modules:callProtection:api"))
+    implementation(project(":modules:scamAnalyzer:api"))
     implementation(libs.core.router)
 
     // Ktor HTTP client
