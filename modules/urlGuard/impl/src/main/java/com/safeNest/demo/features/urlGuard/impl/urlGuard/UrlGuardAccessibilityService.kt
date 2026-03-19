@@ -10,20 +10,21 @@ import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
-import android.view.Display
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
-import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
 import com.safeNest.demo.features.urlGuard.impl.R
-import com.safeNest.demo.features.urlGuard.impl.urlGuard.networking.ScamApiClient
+import com.safeNest.demo.features.urlGuard.impl.detection.UrlDetection
+import com.safeNest.demo.features.urlGuard.impl.detection.model.ModelDetectStatus
+import com.safeNest.demo.features.urlGuard.impl.urlGuard.mapper.toModelDetectionStatus
 import com.safeNest.demo.features.urlGuard.impl.urlGuard.util.UserAllowedDomainGuard
 import com.safeNest.demo.features.urlGuard.impl.urlGuard.view.SecureView
+import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import javax.inject.Inject
 
 /**
  * Accessibility service responsible for detecting what is on screen and reacting accordingly.
@@ -34,6 +35,7 @@ import kotlinx.coroutines.withContext
  *   2.3  A notification was posted     → [ScreenSurface.Notification]
  *   2.4  Any other user-installed app  → [ScreenSurface.App]       + trust check
  */
+@AndroidEntryPoint
 class UrlGuardAccessibilityService : AccessibilityService() {
 
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
@@ -44,6 +46,9 @@ class UrlGuardAccessibilityService : AccessibilityService() {
     private lateinit var screenshotHelper: ScreenshotHelper
     private lateinit var appTrustChecker: AppTrustChecker
     private lateinit var formInspector: FormInspectorWebView
+
+    @Inject
+    lateinit var urlDetection: UrlDetection
 
     // ── UI layer ──────────────────────────────────────────────────────────────
     private lateinit var secureView: SecureView
@@ -249,6 +254,7 @@ class UrlGuardAccessibilityService : AccessibilityService() {
         SurfaceDetector.update(ScreenSurface.Browser(pkg, null, DetectionStatus.UNKNOWN))
 //        secureView.updateButton(FloatingButtonFeature.SAFE_BROWSING, DetectionStatus.UNKNOWN)
 //        secureView.updateActionCard(FloatingButtonFeature.SAFE_BROWSING, DetectionStatus.UNKNOWN)
+        if(isAddressBarFocused(pkg)) return
         scheduleUrlCheck()
     }
 
@@ -472,33 +478,6 @@ class UrlGuardAccessibilityService : AccessibilityService() {
         }.also { mainHandler.postDelayed(it, APP_DEBOUNCE_MS) }
     }
 
-    // =========================================================================
-    // Screenshot — bridges the A11y API to ScreenshotHelper
-    // =========================================================================
-
-    fun takeScreenshot() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            takeScreenshotViaA11y()
-        } else {
-            screenshotHelper.takeViaMediaProjection()
-        }
-    }
-
-    @RequiresApi(Build.VERSION_CODES.R)
-    private fun takeScreenshotViaA11y() {
-        takeScreenshot(
-            Display.DEFAULT_DISPLAY,
-            mainExecutor,
-            object : TakeScreenshotCallback {
-                override fun onSuccess(result: ScreenshotResult) =
-                    screenshotHelper.onA11yScreenshotSuccess(result)
-
-                override fun onFailure(errorCode: Int) =
-                    screenshotHelper.onA11yScreenshotFailure(errorCode)
-            }
-        )
-    }
-
 
     // =========================================================================
     // Form inspection
@@ -589,5 +568,56 @@ class UrlGuardAccessibilityService : AccessibilityService() {
         // ── Intent actions for startService() control ────────────────────────
         const val ACTION_SHOW_FLOATING = "com.safeNest.ACTION_SHOW_FLOATING"
         const val ACTION_HIDE_FLOATING = "com.safeNest.ACTION_HIDE_FLOATING"
+
+        // ── Known address bar view IDs per browser package ───────────────────
+        val BROWSER_ADDRESS_BAR_IDS = mapOf(
+            "com.android.chrome"           to "com.android.chrome:id/url_bar",
+            "com.chrome.beta"              to "com.chrome.beta:id/url_bar",
+            "com.chrome.dev"               to "com.chrome.dev:id/url_bar",
+            "com.chrome.canary"            to "com.chrome.canary:id/url_bar",
+            "org.mozilla.firefox"          to "org.mozilla.firefox:id/mozac_browser_toolbar_url_view",
+            "org.mozilla.firefox_beta"     to "org.mozilla.firefox_beta:id/mozac_browser_toolbar_url_view",
+            "com.brave.browser"            to "com.brave.browser:id/url_bar",
+            "com.microsoft.emmx"           to "com.microsoft.emmx:id/url_bar",
+            "com.opera.browser"            to "com.opera.browser:id/url_field",
+            "com.opera.mini.native"        to "com.opera.mini.native:id/url_field",
+            "com.sec.android.app.sbrowser" to "com.sec.android.app.sbrowser:id/location_bar_edit_text",
+            "com.kiwibrowser.browser"      to "com.kiwibrowser.browser:id/url_bar",
+            "com.vivaldi.browser"          to "com.vivaldi.browser:id/url_bar",
+        )
+    }
+
+    // =========================================================================
+    // Address bar focus detection
+    // =========================================================================
+
+    /**
+     * Returns true if the browser address bar currently has input focus,
+     * meaning the user is actively editing the URL and has not yet navigated.
+     *
+     * Lookup order:
+     *   1. Known view ID for [pkg] → fast direct lookup
+     *   2. Fallback to [AccessibilityNodeInfo.findFocus] → works for unknown browsers
+     *      or when the browser updates its resource IDs between versions.
+     */
+    fun isAddressBarFocused(pkg: String): Boolean {
+        val root = rootInActiveWindow ?: return false
+
+        val knownId = BROWSER_ADDRESS_BAR_IDS[pkg]
+        if (knownId != null) {
+            val nodes = root.findAccessibilityNodeInfosByViewId(knownId)
+            if (nodes.isNotEmpty()) {
+                val focused = nodes.any { it.isFocused }
+                nodes.forEach { it.recycle() }
+                return focused
+            }
+            // ID didn't match — browser may have updated, fall through to generic check
+        }
+
+        val focused = root.findFocus(AccessibilityNodeInfo.FOCUS_INPUT)
+        val isFocused = focused?.isFocused == true &&
+                focused.className?.contains("EditText") == true
+        focused?.recycle()
+        return isFocused
     }
 }
