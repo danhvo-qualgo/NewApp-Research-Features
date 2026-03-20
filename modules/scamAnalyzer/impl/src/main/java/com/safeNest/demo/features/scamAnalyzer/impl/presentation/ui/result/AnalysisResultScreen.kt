@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -45,6 +46,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -515,7 +517,11 @@ fun AudioPlayerComponent(
 
     AudioPlayerComponentContent(
         isPlaying = player.isPlaying,
+        currentPosition = player.currentPosition,
+        duration = player.duration,
+        progress = player.progress,
         onPlayPauseClick = player::togglePlayPause,
+        onSeek = player::seekTo,
         modifier = modifier,
     )
 }
@@ -523,7 +529,11 @@ fun AudioPlayerComponent(
 @Composable
 private fun AudioPlayerComponentContent(
     isPlaying: Boolean,
+    currentPosition: Int,
+    duration: Int,
+    progress: Float,
     onPlayPauseClick: () -> Unit,
+    onSeek: (Float) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Card(
@@ -558,10 +568,51 @@ private fun AudioPlayerComponentContent(
                 }
             }
 
-            if (isPlaying) {
-                AnimatedWaveIndicator()
-            } else {
-                StaticWaveIndicator()
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                // Waveform visualization
+                if (isPlaying) {
+                    AnimatedWaveIndicator()
+                } else {
+                    StaticWaveIndicator()
+                }
+
+                // Progress bar (custom without thumb)
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(6.dp)
+                        .clip(RoundedCornerShape(3.dp))
+                        .background(DSColors.surfaceGrayLightest)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth(progress)
+                            .fillMaxHeight()
+                            .background(DSColors.surfaceError)
+                    )
+                }
+
+                // Time labels
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = formatTime(currentPosition),
+                        style = DSTypography.caption2.regular,
+                        color = DSColors.textBody,
+                        fontSize = 10.sp
+                    )
+                    Text(
+                        text = formatTime(duration),
+                        style = DSTypography.caption2.regular,
+                        color = DSColors.textBody,
+                        fontSize = 10.sp
+                    )
+                }
             }
         }
     }
@@ -638,7 +689,11 @@ private fun AnimatedWaveIcon(delay: Int) {
 private fun AudioPlayerComponentPreview() {
     AudioPlayerComponentContent(
         isPlaying = false,
+        currentPosition = 37000, // 0:37
+        duration = 143000, // 2:23
+        progress = 0.26f,
         onPlayPauseClick = {},
+        onSeek = {},
     )
 }
 
