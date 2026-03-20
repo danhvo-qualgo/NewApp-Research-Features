@@ -16,7 +16,16 @@
 
 package com.safenest.urlanalyzer.gate1
 
+import ai.onnxruntime.OrtEnvironment
+import ai.onnxruntime.OrtSession
 import android.content.Context
+import com.safenest.urlanalyzer.Gate1Result
+import com.safenest.urlanalyzer.KeyFinding
+import org.json.JSONObject
+import java.io.BufferedReader
+import java.io.InputStreamReader
+
+ai.onnxruntime.OrtSessionimport android.content.Context
 import com.safenest.urlanalyzer.Gate1Result
 import com.safenest.urlanalyzer.KeyFinding
 import org.json.JSONObject
@@ -30,10 +39,10 @@ class Gate1Classifier(
 ) {
 
     // TODO: Replace with actual ONNX Runtime or TFLite model instance
-    // private lateinit var session: OrtSession
-    // private lateinit var env: OrtEnvironment
+     private lateinit var session: OrtSession
+     private lateinit var env: OrtEnvironment
 
-    private val keyFindingRules: List<KeyFindingRule>
+    private lateinit var keyFindingRules: List<KeyFindingRule>
     var brandNames: List<String> = emptyList()
         private set
     var brandDomains: Set<String> = emptySet()
@@ -72,9 +81,9 @@ class Gate1Classifier(
         brandsPtr = nativeLoadBrands(brandsData)
 
         // TODO: Initialize ONNX Runtime
-        // env = OrtEnvironment.getEnvironment()
-        // val modelBytes = context.assets.open("gate1_hybrid.onnx").use { it.readBytes() }
-        // session = env.createSession(modelBytes)
+         env = OrtEnvironment.getEnvironment()
+         val modelBytes = context.assets.open("gate1_late_fusion.onnx").use { it.readBytes() }
+         session = env.createSession(modelBytes)
     }
 
     fun classify(url: String): Gate1Result {

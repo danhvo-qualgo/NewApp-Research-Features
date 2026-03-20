@@ -15,8 +15,8 @@ import org.json.JSONObject
 
 class PromptBuilder(context: Context) {
 
-    private val systemPrompt: String
-    private val userTemplate: String
+    private lateinit var systemPrompt: String
+    private lateinit var userTemplate: String
 
     init {
         val jsonStr = context.assets.open("gate2_prompts.json")
