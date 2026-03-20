@@ -1,0 +1,58 @@
+{
+  "signals": [
+    {
+      "source": "scamDB",
+      "field": "found",
+      "condition": "== true",
+      "signalName": "Known Scam Domain",
+      "category": "Known Scam Domain",
+      "severity": "critical",
+      "promptHint": "This domain is listed in the scam database — confirmed malicious."
+    },
+    {
+      "source": "typosquat",
+      "field": "isTyposquat",
+      "condition": "== true",
+      "signalName": "Brand Impersonation",
+      "category": "Impersonation",
+      "severity": "high",
+      "promptHint": "This website's name closely resembles the legitimate brand '{matchedBrand}' ({matchedDomain})."
+    },
+    {
+      "source": "homograph",
+      "field": "isHomograph",
+      "condition": "== true",
+      "signalName": "Deceptive Characters",
+      "category": "Impersonation",
+      "severity": "high",
+      "promptHint": "This website uses deceptive characters to mimic a trusted brand."
+    },
+    {
+      "source": "ssl",
+      "field": "valid",
+      "condition": "== false",
+      "signalName": "No Valid Certificate",
+      "category": "Insecure Connection",
+      "severity": "medium",
+      "promptHint": "This website doesn't have a valid security certificate."
+    },
+    {
+      "source": "pageInfo",
+      "field": "reachable",
+      "condition": "== false",
+      "signalName": "Page Unreachable",
+      "category": "Suspicious Link",
+      "severity": "medium",
+      "promptHint": "The website could not be reached."
+    },
+    {
+      "source": "pageInfo",
+      "field": "title",
+      "condition": "isEmpty",
+      "signalName": "No Page Title",
+      "category": "Suspicious Link",
+      "severity": "low",
+      "promptHint": "The page has no title — common in hastily-built phishing pages."
+    }
+  ]
+}

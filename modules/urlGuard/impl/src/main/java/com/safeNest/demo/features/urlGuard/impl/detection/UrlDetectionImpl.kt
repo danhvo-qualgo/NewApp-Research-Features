@@ -2,7 +2,7 @@ package com.safeNest.demo.features.urlGuard.impl.detection
 
 import android.util.Log
 import com.safeNest.demo.features.urlGuard.impl.detection.model.ModelDetectStatus
-import com.safenest.gate1.Gate1Classifier
+import com.safenest.urlanalyzer.gate1.Gate1Classifier
 import jakarta.inject.Inject
 
 class UrlDetectionImpl @Inject constructor(
