@@ -23,6 +23,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import javax.inject.Inject
 import javax.inject.Singleton
+import com.safeNest.demo.features.scamAnalyzer.impl.data.store.AnalyzeStore
 
 @Singleton
 class OnDeviceAnalyzerRepositoryImpl @Inject constructor(
@@ -31,30 +32,20 @@ class OnDeviceAnalyzerRepositoryImpl @Inject constructor(
     private val entityExtractor: EntityExtractor,
     private val modelManager: ModelManager,
     private val whisperModelManager: WhisperModelManager,
+    private val analyzeStore: AnalyzeStore,
 ) : AnalyzerRepository {
     companion object {
         private const val TAG = "OnDeviceAnalyzer"
-        private fun getPrompt(msg: String, summary: String): String {
-            return """
-        Classify this message as a cybersecurity threat.
-
-        Status codes:
-        0=Safe, 1=Scam, 2=Unverified
-
-        Safe: No phishing/scam indicators.
-        Scam: Clear signals — impersonation, urgency, fake links, threats, sensitive info requests.
-        Unverified: Suspicious but insufficient evidence.
-
-        Rules:
-        - Return ONLY valid JSON, no markdown.
-        - If status = 0, reasons MUST be [].
-        - If status != 0, reasons MUST contain at least one item.
-
-        {"status":0|1|2,"reasons":[]}
-
-        MESSAGE: $msg
-        CONTEXT: $summary
-    """.trimIndent()
+        
+        private suspend fun getPrompt(
+            msg: String,
+            summary: String,
+            analyzeStore: AnalyzeStore
+        ): String {
+            val template = analyzeStore.getCustomPrompt()
+            return template
+                .replace("{message}", msg)
+                .replace("{context}", summary)
         }
     }
 
@@ -96,7 +87,7 @@ class OnDeviceAnalyzerRepositoryImpl @Inject constructor(
 
         modelManager.ensureReady()
         val result = modelManager.analyzer
-            .llmProcessing(getPrompt(text, summary))
+            .llmProcessing(getPrompt(text, summary, analyzeStore))
             .toList()
             .joinToString("")
 

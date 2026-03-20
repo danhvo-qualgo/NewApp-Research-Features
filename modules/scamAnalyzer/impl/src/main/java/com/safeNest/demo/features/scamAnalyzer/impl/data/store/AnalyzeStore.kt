@@ -18,8 +18,31 @@ class AnalyzeStore @Inject constructor(
 ) {
     private val Context.dataStore by preferencesDataStore("analyze_store")
 
-    private val modeKey = intPreferencesKey("analyze_store")
+    private val modeKey = intPreferencesKey("analyze_mode")
+    private val customPromptKey = androidx.datastore.preferences.core.stringPreferencesKey("custom_prompt")
 
+    companion object {
+        const val DEFAULT_PROMPT = """
+        Classify this message as a cybersecurity threat.
+
+        Status codes:
+        0=Safe, 1=Scam, 2=Unverified
+
+        Safe: No phishing/scam indicators.
+        Scam: Clear signals — impersonation, urgency, fake links, threats, sensitive info requests.
+        Unverified: Suspicious but insufficient evidence.
+
+        Rules:
+        - Return ONLY valid JSON, no markdown.
+        - If status = 0, reasons MUST be [].
+        - If status != 0, reasons MUST contain at least one item.
+
+        {"status":0|1|2,"reasons":[{"title":"string","description":"string"}]}
+
+        MESSAGE: {message}
+        CONTEXT: {context}
+    """
+    }
 
     suspend fun setMode(mode: AnalyzeMode) {
         context.dataStore.edit {
@@ -33,6 +56,19 @@ class AnalyzeStore @Inject constructor(
             .firstOrNull()
             ?.toMode()
             ?: AnalyzeMode.Local
+    }
+    
+    suspend fun setCustomPrompt(prompt: String) {
+        context.dataStore.edit {
+            it[customPromptKey] = prompt
+        }
+    }
+    
+    suspend fun getCustomPrompt(): String {
+        return context.dataStore
+            .data.map { it[customPromptKey] }
+            .firstOrNull()
+            ?: DEFAULT_PROMPT.trimIndent()
     }
 
     private fun AnalyzeMode.toInt(): Int = when (this) {

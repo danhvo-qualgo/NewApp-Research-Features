@@ -59,49 +59,59 @@ fun HomeScreen(
     onScamAnalyzerClick: () -> Unit
 ) {
     var currentTab by remember { mutableStateOf(BottomTab.Home) }
+    var showCustomPromptScreen by remember { mutableStateOf(false) }
 
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(gradientBackground)
     ) {
-        Scaffold(
-            containerColor = Color.Transparent,
-            bottomBar = {
-                SafeNestBottomNavigation(
-                    onHomeClick = { currentTab = BottomTab.Home },
-                    onToolsClick = { currentTab = BottomTab.Tools },
-                    onSettingsClick = { currentTab = BottomTab.Settings },
-                    currentTab
-                )
-            }
-        ) { innerPadding ->
+        if (showCustomPromptScreen) {
+            com.safeNest.demo.features.home.impl.presentation.ui.settings.CustomPromptScreen(
+                onBackClick = { showCustomPromptScreen = false }
+            )
+        } else {
+            Scaffold(
+                containerColor = Color.Transparent,
+                bottomBar = {
+                    SafeNestBottomNavigation(
+                        onHomeClick = { currentTab = BottomTab.Home },
+                        onToolsClick = { currentTab = BottomTab.Tools },
+                        onSettingsClick = { currentTab = BottomTab.Settings },
+                        currentTab
+                    )
+                }
+            ) { innerPadding ->
 
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-            ) {
-                when (currentTab) {
-                    BottomTab.Home -> {
-                        SafeNestHomeScreen(
-                            innerPadding,
-                            onBlocklistClick = onBlocklistClick,
-                            onWhitelistClick = onWhitelistClick,
-                            onManageProtectionClick = onManageProtectionClick
-                        )
-                    }
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                ) {
+                    when (currentTab) {
+                        BottomTab.Home -> {
+                            SafeNestHomeScreen(
+                                innerPadding,
+                                onBlocklistClick = onBlocklistClick,
+                                onWhitelistClick = onWhitelistClick,
+                                onManageProtectionClick = onManageProtectionClick
+                            )
+                        }
 
-                    BottomTab.Tools -> {
-                        ScamAnalyzerScreen(
-                            onScamAnalyzerClick = onScamAnalyzerClick,
-                            onRecordAudioClick = onRecordAudioClick,
-                            onUploadAudioClick = onUploadAudioClick,
-                            onUploadImageClick = onUploadImageClick
-                        )
-                    }
+                        BottomTab.Tools -> {
+                            ScamAnalyzerScreen(
+                                onScamAnalyzerClick = onScamAnalyzerClick,
+                                onRecordAudioClick = onRecordAudioClick,
+                                onUploadAudioClick = onUploadAudioClick,
+                                onUploadImageClick = onUploadImageClick
+                            )
+                        }
 
-                    BottomTab.Settings -> {
-                        SettingsScreen(innerPadding = innerPadding)
+                        BottomTab.Settings -> {
+                            SettingsScreen(
+                                innerPadding = innerPadding,
+                                onConfigurePromptClick = { showCustomPromptScreen = true }
+                            )
+                        }
                     }
                 }
             }

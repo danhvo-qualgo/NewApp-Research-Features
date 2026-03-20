@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.safeNest.demo.features.designSystem.component.DSButton
 import com.safeNest.demo.features.designSystem.component.DSDropdown
 import com.safeNest.demo.features.designSystem.theme.DSSpacing
 import com.safeNest.demo.features.designSystem.theme.DSTypography
@@ -30,6 +31,7 @@ import com.safeNest.demo.features.designSystem.theme.color.DSColors
 @Composable
 fun SettingsScreen(
     innerPadding: PaddingValues,
+    onConfigurePromptClick: () -> Unit,
     settingsViewModel: SettingsViewModel = hiltViewModel()
 ) {
     val uiState by settingsViewModel.uiState.collectAsStateWithLifecycle()
@@ -82,6 +84,12 @@ fun SettingsScreen(
                 onModeChange = { mode ->
                     settingsViewModel.toggleAnalyzeMode(mode == AnalysisMode.Remote)
                 }
+            )
+            
+            Spacer(modifier = Modifier.height(DSSpacing.s4))
+            
+            CustomPromptCard(
+                onConfigureClick = onConfigurePromptClick
             )
         }
     }
@@ -139,6 +147,43 @@ private fun AnalyzeModeCard(
                 style = DSTypography.caption1.regular,
                 color = DSColors.textBody,
                 lineHeight = 20.sp
+            )
+        }
+    }
+}
+
+@Composable
+private fun CustomPromptCard(
+    onConfigureClick: () -> Unit
+) {
+    Card(
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = DSColors.surface1),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(DSSpacing.s3)
+        ) {
+            Text(
+                text = "Custom Prompt (On-Device Only)",
+                style = DSTypography.caption1.semiBold,
+                color = DSColors.textBody
+            )
+
+            Text(
+                text = "Customize the AI prompt for on-device analysis. The prompt must return JSON format.",
+                style = DSTypography.caption2.regular,
+                color = DSColors.textBody.copy(alpha = 0.7f),
+                lineHeight = 18.sp
+            )
+
+            DSButton(
+                text = "Configure Prompt",
+                onClick = onConfigureClick,
+                modifier = Modifier.fillMaxWidth(),
+                textStyle = DSTypography.body2.medium
             )
         }
     }
