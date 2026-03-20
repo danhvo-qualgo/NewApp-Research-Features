@@ -1,7 +1,12 @@
 package com.safeNest.demo.features.scamAnalyzer.impl.presentation.ui.result
 
 import android.net.Uri
-import androidx.compose.foundation.Canvas
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -31,14 +36,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -501,12 +506,6 @@ private fun AnalysisItemsSectionPreview() {
     )
 }
 
-private val WaveformBars = listOf(
-    0.4f, 0.6f, 0.3f, 0.8f, 0.5f, 0.9f, 0.4f, 0.7f, 0.3f, 0.6f,
-    0.8f, 0.5f, 0.4f, 0.9f, 0.6f, 0.3f, 0.7f, 0.5f, 0.8f, 0.4f,
-    0.6f, 0.3f, 0.9f, 0.5f, 0.7f, 0.4f, 0.6f, 0.8f, 0.3f, 0.5f,
-)
-
 @Composable
 fun AudioPlayerComponent(
     uri: Uri,
@@ -559,38 +558,78 @@ private fun AudioPlayerComponentContent(
                 }
             }
 
-            FakeWaveform(
-                modifier = Modifier
-                    .weight(1f)
-                    .height(40.dp),
-            )
+            if (isPlaying) {
+                AnimatedWaveIndicator()
+            } else {
+                StaticWaveIndicator()
+            }
         }
     }
 }
 
 @Composable
-private fun FakeWaveform(
-    modifier: Modifier = Modifier,
-    barWidth: Dp = 4.dp,
-    barGap: Dp = 3.dp,
-    barColor: Color = DSColors.surface2,
-) {
-    Canvas(modifier = modifier) {
-        val barPx = barWidth.toPx()
-        val stepPx = barPx + barGap.toPx()
-        val count = (size.width / stepPx).toInt().coerceAtMost(WaveformBars.size)
-
-        for (i in 0 until count) {
-            val barHeight = size.height * WaveformBars[i % WaveformBars.size]
-            val x = i * stepPx + barPx / 2f
-            drawLine(
-                color = barColor,
-                start = Offset(x, (size.height - barHeight) / 2f),
-                end = Offset(x, (size.height + barHeight) / 2f),
-                strokeWidth = barPx,
-                cap = StrokeCap.Round,
-            )
+private fun AnimatedWaveIndicator() {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy((-8).dp, Alignment.CenterHorizontally),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        repeat(5) { index ->
+            AnimatedWaveIcon(delay = index * 200)
         }
+    }
+}
+
+@Composable
+private fun StaticWaveIndicator() {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy((-8).dp, Alignment.CenterHorizontally),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        repeat(5) {
+            Box(
+                modifier = Modifier.size(48.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = ImageVector.vectorResource(id = R.drawable.ic_recording_wave),
+                    contentDescription = null,
+                    tint = Color.Unspecified,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .scale(0.7f)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun AnimatedWaveIcon(delay: Int) {
+    val infiniteTransition = rememberInfiniteTransition(label = "wave")
+    val scale by infiniteTransition.animateFloat(
+        initialValue = 0.7f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(600, delayMillis = delay, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "wave_scale"
+    )
+
+    Box(
+        modifier = Modifier.size(48.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Icon(
+            imageVector = ImageVector.vectorResource(id = R.drawable.ic_recording_wave),
+            contentDescription = null,
+            tint = Color.Unspecified,
+            modifier = Modifier
+                .fillMaxSize()
+                .scale(scale)
+        )
     }
 }
 

@@ -47,7 +47,8 @@ class OnDeviceAnalyzerRepositoryImpl @Inject constructor(
 
         Rules:
         - Return ONLY valid JSON, no markdown.
-        - reasons MUST be [] when status=0.
+        - If status = 0, reasons MUST be [].
+        - If status != 0, reasons MUST contain at least one item.
 
         {"status":0|1|2,"reasons":[]}
 

@@ -14,10 +14,10 @@ import com.uney.core.network.api.ApiClient
 import com.uney.core.network.api.MultipartApiClient
 import com.uney.core.network.api.configs.NonAuthClient
 import com.uney.core.network.api.ext.post
+import com.uney.core.network.api.ext.uploadMultipart
 import com.uney.core.network.api.models.ApiResult
 import com.uney.core.network.api.models.MultipartPart
 import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.serialization.serializer
 import javax.inject.Inject
 
 class RemoteAnalyzerRepositoryImpl @Inject constructor(
@@ -35,18 +35,18 @@ class RemoteAnalyzerRepositoryImpl @Inject constructor(
     }
 
     override suspend fun analyzeAudio(uri: Uri): ApiResult<AnalysisResult> {
+        val mimeType = context.contentResolver.getType(uri) ?: "application/octet-stream"
+
         return multipartApiClient.uploadMultipart<AnalyzeUrlResult>(
-            path = "/api/v1.0/analyze/url",
+            path = "/api/v1.0/analyze/audio",
             parts = listOf(
                 MultipartPart.FileStream(
-                    name = "test",
-                    fileName = "test",
-                    contentType = "audio",
-                    0,
-                    openInputStream = { context.contentResolver.openInputStream(uri)!! }
+                    formFieldName = "file",
+                    fileName = "audio",
+                    contentType = mimeType,
+                    stream = context.contentResolver.openInputStream(uri)!!
                 )
-            ),
-            responseDeserializer = serializer()
+            )
         ).map {
             AnalysisResult(
                 data = AnalysisResultType.Audio(uri.toString()),
@@ -91,18 +91,18 @@ class RemoteAnalyzerRepositoryImpl @Inject constructor(
     }
 
     override suspend fun analyzeImage(uri: Uri): ApiResult<AnalysisResult> {
+        val mimeType = context.contentResolver.getType(uri) ?: "application/octet-stream"
+
         return multipartApiClient.uploadMultipart<AnalyzeImageResult>(
-            path = "/api/v1.0/analyze/url",
+            path = "/api/v1.0/analyze/images",
             parts = listOf(
                 MultipartPart.FileStream(
-                    name = "test",
-                    fileName = "test",
-                    contentType = "audio",
-                    0,
-                    openInputStream = { context.contentResolver.openInputStream(uri)!! }
+                    formFieldName = "file",
+                    fileName = "image",
+                    contentType = mimeType,
+                    stream = context.contentResolver.openInputStream(uri)!!
                 )
             ),
-            responseDeserializer = serializer()
         ).map {
             AnalysisResult(
                 data = AnalysisResultType.Image(uri.toString(), it.hasText),
