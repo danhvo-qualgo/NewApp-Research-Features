@@ -144,6 +144,13 @@ fun MediaPreviewScreen(
         if (uiState.isAnalyzing) {
             FullScreenAnalyzing()
         }
+
+        uiState.errorMessage?.let { error ->
+            ErrorDialog(
+                message = error,
+                onDismiss = { mediaPreviewViewModel.clearError() }
+            )
+        }
     }
 }
 
@@ -207,6 +214,50 @@ private fun MediaFileCard(
                     contentDescription = "Delete",
                     tint = DSColors.iconBody,
                     modifier = Modifier.size(24.dp)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ErrorDialog(
+    message: String,
+    onDismiss: () -> Unit
+) {
+    androidx.compose.ui.window.Dialog(
+        onDismissRequest = onDismiss,
+        properties = androidx.compose.ui.window.DialogProperties(
+            dismissOnBackPress = true,
+            dismissOnClickOutside = true
+        )
+    ) {
+        androidx.compose.material3.Surface(
+            shape = RoundedCornerShape(16.dp),
+            color = DSColors.surfacePrimary,
+            modifier = Modifier.padding(DSSpacing.s6)
+        ) {
+            Column(
+                modifier = Modifier.padding(DSSpacing.s6),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(DSSpacing.s4)
+            ) {
+                Text(
+                    text = "Error",
+                    style = DSTypography.h4.bold,
+                    color = DSColors.textError
+                )
+                Text(
+                    text = message,
+                    style = DSTypography.body2.medium,
+                    color = DSColors.textBody,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                )
+                DSButton(
+                    text = "OK",
+                    onClick = onDismiss,
+                    modifier = Modifier.fillMaxWidth(),
+                    textStyle = DSTypography.body2.bold
                 )
             }
         }

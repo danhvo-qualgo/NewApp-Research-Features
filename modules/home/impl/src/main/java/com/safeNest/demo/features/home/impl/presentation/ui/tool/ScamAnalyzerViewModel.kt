@@ -41,11 +41,19 @@ class ScamAnalyzerViewModel @Inject constructor(
                 _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
                 val result = analyzeUseCase(AnalysisInput.Text("", "", text))
                 Log.d("AnalyzeResult", result.toString())
-                _uiState.value = _uiState.value.copy(
-                    isLoading = false,
-                    analysisResult = result.toString()
-                )
-                _events.send(ScamAnalyzerEvent.AnalysisSuccess)
+                
+                if (result != null) {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        analysisResult = result.toString()
+                    )
+                    _events.send(ScamAnalyzerEvent.AnalysisSuccess)
+                } else {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        errorMessage = "Something went wrong. Please try again."
+                    )
+                }
             } catch (e: Exception) {
                 Log.e("AnalyzeResult", "Error analyzing text", e)
                 _uiState.value = _uiState.value.copy(
@@ -62,11 +70,19 @@ class ScamAnalyzerViewModel @Inject constructor(
                 _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
                 val result = analyzeUseCase(AnalysisInput.Audio(audioUri))
                 Log.d("AnalyzeResult", result.toString())
-                _uiState.value = _uiState.value.copy(
-                    isLoading = false,
-                    analysisResult = result.toString()
-                )
-                _events.send(ScamAnalyzerEvent.AnalysisSuccess)
+                
+                if (result != null) {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        analysisResult = result.toString()
+                    )
+                    _events.send(ScamAnalyzerEvent.AnalysisSuccess)
+                } else {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        errorMessage = "Something went wrong. Please try again."
+                    )
+                }
             } catch (e: Exception) {
                 Log.e("AnalyzeResult", "Error analyzing audio", e)
                 _uiState.value = _uiState.value.copy(
@@ -83,11 +99,19 @@ class ScamAnalyzerViewModel @Inject constructor(
                 _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
                 val result = analyzeUseCase(AnalysisInput.Image(imageUri))
                 Log.d("AnalyzeResult", result.toString())
-                _uiState.value = _uiState.value.copy(
-                    isLoading = false,
-                    analysisResult = result.toString()
-                )
-                _events.send(ScamAnalyzerEvent.AnalysisSuccess)
+                
+                if (result != null) {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        analysisResult = result.toString()
+                    )
+                    _events.send(ScamAnalyzerEvent.AnalysisSuccess)
+                } else {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        errorMessage = "Something went wrong. Please try again."
+                    )
+                }
             } catch (e: Exception) {
                 Log.e("AnalyzeResult", "Error analyzing image", e)
                 _uiState.value = _uiState.value.copy(
@@ -96,5 +120,9 @@ class ScamAnalyzerViewModel @Inject constructor(
                 )
             }
         }
+    }
+
+    fun clearError() {
+        _uiState.value = _uiState.value.copy(errorMessage = null)
     }
 }
