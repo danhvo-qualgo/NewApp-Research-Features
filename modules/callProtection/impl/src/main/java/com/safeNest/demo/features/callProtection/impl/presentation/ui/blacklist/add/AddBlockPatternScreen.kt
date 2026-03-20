@@ -163,6 +163,7 @@ fun AddBlockPatternScreen(
                         viewModel.add(blockPattern, description)
                         blockPattern = ""
                         description = ""
+                        onBack()
                     },
                     modifier = Modifier
                         .fillMaxWidth()
