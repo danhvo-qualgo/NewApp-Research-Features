@@ -25,6 +25,7 @@ import com.uney.core.router.RouterManager
 import com.uney.core.router.compose.LocalRouterManager
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
+import com.safeNest.demo.features.home.impl.presentation.ui.settings.CustomPromptScreen
 
 @AndroidEntryPoint
 class HomeActivity : ComponentActivity() {
@@ -87,6 +88,9 @@ class HomeActivity : ComponentActivity() {
                                 },
                                 onUploadImageClick = { imageUri ->
                                     navController.navigate("mediaPreview/image/${Uri.encode(imageUri.toString())}")
+                                },
+                                onConfigurePromptClick = {
+                                    navController.navigate("customPrompt")
                                 }
                             )
                         }
@@ -97,6 +101,14 @@ class HomeActivity : ComponentActivity() {
                                 },
                                 onAnalysisSuccess = { audioUri ->
                                     navController.navigate("mediaPreview/audio/${Uri.encode(audioUri.toString())}")
+                                }
+                            )
+                        }
+
+                        composable("customPrompt") {
+                            CustomPromptScreen(
+                                onBackClick = {
+                                    navController.popBackStack()
                                 }
                             )
                         }

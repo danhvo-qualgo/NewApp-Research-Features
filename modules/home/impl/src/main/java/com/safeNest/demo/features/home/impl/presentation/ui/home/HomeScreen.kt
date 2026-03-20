@@ -56,7 +56,8 @@ fun HomeScreen(
     onUploadImageClick: (Uri) -> Unit = {},
     onBlocklistClick: () -> Unit,
     onWhitelistClick: () -> Unit,
-    onScamAnalyzerClick: () -> Unit
+    onScamAnalyzerClick: () -> Unit,
+    onConfigurePromptClick: () -> Unit = {}
 ) {
     var currentTab by remember { mutableStateOf(BottomTab.Home) }
 
@@ -101,7 +102,10 @@ fun HomeScreen(
                     }
 
                     BottomTab.Settings -> {
-                        SettingsScreen(innerPadding = innerPadding)
+                        SettingsScreen(
+                            innerPadding = innerPadding,
+                            onConfigurePromptClick = onConfigurePromptClick
+                        )
                     }
                 }
             }
