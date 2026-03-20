@@ -25,12 +25,6 @@ import org.json.JSONObject
 import java.io.BufferedReader
 import java.io.InputStreamReader
 
-ai.onnxruntime.OrtSessionimport android.content.Context
-import com.safenest.urlanalyzer.Gate1Result
-import com.safenest.urlanalyzer.KeyFinding
-import org.json.JSONObject
-import java.io.BufferedReader
-import java.io.InputStreamReader
 
 class Gate1Classifier(
     private val context: Context,

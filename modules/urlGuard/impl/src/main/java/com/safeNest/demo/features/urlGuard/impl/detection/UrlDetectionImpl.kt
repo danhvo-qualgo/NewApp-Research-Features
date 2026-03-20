@@ -13,7 +13,7 @@ class UrlDetectionImpl @Inject constructor(
     override fun detect(url: String): ModelDetectStatus {
         val response = classier1.classify(url)
         Log.d(TAG, "response for url $url: $response")
-        return when(response.data.verdict) {
+        return when(response.verdict) {
             "scam" -> ModelDetectStatus.Scam
             "suspicious" -> ModelDetectStatus.Unknown
             else -> ModelDetectStatus.Safe

@@ -78,7 +78,7 @@ object PageFetcher {
     // MARK: - HTML Parsing (simple regex, no WebView)
 
     private fun extractTitle(html: String): String {
-        val pattern = Regex("<title[^>]*>(.*?)</title>", RegexOption.DOT_MATCHES_ALL or RegexOption.IGNORE_CASE)
+        val pattern = Regex("<title[^>]*>(.*?)</title>", setOf( RegexOption.DOT_MATCHES_ALL, RegexOption.IGNORE_CASE))
         val match = pattern.find(html) ?: return ""
         return match.groupValues[1].trim().take(200)
     }
