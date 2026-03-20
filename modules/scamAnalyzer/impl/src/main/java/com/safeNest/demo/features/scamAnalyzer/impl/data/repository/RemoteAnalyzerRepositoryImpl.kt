@@ -21,10 +21,9 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 
 class RemoteAnalyzerRepositoryImpl @Inject constructor(
-    @ApplicationContext
-    private val context: Context,
-    @NonAuthClient private val apiClient: ApiClient,
-    @NonAuthClient private val multipartApiClient: MultipartApiClient,
+    @param:ApplicationContext private val context: Context,
+    @param:NonAuthClient private val apiClient: ApiClient,
+    @param:NonAuthClient private val multipartApiClient: MultipartApiClient,
 ) : AnalyzerRepository {
     private fun <T : Any, R : Any> ApiResult<T>.map(mapper: (T) -> R): ApiResult<R> {
         return when (this) {
