@@ -14,6 +14,7 @@ import androidx.annotation.ColorInt
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.core.content.ContextCompat
+import androidx.core.view.isVisible
 import com.safeNest.demo.features.urlGuard.impl.R
 
 /**
@@ -51,6 +52,7 @@ class QuickActionCardView @JvmOverloads constructor(
     private val ivAlertIcon: ImageView
     private val tvAlertLabel: TextView
     private val llActions: LinearLayout
+    private val llLoadingState: LinearLayout
 
     // ── Initialisation ────────────────────────────────────────────────────────
 
@@ -68,6 +70,7 @@ class QuickActionCardView @JvmOverloads constructor(
         ivAlertIcon     = findViewById(R.id.iv_threat_alert_icon)
         tvAlertLabel    = findViewById(R.id.tv_threat_alert_label)
         llActions       = findViewById(R.id.ll_threat_actions)
+        llLoadingState  = findViewById(R.id.ll_loading_state)
     }
 
     // ── Header – alert icon setters ───────────────────────────────────────────
@@ -127,6 +130,20 @@ class QuickActionCardView @JvmOverloads constructor(
      */
     fun clearActions() {
         llActions.removeAllViews()
+    }
+
+    // ── Loading state ─────────────────────────────────────────────────────────
+
+    /** Hides the action rows and shows the indeterminate loading indicator. */
+    fun showLoading() {
+        llActions.isVisible = false
+        llLoadingState.isVisible = true
+    }
+
+    /** Hides the loading indicator and restores the action rows. */
+    fun hideLoading() {
+        llLoadingState.isVisible = false
+        llActions.isVisible = true
     }
 
     // ── Internal helpers ──────────────────────────────────────────────────────

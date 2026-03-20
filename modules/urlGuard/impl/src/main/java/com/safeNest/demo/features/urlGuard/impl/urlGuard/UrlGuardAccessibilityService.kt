@@ -14,6 +14,8 @@ import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import androidx.core.app.NotificationCompat
 import com.safeNest.demo.features.scamAnalyzer.api.ScamAnalyzerProvider
+import com.safeNest.demo.features.scamAnalyzer.api.models.AnalysisInput
+import com.safeNest.demo.features.scamAnalyzer.api.useCase.AnalyzeUseCase
 import com.safeNest.demo.features.urlGuard.impl.R
 import com.safeNest.demo.features.urlGuard.impl.detection.NotificationDetection
 import com.safeNest.demo.features.urlGuard.impl.detection.PhoneDetection
@@ -21,7 +23,9 @@ import com.safeNest.demo.features.urlGuard.impl.detection.UrlDetection
 import com.safeNest.demo.features.urlGuard.impl.detection.model.ModelDetectStatus
 import com.safeNest.demo.features.urlGuard.impl.urlGuard.mapper.toModelDetectionStatus
 import com.safeNest.demo.features.urlGuard.impl.urlGuard.util.UserAllowedDomainGuard
+import com.safeNest.demo.features.urlGuard.impl.urlGuard.view.QuickActionCardView
 import com.safeNest.demo.features.urlGuard.impl.urlGuard.view.SecureView
+import com.safeNest.demo.features.urlGuard.impl.urlGuard.view.model.toActionCardViewListAction
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -31,6 +35,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 /**
@@ -63,6 +68,8 @@ class UrlGuardAccessibilityService : AccessibilityService() {
     lateinit var scamAnalyzerProvider: ScamAnalyzerProvider
     @Inject
     lateinit var appTrustChecker: AppTrustChecker
+    @Inject
+    lateinit var analyzeUseCase: AnalyzeUseCase
     // ── UI layer ──────────────────────────────────────────────────────────────
     private lateinit var secureView: SecureView
 
@@ -139,10 +146,7 @@ class UrlGuardAccessibilityService : AccessibilityService() {
 
         // Initialise UI overlay — not shown yet.
         // Shown lazily via ACTION_SHOW_FLOATING sent from UrlGuardActivity.
-        secureView = SecureView(this) {
-            secureView.hideBlockingPage()
-            scamAnalyzerProvider.openActivity(this)
-        }.apply {
+        secureView = SecureView(this).apply {
             onGoBackClick = { hideBlockingPage() }
             onProceedAnywayClick = {
                 // User consciously chose to proceed → whitelist the domain for
@@ -328,6 +332,44 @@ class UrlGuardAccessibilityService : AccessibilityService() {
 
     }
 
+    private fun onDetailAction() {
+        val input = SurfaceDetector.getCurrent().toAnalysisInput()
+        Log.d(TAG, "onDetail action input: ${input}")
+        if (input == null) {
+            secureView.hideBlockingPage()
+            scamAnalyzerProvider.openActivity(this)
+            return
+        }
+        secureView.actionCard.showLoading()
+        serviceScope.launch {
+            try {
+                withContext(Dispatchers.IO) { analyzeUseCase(input) }
+            } finally {
+                secureView.actionCard.hideLoading()
+                secureView.hideActionCard()
+                secureView.hideBlockingPage()
+                scamAnalyzerProvider.openActivity(this@UrlGuardAccessibilityService)
+            }
+        }
+    }
+
+    private fun ScreenSurface.toAnalysisInput(): AnalysisInput? = when (this) {
+        is ScreenSurface.Browser -> url?.let { AnalysisInput.Url(it) }
+        is ScreenSurface.Notification -> {
+            val text = listOfNotNull(title, content).joinToString(" ").takeIf { it.isNotBlank() }
+            text?.let { AnalysisInput.Text(text = it) }
+        }
+        is ScreenSurface.ActiveCall -> phoneNumber?.let { AnalysisInput.Text(text = it) }
+        else -> null
+    }
+
+    private fun buildActions(
+        feature: FloatingButtonFeature,
+        status: DetectionStatus,
+        data: Any? = null
+    ): List<QuickActionCardView.Action> =
+        feature.toActionCardViewListAction(this, status, data) { onDetailAction() }
+
     /**
      * Applies the URL scan result to [SurfaceDetector] and [SecureView].
      */
@@ -339,7 +381,7 @@ class UrlGuardAccessibilityService : AccessibilityService() {
 
         SurfaceDetector.update(ScreenSurface.Browser(browserPkg, normalUrl, status))
         secureView.updateButton(FloatingButtonFeature.SAFE_BROWSING, status)
-        secureView.updateActionCard(FloatingButtonFeature.SAFE_BROWSING, status)
+        secureView.updateActionCard(FloatingButtonFeature.SAFE_BROWSING, status, buildActions(FloatingButtonFeature.SAFE_BROWSING, status))
 
         when (status) {
             DetectionStatus.DANGEROUS,
@@ -392,7 +434,7 @@ class UrlGuardAccessibilityService : AccessibilityService() {
         val detectionStatus = phoneDetection.detectPhone(phoneNumber)
 
         secureView.updateButton(FloatingButtonFeature.CALL_PROTECTION, detectionStatus)
-        secureView.updateActionCard(FloatingButtonFeature.CALL_PROTECTION, detectionStatus)
+        secureView.updateActionCard(FloatingButtonFeature.CALL_PROTECTION, detectionStatus, buildActions(FloatingButtonFeature.CALL_PROTECTION, detectionStatus))
         SurfaceDetector.update(ScreenSurface.ActiveCall(phoneNumber, detectionStatus))
     }
 
@@ -465,7 +507,7 @@ class UrlGuardAccessibilityService : AccessibilityService() {
             serviceScope.launch {
                 val result = notificationDetection.detectNotificationContent(notificationContent)
                 secureView.updateButton(FloatingButtonFeature.SMS_CHECK, result)
-                secureView.updateActionCard(FloatingButtonFeature.SMS_CHECK, result)
+                secureView.updateActionCard(FloatingButtonFeature.SMS_CHECK, result, buildActions(FloatingButtonFeature.SMS_CHECK, result))
             }
         }.also { mainHandler.postDelayed(it, CALL_DEBOUNCE_MS) }
     }
@@ -491,7 +533,7 @@ class UrlGuardAccessibilityService : AccessibilityService() {
             Log.d(TAG, "AppTrust cache hit [$pkg]")
             SurfaceDetector.update(ScreenSurface.App(pkg, cached))
             secureView.updateButton(FloatingButtonFeature.APP_CHECK, cached)
-            secureView.updateActionCard(FloatingButtonFeature.APP_CHECK, cached)
+            secureView.updateActionCard(FloatingButtonFeature.APP_CHECK, cached, buildActions(FloatingButtonFeature.APP_CHECK, cached, pkg))
             return
         }
 
@@ -504,7 +546,7 @@ class UrlGuardAccessibilityService : AccessibilityService() {
                 if (current is ScreenSurface.App && current.packageName == pkg) {
                     SurfaceDetector.update(current.copy(status = status))
                     secureView.updateButton(FloatingButtonFeature.APP_CHECK, status)
-                    secureView.updateActionCard(FloatingButtonFeature.APP_CHECK, status, pkg)
+                    secureView.updateActionCard(FloatingButtonFeature.APP_CHECK, status, buildActions(FloatingButtonFeature.APP_CHECK, status, pkg))
                 }
             }
         }.also { mainHandler.postDelayed(it, APP_DEBOUNCE_MS) }

@@ -5,7 +5,7 @@ set(NATIVE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/native)
 
 # Gate 1 shared library for Android (loaded via JNI)
 add_library(gate1_features SHARED
-    ${CMAKE_CURRENT_SOURCE_DIR}/gate1_jni.c
+    ${NATIVE_DIR}/src/gate1_jni.c
     ${NATIVE_DIR}/src/gate1_features.c
 )
 
