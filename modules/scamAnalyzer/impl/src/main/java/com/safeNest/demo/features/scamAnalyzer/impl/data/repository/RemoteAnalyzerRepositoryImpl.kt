@@ -1,21 +1,30 @@
 package com.safeNest.demo.features.scamAnalyzer.impl.data.repository
 
+import android.content.Context
 import android.net.Uri
 import com.safeNest.demo.features.scamAnalyzer.api.models.AnalysisResult
 import com.safeNest.demo.features.scamAnalyzer.api.models.AnalysisResultType
+import com.safeNest.demo.features.scamAnalyzer.impl.domain.models.AnalyzeImageResult
 import com.safeNest.demo.features.scamAnalyzer.impl.domain.models.AnalyzeTextResult
 import com.safeNest.demo.features.scamAnalyzer.impl.domain.models.AnalyzeUrlResult
 import com.safeNest.demo.features.scamAnalyzer.impl.domain.models.toAnalysisItem
 import com.safeNest.demo.features.scamAnalyzer.impl.domain.models.toAnalysisStatus
 import com.safeNest.demo.features.scamAnalyzer.impl.domain.repository.AnalyzerRepository
 import com.uney.core.network.api.ApiClient
+import com.uney.core.network.api.MultipartApiClient
 import com.uney.core.network.api.configs.NonAuthClient
 import com.uney.core.network.api.ext.post
+import com.uney.core.network.api.ext.uploadMultipart
 import com.uney.core.network.api.models.ApiResult
+import com.uney.core.network.api.models.MultipartPart
+import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 
 class RemoteAnalyzerRepositoryImpl @Inject constructor(
+    @ApplicationContext
+    private val context: Context,
     @NonAuthClient private val apiClient: ApiClient,
+    @NonAuthClient private val multipartApiClient: MultipartApiClient,
 ) : AnalyzerRepository {
     private fun <T : Any, R : Any> ApiResult<T>.map(mapper: (T) -> R): ApiResult<R> {
         return when (this) {
@@ -26,7 +35,25 @@ class RemoteAnalyzerRepositoryImpl @Inject constructor(
     }
 
     override suspend fun analyzeAudio(uri: Uri): ApiResult<AnalysisResult> {
-        return ApiResult.Exception(Throwable())
+        val mimeType = context.contentResolver.getType(uri) ?: "application/octet-stream"
+
+        return multipartApiClient.uploadMultipart<AnalyzeUrlResult>(
+            path = "/api/v1.0/analyze/audio",
+            parts = listOf(
+                MultipartPart.FileStream(
+                    formFieldName = "file",
+                    fileName = "audio",
+                    contentType = mimeType,
+                    stream = context.contentResolver.openInputStream(uri)!!
+                )
+            )
+        ).map {
+            AnalysisResult(
+                data = AnalysisResultType.Audio(uri.toString()),
+                status = it.verdict.toAnalysisStatus(),
+                keyFindings = it.keyFindings.map { finding -> finding.toAnalysisItem() }
+            )
+        }
     }
 
     override suspend fun analyzeUrl(url: String): ApiResult<AnalysisResult> {
@@ -64,6 +91,24 @@ class RemoteAnalyzerRepositoryImpl @Inject constructor(
     }
 
     override suspend fun analyzeImage(uri: Uri): ApiResult<AnalysisResult> {
-        return ApiResult.Exception(Throwable())
+        val mimeType = context.contentResolver.getType(uri) ?: "application/octet-stream"
+
+        return multipartApiClient.uploadMultipart<AnalyzeImageResult>(
+            path = "/api/v1.0/analyze/images",
+            parts = listOf(
+                MultipartPart.FileStream(
+                    formFieldName = "file",
+                    fileName = "image",
+                    contentType = mimeType,
+                    stream = context.contentResolver.openInputStream(uri)!!
+                )
+            ),
+        ).map {
+            AnalysisResult(
+                data = AnalysisResultType.Image(uri.toString(), it.hasText),
+                status = it.verdict.toAnalysisStatus(),
+                keyFindings = it.keyFindings.map { finding -> finding.toAnalysisItem() }
+            )
+        }
     }
 }

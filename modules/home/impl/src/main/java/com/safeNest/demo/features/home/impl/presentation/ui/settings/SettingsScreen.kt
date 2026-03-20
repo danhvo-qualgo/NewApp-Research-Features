@@ -22,7 +22,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.safeNest.demo.features.designSystem.component.DsToggle
+import com.safeNest.demo.features.designSystem.component.DSDropdown
 import com.safeNest.demo.features.designSystem.theme.DSSpacing
 import com.safeNest.demo.features.designSystem.theme.DSTypography
 import com.safeNest.demo.features.designSystem.theme.color.DSColors
@@ -78,19 +78,38 @@ fun SettingsScreen(
             }
         } else {
             AnalyzeModeCard(
-                isRemoteMode = uiState.isRemoteMode,
-                onToggle = { isRemote ->
-                    settingsViewModel.toggleAnalyzeMode(isRemote)
+                selectedMode = if (uiState.isRemoteMode) AnalysisMode.Remote else AnalysisMode.OnDevice,
+                onModeChange = { mode ->
+                    settingsViewModel.toggleAnalyzeMode(mode == AnalysisMode.Remote)
                 }
             )
         }
     }
 }
 
+enum class AnalysisMode {
+    Remote,
+    OnDevice
+}
+
+fun AnalysisMode.getDisplayName(): String {
+    return when (this) {
+        AnalysisMode.Remote -> "Remote"
+        AnalysisMode.OnDevice -> "On Device"
+    }
+}
+
+fun AnalysisMode.getDescription(): String {
+    return when (this) {
+        AnalysisMode.Remote -> "Analysis is performed on cloud servers with higher accuracy and speed."
+        AnalysisMode.OnDevice -> "Analysis is performed locally on your device for better privacy."
+    }
+}
+
 @Composable
 private fun AnalyzeModeCard(
-    isRemoteMode: Boolean,
-    onToggle: (Boolean) -> Unit
+    selectedMode: AnalysisMode,
+    onModeChange: (AnalysisMode) -> Unit
 ) {
     Card(
         shape = RoundedCornerShape(16.dp),
@@ -99,41 +118,24 @@ private fun AnalyzeModeCard(
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(DSSpacing.s3)
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Text(
-                        text = "Analysis Mode",
-                        style = DSTypography.caption1.regular,
-                        color = DSColors.textBody.copy(alpha = 0.7f)
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = if (isRemoteMode) "Remote" else "On Device",
-                        style = DSTypography.body2.bold,
-                        color = DSColors.textBody
-                    )
-                }
-                DsToggle(
-                    checked = isRemoteMode,
-                    onCheckedChange = onToggle
-                )
-            }
+            Text(
+                text = "Analysis Mode",
+                style = DSTypography.caption1.regular,
+                color = DSColors.textBody.copy(alpha = 0.7f)
+            )
 
-            Spacer(modifier = Modifier.height(DSSpacing.s3))
+            DSDropdown(
+                selectedValue = selectedMode,
+                options = listOf(AnalysisMode.Remote, AnalysisMode.OnDevice),
+                onValueChange = onModeChange,
+                getDisplayText = { it.getDisplayName() }
+            )
 
             Text(
-                text = if (isRemoteMode) {
-                    "Analysis is performed on cloud servers with higher accuracy and speed."
-                } else {
-                    "Analysis is performed locally on your device for better privacy."
-                },
+                text = selectedMode.getDescription(),
                 style = DSTypography.caption1.regular,
                 color = DSColors.textBody,
                 lineHeight = 20.sp

@@ -14,7 +14,6 @@ import com.safeNest.demo.features.scamAnalyzer.impl.data.utils.TextRedactor
 import com.safeNest.demo.features.scamAnalyzer.impl.domain.extractor.EntityExtractor
 import com.safeNest.demo.features.scamAnalyzer.impl.domain.repository.AnalyzerRepository
 import com.safeNest.demo.features.scamAnalyzer.impl.utils.ModelManager
-import com.safeNest.demo.features.scamAnalyzer.impl.utils.PhishingLlmAnalyzer
 import com.safeNest.demo.features.scamAnalyzer.impl.utils.asr.WhisperModelManager
 import com.safeNest.demo.features.scamAnalyzer.impl.utils.asr.WhisperTranscriber
 import com.uney.core.network.api.models.ApiResult
@@ -37,56 +36,25 @@ class OnDeviceAnalyzerRepositoryImpl @Inject constructor(
         private const val TAG = "OnDeviceAnalyzer"
         private fun getPrompt(msg: String, summary: String): String {
             return """
-                You are a cybersecurity message analysis assistant.
+        Classify this message as a cybersecurity threat.
 
-                Your task is to analyze a message and classify it into one of the following statuses:
+        Status codes:
+        0=Safe, 1=Scam, 2=Unverified
 
-                0 = Safe
-                1 = Scam
-                2 = Unverified
+        Safe: No phishing/scam indicators.
+        Scam: Clear signals — impersonation, urgency, fake links, threats, sensitive info requests.
+        Unverified: Suspicious but insufficient evidence.
 
-                Definitions:
+        Rules:
+        - Return ONLY valid JSON, no markdown.
+        - If status = 0, reasons MUST be [].
+        - If status != 0, reasons MUST contain at least one item.
 
-                Safe
-                The message contains no phishing or scam indicators.
+        {"status":0|1|2,"reasons":[]}
 
-                Scam
-                The message clearly shows phishing or scam signals such as impersonation, urgency, fake links, threats, or requests for sensitive information.
-
-                Unverified
-                The message may be suspicious but there is not enough evidence to confidently label it as a scam.
-
-                Output Rules:
-
-                * Return ONLY valid JSON.
-                ** If the message is Safe, the reasons array should be empty. **
-
-                JSON format:
-
-                {
-                "status": 0 | 1 | 2,
-                "statusText": "Safe | Scam | Unverified",
-                "reasons": [
-                {
-                "title": "string",
-                "description": "string"
-                }
-                ]
-                }
-
-                Analyze the following message:
-
-                MESSAGE:
-                '''
-                $msg
-                '''
-                
-                SUMMARY:
-                '''
-                $summary
-                '''
-
-            """.trimIndent()
+        MESSAGE: $msg
+        CONTEXT: $summary
+    """.trimIndent()
         }
     }
 
@@ -94,7 +62,6 @@ class OnDeviceAnalyzerRepositoryImpl @Inject constructor(
     @Serializable
     data class ModelResult(
         val status: Int,
-        val statusText: String,
         val reasons: List<Reason>
     ) {
         fun getStatus() = when (status) {
@@ -131,8 +98,7 @@ class OnDeviceAnalyzerRepositoryImpl @Inject constructor(
         val result = modelManager.analyzer
             .llmProcessing(getPrompt(text, summary))
             .toList()
-            .filterIsInstance<PhishingLlmAnalyzer.ModelResult.Token>()
-            .joinToString("") { it.token }
+            .joinToString("")
 
         val thinkRegex = Regex("<think>.*?</think>", RegexOption.DOT_MATCHES_ALL)
         val cleaned = result.replace(thinkRegex, "")

@@ -176,6 +176,13 @@ fun ScamAnalyzerScreen(
         if (uiState.isLoading) {
             FullScreenLoading()
         }
+
+        uiState.errorMessage?.let { error ->
+            ErrorDialog(
+                message = error,
+                onDismiss = { scamAnalyzerViewModel.clearError() }
+            )
+        }
     }
 }
 
@@ -400,6 +407,50 @@ private fun FullScreenLoading() {
                         color = DSColors.textHeading
                     )
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ErrorDialog(
+    message: String,
+    onDismiss: () -> Unit
+) {
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(
+            dismissOnBackPress = true,
+            dismissOnClickOutside = true
+        )
+    ) {
+        Surface(
+            shape = RoundedCornerShape(16.dp),
+            color = DSColors.surfacePrimary,
+            modifier = Modifier.padding(DSSpacing.s6)
+        ) {
+            Column(
+                modifier = Modifier.padding(DSSpacing.s6),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(DSSpacing.s4)
+            ) {
+                Text(
+                    text = "Error",
+                    style = DSTypography.h4.bold,
+                    color = DSColors.textError
+                )
+                Text(
+                    text = message,
+                    style = DSTypography.body2.medium,
+                    color = DSColors.textBody,
+                    textAlign = TextAlign.Center
+                )
+                DSButton(
+                    text = "OK",
+                    onClick = onDismiss,
+                    modifier = Modifier.fillMaxWidth(),
+                    textStyle = DSTypography.body2.bold
+                )
             }
         }
     }

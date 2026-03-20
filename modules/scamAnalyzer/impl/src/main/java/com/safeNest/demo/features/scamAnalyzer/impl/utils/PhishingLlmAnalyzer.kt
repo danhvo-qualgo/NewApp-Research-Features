@@ -42,20 +42,8 @@ class PhishingLlmAnalyzer {
         Log.i(TAG, "Model loaded: $configPath")
     }
 
-    /**
-     * Runs inference with a raw pre-built [prompt] and streams the result token-by-token.
-     * Blocking — call on IO dispatcher.
-     */
-
-    sealed interface ModelResult {
-        data class Token(val token: String) : ModelResult
-
-        data object Success : ModelResult
-    }
-
-    fun llmProcessing(prompt: String): Flow<ModelResult> = callbackFlow {
+    fun llmProcessing(prompt: String): Flow<String> = callbackFlow {
         val thiz = this
-
         withContext(Dispatchers.IO) {
             check(nativePtr != 0L) { "PhishingLlmAnalyzer.load() must be called before llmProcessing()" }
 
@@ -64,12 +52,11 @@ class PhishingLlmAnalyzer {
                 prompt = prompt,
                 listener = object : ProgressListener {
                     override fun onProgress(token: String): Boolean {
-                        thiz.trySendBlocking(ModelResult.Token(token))
+                        thiz.trySendBlocking(token)
                         return true
                     }
 
                     override fun onFinish() {
-                        thiz.trySendBlocking(ModelResult.Success)
                         close()
                     }
                 },
@@ -77,6 +64,10 @@ class PhishingLlmAnalyzer {
         }
     }
 
+    /**
+     * Runs inference with a raw pre-built [prompt] and streams the result token-by-token.
+     * Blocking — call on IO dispatcher.
+     */
     fun llmProcessing(
         prompt: String,
         onToken: (String) -> Unit,

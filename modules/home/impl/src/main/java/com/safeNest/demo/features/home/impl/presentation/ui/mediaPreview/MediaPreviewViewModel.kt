@@ -70,8 +70,15 @@ class MediaPreviewViewModel @Inject constructor(
                 val result = analyzeUseCase(AnalysisInput.Audio(audioUri))
                 Log.d("MediaPreviewViewModel", "Analysis result: $result")
 
-                _uiState.value = _uiState.value.copy(isAnalyzing = false)
-                _events.send(MediaPreviewEvent.AnalysisSuccess)
+                if (result != null) {
+                    _uiState.value = _uiState.value.copy(isAnalyzing = false)
+                    _events.send(MediaPreviewEvent.AnalysisSuccess)
+                } else {
+                    _uiState.value = _uiState.value.copy(
+                        isAnalyzing = false,
+                        errorMessage = "Something went wrong. Please try again."
+                    )
+                }
             } catch (e: Exception) {
                 Log.e("MediaPreviewViewModel", "Error analyzing audio", e)
                 _uiState.value = _uiState.value.copy(
@@ -90,8 +97,15 @@ class MediaPreviewViewModel @Inject constructor(
                 val result = analyzeUseCase(AnalysisInput.Image(imageUri))
                 Log.d("MediaPreviewViewModel", "Analysis result: $result")
 
-                _uiState.value = _uiState.value.copy(isAnalyzing = false)
-                _events.send(MediaPreviewEvent.AnalysisSuccess)
+                if (result != null) {
+                    _uiState.value = _uiState.value.copy(isAnalyzing = false)
+                    _events.send(MediaPreviewEvent.AnalysisSuccess)
+                } else {
+                    _uiState.value = _uiState.value.copy(
+                        isAnalyzing = false,
+                        errorMessage = "Something went wrong. Please try again."
+                    )
+                }
             } catch (e: Exception) {
                 Log.e("MediaPreviewViewModel", "Error analyzing image", e)
                 _uiState.value = _uiState.value.copy(
@@ -175,6 +189,10 @@ class MediaPreviewViewModel @Inject constructor(
 
         Log.d("MediaPreviewViewModel", "Returning: fileName=$fileName, fileSize=$fileSize")
         return Pair(fileName, fileSize)
+    }
+
+    fun clearError() {
+        _uiState.value = _uiState.value.copy(errorMessage = null)
     }
 
     private fun formatFileSize(bytes: Long): String {
