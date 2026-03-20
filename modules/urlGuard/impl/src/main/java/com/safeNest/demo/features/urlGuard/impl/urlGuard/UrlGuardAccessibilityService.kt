@@ -168,6 +168,7 @@ class UrlGuardAccessibilityService : AccessibilityService() {
         if (isOverlayShown) secureView.dismiss()
         formInspector.cleanup()
         allowedDomainGuard.clear()
+        //urlDetection.onDestroy()
     }
 
     override fun onUnbind(intent: Intent?): Boolean {
@@ -227,22 +228,6 @@ class UrlGuardAccessibilityService : AccessibilityService() {
                     else -> onAppForeground(pkg)
                 }
             }
-
-            // ── Content inside an already-visible window changed ──────────────
-            //AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED,
-//            AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED -> {
-//                when (pkg) {
-//                    in AppTrustChecker.BROWSER_PACKAGES -> {
-////                        lastBrowserPackage = pkg
-////                        scheduleUrlCheck()
-//                        onBrowserForeground(pkg)
-//                    }
-//                    in AppTrustChecker.CALL_PACKAGES -> onCallForeground(pkg, event)
-//                    else -> {
-//                        onAppForeground(pkg)
-//                    }
-//                }
-//            }
 
             // ── A notification appeared in the status bar ─────────────────────
             AccessibilityEvent.TYPE_NOTIFICATION_STATE_CHANGED -> {

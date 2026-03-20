@@ -15,7 +15,7 @@ class UrlDetectionImpl @Inject constructor(
         Log.d(TAG, "response for url $url: $response")
         return when(response.verdict) {
             "scam" -> ModelDetectStatus.Scam
-            "suspicious" -> ModelDetectStatus.Unknown
+            "suspicious" -> ModelDetectStatus.Warning
             else -> ModelDetectStatus.Safe
         }
     }

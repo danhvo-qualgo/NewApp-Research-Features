@@ -7,6 +7,7 @@ fun ModelDetectStatus.toModelDetectionStatus(): DetectionStatus {
     return when(this) {
         ModelDetectStatus.Safe -> DetectionStatus.SAFE
         ModelDetectStatus.Scam -> DetectionStatus.DANGEROUS
+        ModelDetectStatus.Warning -> DetectionStatus.WARNING
         ModelDetectStatus.Unknown -> DetectionStatus.UNKNOWN
     }
 }
