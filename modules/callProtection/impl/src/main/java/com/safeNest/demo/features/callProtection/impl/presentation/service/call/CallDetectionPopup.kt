@@ -80,7 +80,7 @@ object CallDetectionPopup {
         findViewById<FrameLayout>(R.id.cardContainer).backgroundTintList =
             ColorStateList.valueOf(color)
         findViewById<TextView>(R.id.txtAlertLabel).setTextColor(color)
-        findViewById<TextView>(R.id.txtAlertTitle).text = getLabelByType(content.type)
+        findViewById<TextView>(R.id.txtAlertTitle).text = content.label
         findViewById<ImageView>(R.id.imgAlertIcon).setImageResource(getIconByType(content.type))
     }
 
@@ -145,6 +145,7 @@ object CallDetectionPopup {
 
     data class PopupContent(
         val phoneNumber: String,
+        val label: String,
         val type: CallerIdInfoType
     )
 }

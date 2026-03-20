@@ -67,7 +67,7 @@ class CallDetectionHandlerImpl @Inject constructor(
                 }
                 else -> {
                     Handler(Looper.getMainLooper()).post {
-                        CallDetectionPopup.show(context, CallDetectionPopup.PopupContent(normalizePhoneNumber, it.type))
+                        CallDetectionPopup.show(context, CallDetectionPopup.PopupContent(normalizePhoneNumber, it.label, it.type))
                     }
                     CallResult.Allow()
                 }

@@ -9,11 +9,15 @@ import kotlinx.coroutines.flow.flowOf
 
 class CallDetectionRepositoryImpl @Inject constructor() : CallDetectionRepository {
     private val callerIdInfos: List<CallerIdInfo> = listOf(
-        CallerIdInfo("+84393491861", "John Vo Scam", CallerIdInfoType.SCAM),
-        CallerIdInfo("+84393491862", "John Vo Spam", CallerIdInfoType.SPAM),
+        CallerIdInfo("+84364384264", "Scam - Open KinShield for Detail", CallerIdInfoType.SCAM),
+        CallerIdInfo("+84903468025", "Spam - Open KinShield for Detail", CallerIdInfoType.SPAM),
+        CallerIdInfo("+84364384264", "John Vo Scam", CallerIdInfoType.SCAM),
+        CallerIdInfo("+84903468025", "John Vo Spam", CallerIdInfoType.SPAM),
         CallerIdInfo("+84393491863", "John Phishing ", CallerIdInfoType.PHISHING),
         CallerIdInfo("+84393491864", "John Unknow ", CallerIdInfoType.UNKNOW),
         CallerIdInfo("+84393491865", "John Safe ", CallerIdInfoType.SAFE),
+        CallerIdInfo("+84352971661", "Trang", CallerIdInfoType.SAFE),
+        CallerIdInfo("+84352971620", "Trang", CallerIdInfoType.SAFE),
     )
 
     override fun evaluatePhoneNumber(phoneNumber: String): Flow<CallerIdInfo?> = flowOf(
