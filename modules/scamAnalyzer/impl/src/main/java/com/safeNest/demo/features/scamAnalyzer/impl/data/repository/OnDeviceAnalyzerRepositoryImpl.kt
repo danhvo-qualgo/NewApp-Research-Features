@@ -139,11 +139,20 @@ class OnDeviceAnalyzerRepositoryImpl @Inject constructor(
     }
 
     override suspend fun analyzeUrl(url: String): ApiResult<AnalysisResult> {
-        // TODO: Load webview
-        // Call LLM Model, input: url, web content
-        Log.d(TAG, "Classifying with LLM")
+        val (_, result) = analyzeText(url)
 
-        return ApiResult.Exception(Throwable())
+        return ApiResult.Success(
+            AnalysisResult(
+                data = AnalysisResultType.Url(url),
+                status = result.getStatus(),
+                keyFindings = result.reasons.map {
+                    AnalysisItem(
+                        title = it.title,
+                        description = it.description
+                    )
+                }
+            )
+        )
     }
 
     override suspend fun analyzeText(
