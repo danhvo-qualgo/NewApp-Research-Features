@@ -121,7 +121,7 @@ object CallDetectionPopup {
     private fun getPopupLayoutParams(popupSize: Size): WindowManager.LayoutParams {
         return WindowManager.LayoutParams(
             popupSize.width,
-            popupSize.height,
+            WindowManager.LayoutParams.WRAP_CONTENT,
             WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
             PixelFormat.TRANSLUCENT

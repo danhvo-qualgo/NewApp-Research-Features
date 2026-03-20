@@ -1,5 +1,6 @@
 package com.safeNest.demo.features.callProtection.impl.data.repository
 
+import android.util.Log
 import com.safeNest.demo.features.callProtection.impl.data.local.CallDeviceStore
 import com.safeNest.demo.features.callProtection.impl.data.local.WhitelistDao
 import com.safeNest.demo.features.callProtection.impl.domain.model.PhoneNumberInfo
@@ -19,7 +20,10 @@ class WhitelistRepositoryImpl @Inject constructor(
         }
 
     override fun getPhoneNumber(phoneNumber: String): Flow<PhoneNumberInfo?> =
-        dao.get(phoneNumber).map { it?.toPhoneNumberInfo() }
+        dao.get(phoneNumber).map {
+            Log.v("WhitelistRepositoryImpl", "getPhoneNumber: $it")
+            it?.toPhoneNumberInfo()
+        }
 
     override fun isEnable(): Flow<Boolean> {
         return store.isEnableWhitelist()

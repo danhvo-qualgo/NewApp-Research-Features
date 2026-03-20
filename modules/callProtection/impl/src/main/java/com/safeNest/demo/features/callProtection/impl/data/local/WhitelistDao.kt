@@ -12,15 +12,15 @@ interface WhitelistDao {
     @Query("SELECT * FROM whitelist")
     fun getAll(): Flow<List<WhitelistEntity>>
 
-    @Query("SELECT * FROM whitelist WHERE phoneNumber = :phoneNumber")
+    @Query("SELECT * FROM whitelist WHERE normalizedNumber = :phoneNumber")
     fun get(phoneNumber: String): Flow<WhitelistEntity?>
 
-    @Query("SELECT EXISTS(SELECT 1 FROM whitelist WHERE phoneNumber = :number)")
+    @Query("SELECT EXISTS(SELECT 1 FROM whitelist WHERE normalizedNumber = :number)")
     suspend fun exists(number: String): Boolean
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(entity: WhitelistEntity)
 
-    @Query("DELETE FROM whitelist WHERE phoneNumber = :number")
+    @Query("DELETE FROM whitelist WHERE normalizedNumber = :number")
     suspend fun delete(number: String)
 }

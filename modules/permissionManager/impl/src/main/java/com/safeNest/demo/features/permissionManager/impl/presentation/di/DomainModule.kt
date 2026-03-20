@@ -14,4 +14,5 @@ abstract class DomainModule {
     abstract fun bindGetAppPermissionInfoUseCase(
         impl: GetAppPermissionInfoUseCaseImpl
     ): GetAppPermissionInfoUseCase
+
 }

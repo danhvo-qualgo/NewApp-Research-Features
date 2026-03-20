@@ -235,7 +235,7 @@ private fun BlockedPatternItem(
             Column(modifier = Modifier.weight(1f).padding(horizontal = DSSpacing.s4)) {
                 Text(pattern.pattern, color = DSColors.textHeading, style = DSTypography.body2.bold)
                 Spacer(modifier = Modifier.height(DSSpacing.half))
-                Text("Auto block from unknown patterns", color = DSColors.textNeutral, style = DSTypography.caption2.regular)
+                Text(pattern.description, color = DSColors.textNeutral, style = DSTypography.caption2.regular)
             }
             Icon(ImageVector.vectorResource(R.drawable.ic_delete_trash), contentDescription = "Delete", tint = Color.Unspecified, modifier = Modifier.clickable {
                 onDeleteClick()

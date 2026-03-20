@@ -1,6 +1,8 @@
 package com.safeNest.demo.features.callProtection.impl.presentation.service.handler
 
 import android.content.Context
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import com.safeNest.demo.features.callProtection.api.domain.model.CallerIdInfoType
 import com.safeNest.demo.features.callProtection.api.domain.model.GetCallerIdInfoUseCase
@@ -29,40 +31,43 @@ class CallDetectionHandlerImpl @Inject constructor(
     private val getMasterWhitelistNumberUseCase: GetMasterBlocklistNumberUseCase,
     private val getCallerIdUseCase: GetCallerIdInfoUseCase,
     private val addCallTrackingUseCase: AddCallTrackingUseCase,
-    private val getCallTrackingUseCase: GetCallTrackingUseCase,
 ) : CallDetectionHandler {
 
     override suspend fun onCallRing(phoneNumber: String): CallResult {
         val normalizePhoneNumber = normalizePhoneNumber(phoneNumber)
+        Log.v("CallDetectionHandlerImpl", "normalizePhoneNumber: $normalizePhoneNumber")
         if (getMasterWhitelistNumberUseCase(normalizePhoneNumber).first() != null) {
             return CallResult.Allow()
         }
-        if (getMasterBlocklistNumberUseCase(normalizePhoneNumber).first() != null) {
+        if (getMasterBlocklistNumberUseCase(normalizePhoneNumber).first() != null || getMasterBlocklistNumberUseCase(phoneNumber).first() != null) {
             return CallResult.Reject
         }
+        Log.v("CallDetectionHandlerImpl", "start check whitelist: $normalizePhoneNumber")
 
         val isEnableWhitelist = enableWhiteListUseCase.isEnable().first()
         val isEnableBlacklist = enableBlockListUseCase.isEnable().first()
-
+        addCallTrackingUseCase(normalizePhoneNumber)
         if (isEnableWhitelist) {
-            return getWhitelistByNumberUseCase(phoneNumber).first()?.let {
+            return getWhitelistByNumberUseCase(normalizePhoneNumber).first()?.let {
                 CallResult.Allow()
             } ?: CallResult.Reject
         }
+        Log.v("CallDetectionHandlerImpl", "start check blocklist: $normalizePhoneNumber")
 
         if (isEnableBlacklist && isBlocklistPatternsUseCase(normalizePhoneNumber).first()) {
             return CallResult.Reject
         }
         Log.v("CallDetectionHandlerImpl", "onCallRing: $normalizePhoneNumber")
         getCallerIdUseCase(normalizePhoneNumber)?.let {
-            addCallTrackingUseCase(normalizePhoneNumber)
             Log.v("CallDetectionHandlerImpl", "onCallRing: $it")
             return when(it.type) {
                 CallerIdInfoType.SCAM -> {
                     CallResult.Reject
                 }
                 else -> {
-                    CallDetectionPopup.show(context, CallDetectionPopup.PopupContent(phoneNumber, it.type))
+                    Handler(Looper.getMainLooper()).post {
+                        CallDetectionPopup.show(context, CallDetectionPopup.PopupContent(normalizePhoneNumber, it.type))
+                    }
                     CallResult.Allow()
                 }
             }
