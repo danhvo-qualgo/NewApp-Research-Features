@@ -35,11 +35,52 @@ class ScamAnalyzerViewModel @Inject constructor(
     private val _events = Channel<ScamAnalyzerEvent>()
     val events = _events.receiveAsFlow()
 
+    companion object {
+        // Regex pattern to match URLs
+        private val URL_PATTERN = Regex(
+            pattern = "^(https?://)?([\\da-z\\.-]+)\\.([a-z\\.]{2,6})([/\\w \\.-]*)*/?$",
+            option = RegexOption.IGNORE_CASE
+        )
+        
+        // More comprehensive URL pattern
+        private val URL_PATTERN_COMPREHENSIVE = Regex(
+            pattern = "(https?://|www\\.)[^\\s]+",
+            option = RegexOption.IGNORE_CASE
+        )
+    }
+    
+    private fun isUrl(text: String): Boolean {
+        val trimmedText = text.trim()
+        return URL_PATTERN_COMPREHENSIVE.containsMatchIn(trimmedText) || 
+               trimmedText.startsWith("http://") || 
+               trimmedText.startsWith("https://") ||
+               trimmedText.startsWith("www.")
+    }
+    
+    private fun normalizeUrl(text: String): String {
+        val trimmed = text.trim()
+        return when {
+            trimmed.startsWith("http://") || trimmed.startsWith("https://") -> trimmed
+            trimmed.startsWith("www.") -> "https://$trimmed"
+            else -> trimmed
+        }
+    }
+
     fun analyzeText(text: String) {
         viewModelScope.launch {
             try {
                 _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
-                val result = analyzeUseCase(AnalysisInput.Text("", "", text))
+                
+                val input = if (isUrl(text)) {
+                    val url = normalizeUrl(text)
+                    Log.d("AnalyzeResult", "Detected URL: $url")
+                    AnalysisInput.Url(url)
+                } else {
+                    Log.d("AnalyzeResult", "Detected normal text")
+                    AnalysisInput.Text("", "", text)
+                }
+                
+                val result = analyzeUseCase(input)
                 Log.d("AnalyzeResult", result.toString())
                 
                 if (result != null) {
@@ -56,64 +97,6 @@ class ScamAnalyzerViewModel @Inject constructor(
                 }
             } catch (e: Exception) {
                 Log.e("AnalyzeResult", "Error analyzing text", e)
-                _uiState.value = _uiState.value.copy(
-                    isLoading = false,
-                    errorMessage = e.message ?: "Unknown error occurred"
-                )
-            }
-        }
-    }
-
-    fun analyzeAudio(audioUri: Uri) {
-        viewModelScope.launch {
-            try {
-                _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
-                val result = analyzeUseCase(AnalysisInput.Audio(audioUri))
-                Log.d("AnalyzeResult", result.toString())
-                
-                if (result != null) {
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        analysisResult = result.toString()
-                    )
-                    _events.send(ScamAnalyzerEvent.AnalysisSuccess)
-                } else {
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        errorMessage = "Something went wrong. Please try again."
-                    )
-                }
-            } catch (e: Exception) {
-                Log.e("AnalyzeResult", "Error analyzing audio", e)
-                _uiState.value = _uiState.value.copy(
-                    isLoading = false,
-                    errorMessage = e.message ?: "Unknown error occurred"
-                )
-            }
-        }
-    }
-
-    fun analyzeImage(imageUri: Uri) {
-        viewModelScope.launch {
-            try {
-                _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
-                val result = analyzeUseCase(AnalysisInput.Image(imageUri))
-                Log.d("AnalyzeResult", result.toString())
-                
-                if (result != null) {
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        analysisResult = result.toString()
-                    )
-                    _events.send(ScamAnalyzerEvent.AnalysisSuccess)
-                } else {
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        errorMessage = "Something went wrong. Please try again."
-                    )
-                }
-            } catch (e: Exception) {
-                Log.e("AnalyzeResult", "Error analyzing image", e)
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
                     errorMessage = e.message ?: "Unknown error occurred"
