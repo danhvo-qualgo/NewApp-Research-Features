@@ -15,7 +15,7 @@ interface BlacklistPatternDao {
     @Query("SELECT * FROM blacklist_pattern WHERE pattern = :pattern")
     fun get(pattern: String): Flow<BlacklistPatternEntity?>
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insert(entity: BlacklistPatternEntity)
 
     @Query("DELETE FROM blacklist_pattern WHERE pattern = :pattern")

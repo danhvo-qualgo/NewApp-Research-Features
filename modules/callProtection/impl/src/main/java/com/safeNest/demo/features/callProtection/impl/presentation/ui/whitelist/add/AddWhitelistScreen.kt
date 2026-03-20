@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -31,6 +32,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.vectorResource
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.safeNest.demo.features.callProtection.impl.R
@@ -128,7 +130,8 @@ fun AddWhitelistScreen(
                                 phoneNumber = it
                             }
                         },
-                        placeholder = "+1 (555) 000-0000"
+                        placeholder = "+1 (555) 000-0000",
+                        isPhoneNumber = true
                     )
 
                 }
@@ -166,7 +169,8 @@ fun AddWhitelistScreen(
 fun CustomPillTextField(
     value: String,
     onValueChange: (String) -> Unit,
-    placeholder: String
+    placeholder: String,
+    isPhoneNumber: Boolean = false
 ) {
     Box(
         modifier = Modifier
@@ -188,7 +192,8 @@ fun CustomPillTextField(
                     )
                 }
                 innerTextField()
-            }
+            },
+            keyboardOptions = KeyboardOptions(keyboardType = if (isPhoneNumber) KeyboardType.Phone else KeyboardType.Text)
         )
     }
 }

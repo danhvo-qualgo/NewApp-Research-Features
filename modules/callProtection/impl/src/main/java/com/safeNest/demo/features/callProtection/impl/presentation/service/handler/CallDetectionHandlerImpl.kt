@@ -33,7 +33,7 @@ class CallDetectionHandlerImpl @Inject constructor(
     private val addCallTrackingUseCase: AddCallTrackingUseCase,
 ) : CallDetectionHandler {
 
-    override suspend fun onCallRing(phoneNumber: String): CallResult {
+    override suspend fun onCallRing(phoneNumber: String, isIncoming: Boolean): CallResult {
         val normalizePhoneNumber = normalizePhoneNumber(phoneNumber)
         Log.v("CallDetectionHandlerImpl", "normalizePhoneNumber: $normalizePhoneNumber")
         if (getMasterWhitelistNumberUseCase(normalizePhoneNumber).first() != null) {
@@ -46,7 +46,7 @@ class CallDetectionHandlerImpl @Inject constructor(
 
         val isEnableWhitelist = enableWhiteListUseCase.isEnable().first()
         val isEnableBlacklist = enableBlockListUseCase.isEnable().first()
-        addCallTrackingUseCase(normalizePhoneNumber)
+        if (isIncoming) addCallTrackingUseCase(normalizePhoneNumber)
         if (isEnableWhitelist) {
             return getWhitelistByNumberUseCase(normalizePhoneNumber).first()?.let {
                 CallResult.Allow()
@@ -54,7 +54,8 @@ class CallDetectionHandlerImpl @Inject constructor(
         }
         Log.v("CallDetectionHandlerImpl", "start check blocklist: $normalizePhoneNumber")
 
-        if (isEnableBlacklist && isBlocklistPatternsUseCase(normalizePhoneNumber).first()) {
+        if (isEnableBlacklist && (isBlocklistPatternsUseCase(phoneNumber).first()
+                    || isBlocklistPatternsUseCase(normalizePhoneNumber).first())) {
             return CallResult.Reject
         }
         Log.v("CallDetectionHandlerImpl", "onCallRing: $normalizePhoneNumber")

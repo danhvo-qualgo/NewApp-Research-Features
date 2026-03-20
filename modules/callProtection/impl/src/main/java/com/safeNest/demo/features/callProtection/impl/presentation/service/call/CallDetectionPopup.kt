@@ -71,14 +71,17 @@ object CallDetectionPopup {
     private fun getPopupView(
         context: Context, content: PopupContent
     ): ViewGroup {
-        return (LayoutInflater.from(context).inflate(R.layout.popup_call_detection, null) as ViewGroup).apply {
-            val color = getColorByType(content.type)
-            findViewById<FrameLayout>(R.id.cardContainer).backgroundTintList =
-                ColorStateList.valueOf(color)
-            findViewById<TextView>(R.id.txtAlertLabel).setTextColor(color)
-            findViewById<TextView>(R.id.txtAlertTitle).text = getLabelByType(content.type)
-            findViewById<ImageView>(R.id.imgAlertIcon).setImageResource(getIconByType(content.type))
-        }
+        return createCallDetectionPopup(context, content)
+    }
+
+    private fun createCallDetectionPopup(context: Context, content: PopupContent)
+    = (LayoutInflater.from(context).inflate(R.layout.popup_call_detection, null) as ViewGroup).apply {
+        val color = getColorByType(content.type)
+        findViewById<FrameLayout>(R.id.cardContainer).backgroundTintList =
+            ColorStateList.valueOf(color)
+        findViewById<TextView>(R.id.txtAlertLabel).setTextColor(color)
+        findViewById<TextView>(R.id.txtAlertTitle).text = getLabelByType(content.type)
+        findViewById<ImageView>(R.id.imgAlertIcon).setImageResource(getIconByType(content.type))
     }
 
     private fun getColorByType(type: CallerIdInfoType) =

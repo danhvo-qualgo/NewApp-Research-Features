@@ -35,7 +35,7 @@ class MyCallRedirectionService : CallRedirectionService() {
 
         CoroutineScope(Dispatchers.IO).launch {
 
-            val result = callDetectionHandler.onCallRing(originalNumber)
+            val result = callDetectionHandler.onCallRing(originalNumber, false)
 
             withContext(Dispatchers.Main) {
 
@@ -44,7 +44,7 @@ class MyCallRedirectionService : CallRedirectionService() {
                     Handler(Looper.getMainLooper()).post {
                         Toast.makeText(
                             applicationContext,
-                            "Cannot perform this call",
+                            "Block Outgoing Calls $originalNumber",
                             Toast.LENGTH_LONG
                         ).show()
                     }

@@ -21,8 +21,9 @@ class CallDetectionService : CallScreeningService() {
         val incomingNumber = details.handle.schemeSpecificPart
         Log.d("CallDetectionService", "incoming call $incomingNumber")
         CoroutineScope(Dispatchers.IO).launch {
+            val isIncoming = details.callDirection == Call.Details.DIRECTION_INCOMING
 
-            val allowed = callDetectionHandler.onCallRing(incomingNumber)
+            val allowed = callDetectionHandler.onCallRing(incomingNumber, isIncoming)
 
             val response = CallResponse.Builder()
 

@@ -16,3 +16,12 @@ fun formatBeautifulNumber(rawNumber: String, region: String = "VN"): String {
     }
     return normalizePhoneNumber
 }
+
+fun isNumberMatchingExactPattern(incomingNumber: String, blockPattern: String): Boolean {
+    val cleanPattern = blockPattern.replace(Regex("[^\\+0-9\\*]"), "")
+    val baseRegex = cleanPattern.replace("+", "\\+").replace("*", "\\d")
+
+    val regexString = "^$baseRegex$"
+    val regex = Regex(regexString)
+    return regex.matches(incomingNumber)
+}
