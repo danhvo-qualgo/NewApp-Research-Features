@@ -16,15 +16,15 @@
         android:theme="@style/Theme.App"
         tools:replace="android:dataExtractionRules,android:fullBackupContent">
 
-        <service
-            android:name="com.safeNest.demo.features.callProtection.impl.presentation.service.call.MyConnectionService"
-            android:exported="true"
-            android:permission="android.permission.BIND_TELECOM_CONNECTION_SERVICE"
-            tools:node="merge">
+<!--        <service-->
+<!--            android:name="com.safeNest.demo.features.callProtection.impl.presentation.service.call.MyConnectionService"-->
+<!--            android:exported="true"-->
+<!--            android:permission="android.permission.BIND_TELECOM_CONNECTION_SERVICE"-->
+<!--            tools:node="merge">-->
 
-            <intent-filter>
-                <action android:name="android.telecom.ConnectionService" />
-            </intent-filter>
-        </service>
+<!--            <intent-filter>-->
+<!--                <action android:name="android.telecom.ConnectionService" />-->
+<!--            </intent-filter>-->
+<!--        </service>-->
     </application>
 </manifest>

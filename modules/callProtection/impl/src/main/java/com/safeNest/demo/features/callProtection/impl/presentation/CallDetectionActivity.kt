@@ -97,6 +97,9 @@ class CallDetectionActivity : ComponentActivity() {
                 is Screen.MakeCallConfirm -> NavEntry(key){
                     MakeCallConfirmScreen(
                         key.callerIdInfo,
+                        onGoToReview = {
+                            backStack.add(Screen.ReviewCall(key.callerIdInfo))
+                        },
                         onBack = onBack
                     )
                 }

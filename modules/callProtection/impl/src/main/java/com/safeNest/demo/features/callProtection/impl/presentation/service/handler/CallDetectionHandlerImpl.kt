@@ -20,6 +20,7 @@ import com.safeNest.demo.features.callProtection.impl.domain.usecase.EnableBlock
 import com.safeNest.demo.features.callProtection.impl.domain.usecase.EnableWhiteListUseCase
 import com.safeNest.demo.features.callProtection.impl.domain.usecase.GetCallTrackingUseCase
 import com.safeNest.demo.features.callProtection.impl.domain.usecase.GetMasterBlocklistNumberUseCase
+import com.safeNest.demo.features.callProtection.impl.domain.usecase.GetMasterWhitelistNumberUseCase
 import com.safeNest.demo.features.callProtection.impl.domain.usecase.GetWhitelistByNumberUseCase
 import com.safeNest.demo.features.callProtection.impl.domain.usecase.IsBlocklistPatternsUseCase
 import com.safeNest.demo.features.callProtection.impl.presentation.router.CallDetectionDeeplink
@@ -40,7 +41,7 @@ class CallDetectionHandlerImpl @Inject constructor(
     private val enableBlockListUseCase: EnableBlockListUseCase,
     private val enableWhiteListUseCase: EnableWhiteListUseCase,
     private val getMasterBlocklistNumberUseCase: GetMasterBlocklistNumberUseCase,
-    private val getMasterWhitelistNumberUseCase: GetMasterBlocklistNumberUseCase,
+    private val getMasterWhitelistNumberUseCase: GetMasterWhitelistNumberUseCase,
     private val getCallerIdUseCase: GetCallerIdInfoUseCase,
     private val addCallTrackingUseCase: AddCallTrackingUseCase,
     private val getCallTrackingUseCase: GetCallTrackingUseCase,
@@ -50,13 +51,15 @@ class CallDetectionHandlerImpl @Inject constructor(
     override suspend fun onCallRing(phoneNumber: String, isIncoming: Boolean): CallResult {
         val normalizePhoneNumber = normalizePhoneNumber(phoneNumber)
         Log.d("CallDetectionHandlerImpl", "normalizePhoneNumber: $normalizePhoneNumber")
+        val whitelist = getMasterWhitelistNumberUseCase(normalizePhoneNumber).first()
+        val blacklist = getMasterBlocklistNumberUseCase(normalizePhoneNumber).first()
+        Log.d("CallDetectionHandlerImpl", "whitelist: $whitelist")
+        Log.d("CallDetectionHandlerImpl", "blacklist: $blacklist")
         if (getMasterWhitelistNumberUseCase(normalizePhoneNumber).first() != null) {
-            Log.d("CallDetectionHandlerImpl", "normalizePhoneNumber: ${getMasterWhitelistNumberUseCase(normalizePhoneNumber).first()}")
             return CallResult.Allow()
         }
         if ((getMasterBlocklistNumberUseCase(normalizePhoneNumber).first() != null
             || getMasterBlocklistNumberUseCase(phoneNumber).first() != null) && isIncoming) {
-            Log.d("CallDetectionHandlerImpl", "normalizePhoneNumber: ${getMasterBlocklistNumberUseCase(normalizePhoneNumber).first()}")
             return CallResult.Reject
         }
         Log.d("CallDetectionHandlerImpl", "start check whitelist: $normalizePhoneNumber")
@@ -67,39 +70,50 @@ class CallDetectionHandlerImpl @Inject constructor(
         if (isEnableWhitelist) {
             return getWhitelistByNumberUseCase(normalizePhoneNumber).first()?.let {
                 CallResult.Allow()
-            } ?: CallResult.Reject
+            } ?: run {
+                onCallAnswer(normalizePhoneNumber)
+                CallResult.Reject
+            }
         }
         Log.v("CallDetectionHandlerImpl", "start check blocklist: $normalizePhoneNumber")
 
         if (isIncoming && isEnableBlacklist && (isBlocklistPatternsUseCase(phoneNumber).first()
                     || isBlocklistPatternsUseCase(normalizePhoneNumber).first())) {
+            onCallAnswer(normalizePhoneNumber)
             return CallResult.Reject
         }
         Log.v("CallDetectionHandlerImpl", "onCallRing: $normalizePhoneNumber")
-        getCallerIdUseCase(normalizePhoneNumber)?.let {
-            Log.v("CallDetectionHandlerImpl", "onCallRing: $it")
-            return when(it.type) {
-                CallerIdInfoType.SCAM -> {
-                    incomingCallSharedFlow.emit(IncomingCallData(
-                        phoneNumber = normalizePhoneNumber,
-                        message = "KinShield helped block  because it is identified as scam by community. Tap for more."
-                    ))
-                    CallResult.Reject
-                }
-                else -> {
-                    if (it.type == CallerIdInfoType.SPAM) {
+
+        if (isIncoming)
+            getCallerIdUseCase(normalizePhoneNumber)?.let {
+                Log.v("CallDetectionHandlerImpl", "onCallRing: $it")
+                return when(it.type) {
+                    CallerIdInfoType.SCAM -> {
+
+                        Log.v("CallDetectionHandlerImpl", "onCallRing scam: $it")
+                        onCallAnswer(normalizePhoneNumber)
                         incomingCallSharedFlow.emit(IncomingCallData(
                             phoneNumber = normalizePhoneNumber,
-                            message = "The caller is identified by community as spam. Tap to see detail."
+                            message = "KinShield helped block  because it is identified as scam by community. Tap for more."
                         ))
+                        CallResult.Reject
                     }
-                    Handler(Looper.getMainLooper()).post {
-                        CallDetectionPopup.show(context, CallDetectionPopup.PopupContent(normalizePhoneNumber, it.label, it.type))
+                    else -> {
+                        if (it.type == CallerIdInfoType.SPAM) {
+                            incomingCallSharedFlow.emit(IncomingCallData(
+                                phoneNumber = normalizePhoneNumber,
+                                message = "The caller is identified by community as spam. Tap to see detail."
+                            ))
+                        }
+
+                        Log.v("CallDetectionHandlerImpl", "onCallRing spam: $it")
+                        Handler(Looper.getMainLooper()).post {
+                            CallDetectionPopup.show(context, CallDetectionPopup.PopupContent(normalizePhoneNumber, it.label, it.type))
+                        }
+                        CallResult.Allow()
                     }
-                    CallResult.Allow()
                 }
             }
-        }
 
         return CallResult.Allow()
     }

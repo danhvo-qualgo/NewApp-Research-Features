@@ -48,6 +48,7 @@ import androidx.core.net.toUri
 @Composable
 fun MakeCallConfirmScreen(
     callerIdInfo: CallerIdInfo,
+    onGoToReview: () -> Unit,
     onBack: () -> Unit
 ) {
     val context = LocalContext.current
@@ -74,6 +75,7 @@ fun MakeCallConfirmScreen(
                     data = "tel:${callerIdInfo.phoneNumber}".toUri()
                 }
                 context.startActivity(intent)
+                onGoToReview()
             }
         }
     ) { paddingValues ->
