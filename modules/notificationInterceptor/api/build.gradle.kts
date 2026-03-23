@@ -17,4 +17,5 @@ uneyPublishing {
 dependencies {
     implementation(libs.core.utils.kotlin)
     implementation(libs.core.router)
+    implementation(libs.kotlinx.coroutines.core)
 }

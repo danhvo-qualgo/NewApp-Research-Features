@@ -5,7 +5,5 @@ import com.safeNest.demo.features.notificationInterceptor.api.NotificationInterc
 import javax.inject.Inject
 
 class NotificationInterceptorProviderImpl @Inject constructor() : NotificationInterceptorProvider {
-    override fun getNotificationInterceptorClass(): Class<out Service> {
-        return NotificationInterceptorService::class.java
-    }
+    override fun getNotificationInterceptorClass(): Class<out Service> = NotificationInterceptorService::class.java
 }

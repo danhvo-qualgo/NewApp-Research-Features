@@ -12,11 +12,23 @@ import android.util.Log
 import com.safeNest.demo.features.notificationInterceptor.impl.data.NotificationCategory
 import com.safeNest.demo.features.notificationInterceptor.impl.data.NotificationRecord
 import com.safeNest.demo.features.notificationInterceptor.impl.data.NotificationStore
+import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import net.qualgo.safeNest.features.notificationInterceptor.impl.presentation.ScamWarningOverlayService
+import javax.inject.Inject
+import com.safeNest.demo.features.notificationInterceptor.api.model.NotificationRecord as ApiNotificationRecord
 
+@AndroidEntryPoint
 class NotificationInterceptorService : NotificationListenerService() {
 
     private var hasRebound = false
+
+    @Inject
+    lateinit var notificationEventListener: NotificationEventListener
+
+    private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     override fun onListenerConnected() {
         super.onListenerConnected()
@@ -123,6 +135,16 @@ class NotificationInterceptorService : NotificationListenerService() {
         )
         Log.d("NotifInterceptor", "Record saved: ${record.appName} — ${record.title}")
         NotificationStore.add(record)
+        //serviceScope.launch {
+            notificationEventListener.tryEmit(
+                ApiNotificationRecord(
+                    sender = record.senderName,
+                    appSenderPkgName = record.packageName,
+                    title = record.title,
+                    content = record.text ?: record.bigText,
+                )
+            )
+        //}
     }
 
     override fun onNotificationRemoved(
@@ -136,7 +158,7 @@ class NotificationInterceptorService : NotificationListenerService() {
             val record = NotificationStore.notifications.value.find { it.id == key }
             if (record != null && containsScamContent(record)) {
                 Log.d("NotifInterceptor", "Scam content detected on click for: ${record.appName}")
-                startScamWarningOverlay()
+                //startScamWarningOverlay()
             }
         }
     }

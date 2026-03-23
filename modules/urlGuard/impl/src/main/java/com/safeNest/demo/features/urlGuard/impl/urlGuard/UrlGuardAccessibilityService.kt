@@ -13,6 +13,7 @@ import android.util.Log
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import androidx.core.app.NotificationCompat
+import com.safeNest.demo.features.notificationInterceptor.api.NotificationObserver
 import com.safeNest.demo.features.scamAnalyzer.api.ScamAnalyzerProvider
 import com.safeNest.demo.features.scamAnalyzer.api.models.AnalysisInput
 import com.safeNest.demo.features.scamAnalyzer.api.useCase.AnalyzeUseCase
@@ -58,6 +59,9 @@ class UrlGuardAccessibilityService : AccessibilityService() {
     private lateinit var screenshotHelper: ScreenshotHelper
     private lateinit var formInspector: FormInspectorWebView
 
+
+    @Inject
+    lateinit var notificationObserver: NotificationObserver
     @Inject
     lateinit var urlDetection: UrlDetection
     @Inject
@@ -158,6 +162,16 @@ class UrlGuardAccessibilityService : AccessibilityService() {
             }
         }
 
+        serviceScope.launch {
+            notificationObserver.notificationFlow.collect { record ->
+                onNotificationPosted(
+                    record.appSenderPkgName,
+                    record.title ?: "",
+                    record.content ?: ""
+                )
+            }
+        }
+
         createNotificationChannel()
         startForeground(NOTIFICATION_ID, buildNotification())
 
@@ -233,11 +247,10 @@ class UrlGuardAccessibilityService : AccessibilityService() {
                 }
             }
 
-            // ── A notification appeared in the status bar ─────────────────────
-            AccessibilityEvent.TYPE_NOTIFICATION_STATE_CHANGED -> {
-                onNotificationPosted(pkg, event)
-            }
-
+//            // ── A notification appeared in the status bar ─────────────────────
+//            AccessibilityEvent.TYPE_NOTIFICATION_STATE_CHANGED -> {
+//                onNotificationPosted(pkg, event)
+//            }
             else -> Unit
         }
     }
@@ -489,18 +502,30 @@ class UrlGuardAccessibilityService : AccessibilityService() {
                 DetectionStatus.UNKNOWN
             )
         )
-        serviceScope.launch {
-            scheduleNotificationCheck(texts.joinToString("\n"))
-        }
+        scheduleNotificationCheck(texts.joinToString("\n"))
+
 //        secureView.updateButton(FloatingButtonFeature.SMS_CHECK, DetectionStatus.UNKNOWN)
 //        secureView.updateActionCard(FloatingButtonFeature.SMS_CHECK, DetectionStatus.UNKNOWN)
     }
 
-    // =========================================================================
-    // 2.4 Any other user-installed app
-    // =========================================================================
+    /** Handle notification from notification listener service
+     */
+    private fun onNotificationPosted(pkg: String, title: String, content: String) {
+        Log.d(TAG, "Notification from [$pkg] content=$content title=$title")
+        SurfaceDetector.update(
+            ScreenSurface.Notification(
+                pkg,
+                title,
+                content,
+                DetectionStatus.UNKNOWN
+            )
+        )
 
-    private suspend fun scheduleNotificationCheck(notificationContent: String) {
+        scheduleNotificationCheck(content)
+
+    }
+
+    private fun scheduleNotificationCheck(notificationContent: String) {
         pendingCallCheck?.let { mainHandler.removeCallbacks(it) }
         pendingCallCheck = Runnable {
             pendingCallCheck = null
@@ -511,6 +536,11 @@ class UrlGuardAccessibilityService : AccessibilityService() {
             }
         }.also { mainHandler.postDelayed(it, CALL_DEBOUNCE_MS) }
     }
+
+
+    // =========================================================================
+    // 2.4 Any other user-installed app
+    // =========================================================================
 
     private fun onAppForeground(pkg: String) {
         if (appTrustChecker.isSystemApp(pkg)) {
