@@ -1,6 +1,8 @@
 package com.safeNest.demo.features.notificationInterceptor.impl.presentation.di
 
 import com.safeNest.demo.features.notificationInterceptor.api.NotificationInterceptorProvider
+import com.safeNest.demo.features.notificationInterceptor.api.NotificationObserver
+import com.safeNest.demo.features.notificationInterceptor.impl.presentation.NotificationEventListener
 import com.safeNest.demo.features.notificationInterceptor.impl.presentation.NotificationInterceptorProviderImpl
 import com.safeNest.demo.features.notificationInterceptor.impl.presentation.router.NotificationInterceptorRouter
 import com.uney.core.router.Router
@@ -9,6 +11,7 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import dagger.multibindings.IntoSet
+import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -21,4 +24,8 @@ internal class AppModule {
     @IntoSet
     @Provides
     fun providerFeatureRouter(impl: NotificationInterceptorRouter): Router = impl
+
+    @Singleton
+    @Provides
+    fun provideNotificationObserver(impl: NotificationEventListener): NotificationObserver = impl
 }

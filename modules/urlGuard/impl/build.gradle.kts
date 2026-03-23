@@ -15,6 +15,7 @@ android {
 
 dependencies {
     implementation(project(":modules:urlGuard:api"))
+    implementation(project(":modules:notificationInterceptor:api"))
     implementation(project(":modules:onDeviceModel"))
     implementation(project(":modules:permissionManager:api"))
     implementation(project(":modules:callProtection:api"))
