@@ -2,11 +2,13 @@ package com.safeNest.demo.features.scamAnalyzer.impl.utils
 
 import android.util.Log
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.channels.trySendBlocking
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.util.concurrent.Executors
 
 /**
  * Kotlin facade over the native MNN LLM via [libmnnllmphishing.so].
@@ -28,15 +30,17 @@ class PhishingLlmAnalyzer {
         fun onFinish()
     }
 
+    private val dispatcher = Executors.newSingleThreadScheduledExecutor().asCoroutineDispatcher()
+
     private var nativePtr: Long = 0L
 
     /**
      * Loads the MNN model. Blocking — must be called on IO dispatcher.
      * @throws RuntimeException if the native layer fails to load the model.
      */
-    fun load(modelFolder: File) {
+    suspend fun load(modelFolder: File) {
         val configPath = File(modelFolder, "llm_config.json").absolutePath
-        val ptr = nativeCreate(configPath)
+        val ptr = withContext(dispatcher) { nativeCreate(configPath) }
         if (ptr == 0L) throw RuntimeException("Failed to load MNN model from $configPath")
         nativePtr = ptr
         Log.i(TAG, "Model loaded: $configPath")
@@ -44,7 +48,7 @@ class PhishingLlmAnalyzer {
 
     fun llmProcessing(prompt: String): Flow<String> = callbackFlow {
         val thiz = this
-        withContext(Dispatchers.IO) {
+        withContext(dispatcher) {
             check(nativePtr != 0L) { "PhishingLlmAnalyzer.load() must be called before llmProcessing()" }
 
             nativeGenerate(

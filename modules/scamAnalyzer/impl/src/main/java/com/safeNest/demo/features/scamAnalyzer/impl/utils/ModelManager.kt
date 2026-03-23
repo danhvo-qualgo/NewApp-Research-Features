@@ -63,9 +63,7 @@ class ModelManager @Inject constructor(
                 _state.value = loadingState
                 onProgress(loadingState)
 
-                withContext(Dispatchers.IO) {
-                    analyzer.load(modelFolder)
-                }
+                analyzer.load(modelFolder)
 
                 _state.value = ModelState.Ready
                 onProgress(ModelState.Ready)
