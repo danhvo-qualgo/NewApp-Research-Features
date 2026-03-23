@@ -13,24 +13,30 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
@@ -49,15 +55,25 @@ enum class MediaType {
 fun MediaPreviewScreen(
     mediaUri: Uri,
     mediaType: MediaType,
-    context: Context,
     onAnalyzeClick: () -> Unit,
     onDeleteClick: () -> Unit,
-    mediaPreviewViewModel: MediaPreviewViewModel = hiltViewModel()
+    mediaPreviewViewModel: MediaPreviewViewModel = hiltViewModel(),
+    autoAnalyze: Boolean = false,
+    onBackClick: () -> Unit = {}
 ) {
     val uiState by mediaPreviewViewModel.uiState.collectAsStateWithLifecycle()
 
     LaunchedEffect(mediaUri) {
         mediaPreviewViewModel.loadMediaInfo(mediaUri)
+    }
+
+    LaunchedEffect(autoAnalyze) {
+        if (autoAnalyze && !uiState.isAnalyzing) {
+            when (mediaType) {
+                MediaType.AUDIO -> mediaPreviewViewModel.analyzeAudio(mediaUri)
+                MediaType.IMAGE -> mediaPreviewViewModel.analyzeImage(mediaUri)
+            }
+        }
     }
 
     LaunchedEffect(Unit) {
@@ -75,24 +91,16 @@ fun MediaPreviewScreen(
             .fillMaxSize()
             .background(gradientBackground)
     ) {
-        Scaffold(
-            containerColor = Color.Transparent,
-        ) { paddingValues ->
+        Column(modifier = Modifier.fillMaxSize()) {
+            TopNavBar(onBackClick = onBackClick)
+
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(paddingValues)
-                    .padding(top = 64.dp, start = DSSpacing.s6, end = DSSpacing.s6),
+                    .padding(horizontal = DSSpacing.s6),
                 horizontalAlignment = Alignment.Start
             ) {
-                Text(
-                    text = "Scam Analyzer",
-                    style = DSTypography.h2.bold,
-                    color = DSColors.textActionActive,
-                    lineHeight = 42.sp
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(DSSpacing.s6))
 
                 Text(
                     text = "Identify scams in messages, links, or images using our AI-powered analyzer.",
@@ -112,6 +120,7 @@ fun MediaPreviewScreen(
                             onDeleteClick = onDeleteClick
                         )
                     }
+
                     MediaType.IMAGE -> {
                         ImagePreviewCard(
                             imageUri = mediaUri,
@@ -294,7 +303,7 @@ private fun ImagePreviewCard(
 
 @Composable
 private fun FullScreenAnalyzing() {
-    androidx.compose.ui.window.Dialog(
+    Dialog(
         onDismissRequest = { },
         properties = androidx.compose.ui.window.DialogProperties(
             dismissOnBackPress = false,
@@ -305,10 +314,10 @@ private fun FullScreenAnalyzing() {
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.5f)),
+                .background(Color.White.copy(alpha = 0.1f)),
             contentAlignment = Alignment.Center
         ) {
-            androidx.compose.material3.Surface(
+            Surface(
                 shape = RoundedCornerShape(16.dp),
                 color = DSColors.surfacePrimary,
                 modifier = Modifier.padding(DSSpacing.s6)
@@ -318,7 +327,7 @@ private fun FullScreenAnalyzing() {
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(DSSpacing.s4)
                 ) {
-                    androidx.compose.material3.CircularProgressIndicator(
+                    CircularProgressIndicator(
                         modifier = Modifier.size(48.dp),
                         color = DSColors.textActionActive,
                         strokeWidth = 4.dp
@@ -330,6 +339,47 @@ private fun FullScreenAnalyzing() {
                     )
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun TopNavBar(onBackClick: () -> Unit) {
+    Surface(
+        color = DSColors.surfacePrimary,
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Row(
+            modifier = Modifier
+                .statusBarsPadding()
+                .fillMaxWidth()
+                .height(72.dp)
+                .padding(horizontal = DSSpacing.s6, vertical = DSSpacing.s4),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(DSSpacing.s4)
+        ) {
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .background(DSColors.surfacePrimary)
+            ) {
+                IconButton(onClick = onBackClick, modifier = Modifier.size(40.dp)) {
+                    Icon(
+                        painter = painterResource(R.drawable.ic_back),
+                        contentDescription = "Back",
+                        tint = DSColors.textAction,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            }
+
+            Text(
+                text = "Scam Analyzer",
+                style = DSTypography.h4.bold,
+                color = DSColors.textAction,
+            )
         }
     }
 }

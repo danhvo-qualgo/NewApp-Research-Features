@@ -23,24 +23,22 @@ class AnalyzeStore @Inject constructor(
 
     companion object {
         const val DEFAULT_PROMPT = """
-        Classify this message as a cybersecurity threat.
-
-        Status codes:
-        0=Safe, 1=Scam, 2=Unverified
-
-        Safe: No phishing/scam indicators.
-        Scam: Clear signals — impersonation, urgency, fake links, threats, sensitive info requests.
-        Unverified: Suspicious but insufficient evidence.
-
-        Rules:
-        - Return ONLY valid JSON, no markdown.
-        - If status = 0, reasons MUST be [].
-        - If status != 0, reasons MUST contain at least one item.
-
-        {"status":0|1|2,"reasons":[{"title":"string","description":"string"}]}
-
-        MESSAGE: {message}
-        CONTEXT: {context}
+            Task: Classify a message for cybersecurity risk.
+            
+            Input:
+              - MESSAGE: {message}
+              - CONTEXT: {context}
+            
+            Output: Valid JSON
+              {
+                "category": "Safe|Scam|Unverified", 
+                "reasons":[
+                    {
+                        "title":"brief about indicator",
+                        "description":"short explanation why it's not safe"
+                    }
+                ]
+              }
     """
     }
 

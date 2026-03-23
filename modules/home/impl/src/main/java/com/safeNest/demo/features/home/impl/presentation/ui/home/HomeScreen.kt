@@ -27,9 +27,11 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -57,9 +59,17 @@ fun HomeScreen(
     onBlocklistClick: () -> Unit,
     onWhitelistClick: () -> Unit,
     onScamAnalyzerClick: () -> Unit,
-    onConfigurePromptClick: () -> Unit = {}
+    onConfigurePromptClick: () -> Unit = {},
+    initialSharedText: String? = null,
+    shouldStartOnToolsTab: Boolean = false
 ) {
-    var currentTab by remember { mutableStateOf(BottomTab.Home) }
+    var currentTab by rememberSaveable {
+        mutableStateOf(if (shouldStartOnToolsTab) BottomTab.Tools else BottomTab.Home)
+    }
+
+    LaunchedEffect(initialSharedText, shouldStartOnToolsTab) {
+        android.util.Log.d("HomeScreen", "Params - initialSharedText: $initialSharedText, shouldStartOnToolsTab: $shouldStartOnToolsTab, currentTab: $currentTab")
+    }
 
     Box(
         modifier = Modifier
@@ -97,7 +107,9 @@ fun HomeScreen(
                             onScamAnalyzerClick = onScamAnalyzerClick,
                             onRecordAudioClick = onRecordAudioClick,
                             onUploadAudioClick = onUploadAudioClick,
-                            onUploadImageClick = onUploadImageClick
+                            onUploadImageClick = onUploadImageClick,
+                            sharedText = initialSharedText,
+                            onSharedTextConsumed = {}
                         )
                     }
 
