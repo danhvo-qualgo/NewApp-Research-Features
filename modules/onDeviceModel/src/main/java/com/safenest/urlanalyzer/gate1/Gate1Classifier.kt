@@ -16,14 +16,17 @@
 
 package com.safenest.urlanalyzer.gate1
 
+import ai.onnxruntime.OnnxTensor
 import ai.onnxruntime.OrtEnvironment
 import ai.onnxruntime.OrtSession
 import android.content.Context
+import android.util.Log
 import com.safenest.urlanalyzer.Gate1Result
 import com.safenest.urlanalyzer.KeyFinding
 import org.json.JSONObject
 import java.io.BufferedReader
 import java.io.InputStreamReader
+import kotlin.math.exp
 
 
 class Gate1Classifier(
@@ -54,6 +57,7 @@ class Gate1Classifier(
     }
 
     companion object {
+        const val TAG = "Gate1Classifier"
         init {
             // Load native C library (gate1_features via JNI)
             System.loadLibrary("gate1_features")
@@ -85,6 +89,7 @@ class Gate1Classifier(
 
         // 1. Allowlist gate
         if (brandsPtr != 0L && nativeIsAllowlisted(url, brandsPtr)) {
+            Log.d(TAG, "url in allowlist $url")
             val elapsed = (System.nanoTime() - start) / 1_000_000.0
             return Gate1Result(
                 verdict = "safe",
@@ -142,26 +147,25 @@ class Gate1Classifier(
         )
     }
 
-    /**
-     * Run model inference.
-     * TODO: Replace this placeholder with actual ONNX Runtime or TFLite call.
-     */
     private fun runInference(features: FloatArray, urlIds: IntArray): Float {
-        // Placeholder — replace with:
-        //
-        // ONNX Runtime:
-        //   val featureTensor = OnnxTensor.createTensor(env, arrayOf(features))
-        //   val urlTensor = OnnxTensor.createTensor(env, arrayOf(urlIds))
-        //   val results = session.run(mapOf("features" to featureTensor, "url_ids" to urlTensor))
-        //   val logit = (results[0].value as Array<FloatArray>)[0][0]
-        //   return 1f / (1f + exp(-logit))
-        //
+        val urlLongIds = LongArray(urlIds.size) { urlIds[it].toLong() }
+        val featureTensor = OnnxTensor.createTensor(env, arrayOf(features))
+        val urlTensor = OnnxTensor.createTensor(env, arrayOf(urlLongIds))
+        return try {
+            val results = session.run(mapOf("features" to featureTensor, "url_ids" to urlTensor))
+            results.use {
+                val logit = (it[0].value as FloatArray)[0]
+                1f / (1f + exp(-logit))
+            }
+        } finally {
+            featureTensor.close()
+            urlTensor.close()
+        }
+
         // TFLite:
         //   interpreter.run(inputArray, outputArray)
         //   val logit = outputArray[0][0]
         //   return 1f / (1f + exp(-logit))
-
-        return -1f // Safe fallback until model is integrated
     }
 
     // MARK: - KeyFinding Mapping

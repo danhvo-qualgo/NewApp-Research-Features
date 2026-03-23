@@ -15,31 +15,30 @@
 /* ── Internal Constants ───────────────────────────────────────────────────── */
 
 static const char* SUSPICIOUS_TLDS[] = {
-    "xyz", "top", "buzz", "click", "fun", "sbs", "cfd", "icu", "gq", "ml",
-    "tk", "ga", "cf", "cam", "rest", "beauty", "hair", "quest", "one",
-    "monster", "today", "world", "life", "live", "surf", "bar", NULL
+        "xyz", "top", "buzz", "click", "fun", "sbs", "cfd", "icu", "gq", "ml",
+        "cf", "ga", "tk", "work", "rest", "surf", "monster", "cam", "quest",
+        NULL
 };
 
 static const char* SUSPICIOUS_KEYWORDS[] = {
-    "login", "verify", "secure", "account", "update", "confirm", "banking",
-    "password", "credential", "signin", "auth", "wallet", "suspend",
-    "restore", "unlock", "alert", "urgent", "immediately", "expire",
-    "unusual", "limited", "offer", "free", "prize", "winner", "gift",
-    "reward", "bonus", "claim", "congratulation", NULL
+        "login", "verify", "secure", "account", "update", "confirm", "bank",
+        "free", "gift", "prize", "winner", "offer", "limited", "urgent",
+        "suspend", "alert", "wallet", "crypto", "earn", "money", "fast",
+        "password", "signin", "phishing", NULL
 };
 
 static const char* COMPOUND_TLDS[] = {
-    "com.vn", "com.au", "com.br", "com.cn", "com.hk", "com.mx",
-    "com.my", "com.ng", "com.ph", "com.sg", "com.tw", "com.ua",
-    "co.uk", "co.kr", "co.jp", "co.id", "co.in", "co.nz", "co.za",
-    "co.th", "org.vn", "gov.vn", "edu.vn", "net.vn", "ac.uk",
-    "org.uk", "gov.uk", "gob.mx", "go.id", "or.id", NULL
+        "com.vn", "com.au", "com.br", "com.cn", "com.hk", "com.mx",
+        "com.my", "com.ng", "com.ph", "com.sg", "com.tw", "com.ua",
+        "co.uk", "co.kr", "co.jp", "co.id", "co.in", "co.nz", "co.za",
+        "co.th", "org.vn", "gov.vn", "edu.vn", "net.vn", "ac.uk",
+        "org.uk", "gov.uk", "gob.mx", "go.id", "or.id", NULL
 };
 
 /* ASCII homoglyphs: digit -> letter it looks like */
 typedef struct { char digit; char letter; } AsciiHomoglyph;
 static const AsciiHomoglyph ASCII_HOMOGLYPHS[] = {
-    {'0', 'o'}, {'1', 'l'}, {'3', 'e'}, {'5', 's'}, {0, 0}
+        {'0', 'o'}, {'1', 'l'}, {'3', 'e'}, {'5', 's'}, {0, 0}
 };
 
 /* ── Brand List Implementation ────────────────────────────────────────────── */
@@ -98,12 +97,20 @@ Gate1BrandList* gate1_load_brands_from_buffer(const void* data, size_t len) {
         bl->entries[i].domain_len = dlen;
         p += dlen;
 
+        /* Skip the brand display name from binary (e.g. "Vietcombank (VCB)") */
         uint8_t blen = *p++;
-        if (blen >= MAX_DOMAIN_LEN) blen = MAX_DOMAIN_LEN - 1;
-        memcpy(bl->entries[i].brand, p, blen);
-        bl->entries[i].brand[blen] = '\0';
-        bl->entries[i].brand_len = blen;
         p += blen;
+
+        /* Derive brand base from domain: first label before any dot
+         * (matches Python: base = domain.split(".")[0]) */
+        {
+            const char* dot = strchr(bl->entries[i].domain, '.');
+            int base_len = dot ? (int)(dot - bl->entries[i].domain) : dlen;
+            if (base_len >= MAX_DOMAIN_LEN) base_len = MAX_DOMAIN_LEN - 1;
+            memcpy(bl->entries[i].brand, bl->entries[i].domain, base_len);
+            bl->entries[i].brand[base_len] = '\0';
+            bl->entries[i].brand_len = base_len;
+        }
 
         /* Insert domain into hash set */
         uint32_t h = fnv1a(bl->entries[i].domain, dlen) % bl->hash_capacity;
@@ -191,6 +198,12 @@ static void parse_url(const char* url, ParsedURL* out) {
         }
     }
     out->path[pi] = '\0';
+
+    /* Default empty path to "/" (matches Python urlparse behaviour) */
+    if (pi == 0) {
+        out->path[0] = '/';
+        out->path[1] = '\0';
+    }
 
     /* Query */
     if (*p == '?') {
@@ -383,7 +396,7 @@ static int count_suspicious_keywords(const char* url_lower) {
 static int count_special_chars(const char* s) {
     int count = 0;
     for (const char* p = s; *p; p++) {
-        if (!isalnum((unsigned char)*p) && *p != '.' && *p != '/' && *p != ':') count++;
+        if (!isalnum((unsigned char)*p) && *p != '.' && *p != '/') count++;
     }
     return count;
 }
@@ -414,42 +427,44 @@ static int has_encoded_chars(const char* url) {
     return 0;
 }
 
-/* Homograph analysis */
-static void compute_homograph(const char* domain_no_tld,
+/* Homograph analysis (matches Python: iterates over full domain, uses len(domain) as denominator)
+ * Python CONFUSABLES includes: digits 0→o, 1→l, 3→e, 5→s plus Unicode confusables.
+ * Python mixed_scripts = has_latin AND has_non_ascii (>127). ASCII homoglyphs do NOT trigger mixed. */
+static void compute_homograph(const char* domain,
                               float* score, int* confusable_count, int* mixed_scripts) {
-    int total = 0, conf = 0;
-    int has_latin = 0, has_homoglyph = 0, has_nonlatin = 0;
-    for (const char* p = domain_no_tld; *p; p++) {
-        if (*p == '.') continue;
-        total++;
+    int total = (int)strlen(domain);
+    int conf = 0;
+    int has_latin = 0, has_non_ascii = 0;
+    for (const char* p = domain; *p; p++) {
         unsigned char ch = (unsigned char)*p;
-        /* ASCII homoglyphs */
+        /* ASCII homoglyphs (digits that look like letters) */
         for (int i = 0; ASCII_HOMOGLYPHS[i].digit; i++) {
             if ((char)ch == ASCII_HOMOGLYPHS[i].digit) {
                 conf++;
-                has_homoglyph = 1;
                 goto next_char;
             }
         }
-        if (ch < 128 && isalpha(ch)) {
+        if (ch <= 127) {
             has_latin = 1;
-        } else if (ch > 127) {
-            /* Non-ASCII: could be Unicode confusable */
+        }
+        if (ch > 127) {
+            /* Non-ASCII: Unicode confusable */
             conf++;
-            has_nonlatin = 1;
+            has_non_ascii = 1;
         }
         next_char: ;
     }
     *score = total > 0 ? (float)conf / total : 0.0f;
     *confusable_count = conf;
-    *mixed_scripts = (has_latin && (has_homoglyph || has_nonlatin)) ? 1 : 0;
+    /* Python: has_mixed = has_latin and has_non_ascii (ASCII homoglyphs don't count) */
+    *mixed_scripts = (has_latin && has_non_ascii) ? 1 : 0;
 }
 
 static int is_idn(const char* host) {
+    /* Matches Python: is_idn = any(ord(ch) > 127 for ch in domain) */
     for (const char* p = host; *p; p++) {
         if ((unsigned char)*p > 127) return 1;
     }
-    if (strstr(host, "xn--") != NULL) return 1;
     return 0;
 }
 
@@ -477,49 +492,68 @@ static int sounds_alike(const char* a, const char* b) {
     return strcmp(sa, sb) == 0;
 }
 
-/* Segment-based brand containment */
-static float compute_containment(const char* domain_no_tld, const Gate1BrandList* brands) {
-    /* Split domain on delimiters: - . _ */
-    char buf[256];
-    strncpy(buf, domain_no_tld, sizeof(buf) - 1);
-    buf[sizeof(buf) - 1] = '\0';
+/* Segment-based brand containment (matches Python _compute_containment).
+ * Receives full domain (e.g. "vietcombank-verify.xyz"), strips TLD internally. */
+static float compute_containment(const char* full_domain, const Gate1BrandList* brands) {
+    if (!brands || brands->count == 0) return 0.0f;
 
-    float max_score = 0.0f;
+    /* Strip TLD to get base (matches Python logic) */
+    char buf[256];
+    strncpy(buf, full_domain, sizeof(buf) - 1);
+    buf[sizeof(buf) - 1] = '\0';
+    for (int i = 0; buf[i]; i++) buf[i] = tolower((unsigned char)buf[i]);
+
+    /* Find base: everything before the TLD portion.
+     * Python: parts = domain.split("."), then base = ".".join(parts[:-1]) for simple TLDs
+     *         or ".".join(parts[:-2]) for compound TLDs */
+    const char* tld = get_tld(buf);
+    int tld_offset = (int)(tld - buf);
+    if (tld_offset > 0) {
+        buf[tld_offset - 1] = '\0';  /* Remove ".tld" */
+    }
+
+    /* Split base on [-._] and check segments */
+    float best = 0.0f;
     char* token = strtok(buf, "-._");
     while (token) {
         int tlen = (int)strlen(token);
         if (tlen >= 3) {
             for (int i = 0; i < brands->count; i++) {
-                if (brands->entries[i].brand_len == tlen &&
-                    strcmp(token, brands->entries[i].brand) == 0) {
-                    max_score = 1.0f;
-                    return max_score;  /* Exact segment match = 1.0 */
+                int blen = brands->entries[i].brand_len;
+                if (blen < 3) continue;
+                /* Exact segment match */
+                if (blen == tlen && strcmp(token, brands->entries[i].brand) == 0) {
+                    return 1.0f;
+                }
+                /* Substring containment */
+                if (strstr(token, brands->entries[i].brand) != NULL) {
+                    float ratio = (float)blen / tlen;
+                    if (ratio >= 0.6f && ratio > best) {
+                        best = ratio;
+                    }
                 }
             }
         }
         token = strtok(NULL, "-._");
     }
-    return max_score;
+    return best >= 0.6f ? best : 0.0f;
 }
 
 /* Typosquat features: compare domain against all brands */
 static void compute_typosquat(const char* domain_no_tld, const Gate1BrandList* brands,
                               float* similarity, int* distance, int* is_match,
-                              int* is_tld_swap, int* psounds_alike, float* containment,
-                              const char* full_domain __attribute__((unused)), const char* tld) {
+                              int* is_tld_swap, int* psounds_alike,
+                              int has_suspicious_tld) {
     *similarity = 0.0f;
     *distance = 99;
     *is_match = 0;
     *is_tld_swap = 0;
     *psounds_alike = 0;
-    *containment = 0.0f;
 
     if (!brands || brands->count == 0) return;
 
     int base_len = (int)strlen(domain_no_tld);
     if (base_len == 0) return;
-
-    *containment = compute_containment(domain_no_tld, brands);
 
     float best_sim = 0.0f;
     int best_dist = 99;
@@ -537,21 +571,22 @@ static void compute_typosquat(const char* domain_no_tld, const Gate1BrandList* b
         if (sim > best_sim) {
             best_sim = sim;
             best_dist = dist;
-        }
 
-        /* Exact match check */
-        if (dist == 0) {
-            *is_match = 1;
-            /* TLD swap: domain matches brand but TLD differs */
-            const char* brand_tld = strrchr(brands->entries[i].domain, '.');
-            if (brand_tld && strcmp(brand_tld + 1, tld) != 0) {
+            /* TLD swap: domain exactly matches brand AND TLD is suspicious
+             * (matches Python: domain_base == brand and has_suspicious_tld > 0) */
+            if (dist == 0 && has_suspicious_tld) {
                 *is_tld_swap = 1;
             }
-        }
 
-        /* Sounds-alike check (only for close matches) */
-        if (dist <= 3 && dist > 0) {
-            if (sounds_alike(domain_no_tld, brands->entries[i].brand)) {
+            /* Typosquat match: close but not exact (1 or 2 edits away)
+             * (matches Python: 0 < dist <= 2 and domain_base != brand) */
+            if (dist > 0 && dist <= 2) {
+                *is_match = 1;
+            }
+
+            /* Sounds-alike check (only for close but non-exact matches)
+             * (matches Python: _sounds_like(...) and domain_base != brand) */
+            if (dist > 0 && sounds_alike(domain_no_tld, brands->entries[i].brand)) {
                 *psounds_alike = 1;
             }
         }
@@ -584,13 +619,18 @@ Gate1Features gate1_extract_features(const char* url, const Gate1BrandList* bran
     get_domain_no_tld(pu.host, domain_no_tld, sizeof(domain_no_tld));
     int domain_len = (int)strlen(pu.host);
 
-    /* Path analysis */
+    /* Path analysis — count non-empty segments (matches Python path.split("/") filter) */
     int path_len = (int)strlen(pu.path);
     int path_depth = 0;
+    int in_segment = 0;
     for (int i = 0; i < path_len; i++) {
-        if (pu.path[i] == '/') path_depth++;
+        if (pu.path[i] == '/') {
+            in_segment = 0;
+        } else if (!in_segment) {
+            in_segment = 1;
+            path_depth++;
+        }
     }
-    if (path_depth > 0) path_depth--;  /* Don't count leading / */
 
     /* Character ratios (computed on full URL) */
     int digits = 0, vowels = 0, consonants = 0;
@@ -605,18 +645,31 @@ Gate1Features gate1_extract_features(const char* url, const Gate1BrandList* bran
         }
     }
 
-    /* Homograph features */
+    /* Homograph features (computed on full domain, matching Python) */
     float homo_score;
     int homo_conf, homo_mixed;
-    compute_homograph(domain_no_tld, &homo_score, &homo_conf, &homo_mixed);
+    compute_homograph(pu.host, &homo_score, &homo_conf, &homo_mixed);
+
+    /* Strip hyphens from domain for typosquat comparison (matches Python) */
+    char domain_stripped[256];
+    int si = 0;
+    for (int i = 0; domain_no_tld[i] && si < 255; i++) {
+        if (domain_no_tld[i] != '-')
+            domain_stripped[si++] = tolower((unsigned char)domain_no_tld[i]);
+    }
+    domain_stripped[si] = '\0';
 
     /* Typosquat features */
-    float typo_sim, typo_containment;
+    int suspicious_tld = is_suspicious_tld(tld);
+    float typo_sim;
     int typo_dist, typo_match, typo_tld_swap, typo_sounds;
-    compute_typosquat(domain_no_tld, brands,
+    compute_typosquat(domain_stripped, brands,
                       &typo_sim, &typo_dist, &typo_match,
-                      &typo_tld_swap, &typo_sounds, &typo_containment,
-                      pu.host, tld);
+                      &typo_tld_swap, &typo_sounds,
+                      suspicious_tld);
+
+    /* Containment: computed on full domain (matches Python _compute_containment(domain, brand_set)) */
+    float typo_containment = compute_containment(pu.host, brands);
 
     /* Has dash in domain (not in URL scheme/path) */
     int has_dash = (strchr(pu.host, '-') != NULL) ? 1 : 0;
@@ -632,13 +685,14 @@ Gate1Features gate1_extract_features(const char* url, const Gate1BrandList* bran
     feat.values[7]  = (float)pu.is_https;                       /* is_https */
     feat.values[8]  = (float)count_special_chars(url);          /* special_char_count */
     feat.values[9]  = url_len > 0 ? (float)digits / url_len : 0; /* digit_ratio */
-    feat.values[10] = url_len > 0 ? (float)vowels / url_len : 0; /* vowel_ratio */
-    feat.values[11] = url_len > 0 ? (float)consonants / url_len : 0; /* consonant_ratio */
+    int total_alpha = vowels + consonants;
+    feat.values[10] = total_alpha > 0 ? (float)vowels / total_alpha : 0; /* vowel_ratio */
+    feat.values[11] = total_alpha > 0 ? (float)consonants / total_alpha : 0; /* consonant_ratio */
     feat.values[12] = compute_entropy(url);                     /* entropy */
-    feat.values[13] = (float)is_suspicious_tld(tld);            /* has_suspicious_tld */
+    feat.values[13] = (float)suspicious_tld;                     /* has_suspicious_tld */
     feat.values[14] = (float)strlen(tld);                       /* tld_length */
     feat.values[15] = (float)has_dash;                          /* has_dash */
-    feat.values[16] = (float)max_consecutive_repeat(url);       /* consecutive_char_repeat */
+    feat.values[16] = (float)max_consecutive_repeat(pu.host);    /* consecutive_char_repeat */
     feat.values[17] = (float)count_query_params(pu.query);      /* query_param_count */
     feat.values[18] = (float)has_encoded_chars(url);            /* has_encoded_chars */
     feat.values[19] = (float)count_suspicious_keywords(url_lower); /* suspicious_keyword_count */
