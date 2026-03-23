@@ -22,31 +22,33 @@ class AnalyzeUseCaseImpl @Inject constructor(
     private val analyzerResultRepository: AnalyzerResultRepository,
 ) : AnalyzeUseCase {
     override suspend fun invoke(input: AnalysisInput): AnalysisResult? {
-        val mode = analyzeStore.getMode()
+        return runCatching {
+            val mode = analyzeStore.getMode()
 
-        Log.d("AnalyzeUseCase", "Mode: $mode")
+            Log.d("AnalyzeUseCase", "Mode: $mode")
 
-        val repository = when (mode) {
-            AnalyzeMode.Local -> onDeviceAnalyzerRepository
-            AnalyzeMode.Remote -> remoteAnalyzerRepository
-        }
+            val repository = when (mode) {
+                AnalyzeMode.Local -> onDeviceAnalyzerRepository
+                AnalyzeMode.Remote -> remoteAnalyzerRepository
+            }
 
-        val result = when (input) {
-            is AnalysisInput.Audio -> repository.analyzeAudio(input.uri)
-            is AnalysisInput.Image -> repository.analyzeImage(input.uri)
-            is AnalysisInput.Text -> repository.analyzeText(
-                input.bundle,
-                input.senderId,
-                input.text
-            )
+            val result = when (input) {
+                is AnalysisInput.Audio -> repository.analyzeAudio(input.uri)
+                is AnalysisInput.Image -> repository.analyzeImage(input.uri)
+                is AnalysisInput.Text -> repository.analyzeText(
+                    input.bundle,
+                    input.senderId,
+                    input.text
+                )
 
-            is AnalysisInput.Url -> repository.analyzeUrl(input.url)
-        }
+                is AnalysisInput.Url -> repository.analyzeUrl(input.url)
+            }
 
-        val castResult = result as? ApiResult.Success<AnalysisResult> ?: return null
+            val castResult = result as? ApiResult.Success<AnalysisResult> ?: return null
 
-        analyzerResultRepository.cacheResult(castResult.data)
+            analyzerResultRepository.cacheResult(castResult.data)
 
-        return castResult.data
+            castResult.data
+        }.getOrNull()
     }
 }
