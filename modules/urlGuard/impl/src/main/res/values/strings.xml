@@ -21,6 +21,7 @@
     <string name="scam_detail">Scam detail</string>
     <string name="view_sms">View SMS</string>
     <string name="action_view_details">View details</string>
+    <string name="action_analyzing">Analyzing…</string>
     <string name="action_open_kinshield">Open kinShield</string>
     <string name="action_view_notification">View notification</string>
     <string name="action_open_system_settings">Open settings</string>

@@ -1,0 +1,84 @@
+{
+  "mappings": [
+    {
+      "featureIndex": 26,
+      "featureName": "typosquat_is_match",
+      "condition": "== 1",
+      "category": "Impersonation",
+      "description": "This website's name closely resembles a well-known brand",
+      "severity": "high"
+    },
+    {
+      "featureIndex": 27,
+      "featureName": "typosquat_is_tld_swap",
+      "condition": "== 1",
+      "category": "Impersonation",
+      "description": "This website uses a well-known brand name with a different domain extension",
+      "severity": "high"
+    },
+    {
+      "featureIndex": 29,
+      "featureName": "typosquat_containment",
+      "condition": "> 0",
+      "category": "Impersonation",
+      "description": "This website's name contains a well-known brand name",
+      "severity": "high"
+    },
+    {
+      "featureIndex": 20,
+      "featureName": "homograph_score",
+      "condition": "> 0",
+      "category": "Impersonation",
+      "description": "This website uses deceptive characters to mimic a trusted brand",
+      "severity": "high"
+    },
+    {
+      "featureIndex": 7,
+      "featureName": "is_https",
+      "condition": "== 0",
+      "category": "Insecure Connection",
+      "description": "This website doesn't use a secure connection",
+      "severity": "medium"
+    },
+    {
+      "featureIndex": 13,
+      "featureName": "has_suspicious_tld",
+      "condition": "== 1",
+      "category": "Suspicious Domain",
+      "description": "This website uses a domain extension often linked to scams",
+      "severity": "medium"
+    },
+    {
+      "featureIndex": 5,
+      "featureName": "has_ip_address",
+      "condition": "== 1",
+      "category": "Suspicious Link",
+      "description": "This link points to an IP address instead of a named website",
+      "severity": "high"
+    },
+    {
+      "featureIndex": 19,
+      "featureName": "suspicious_keyword_count",
+      "condition": "> 0",
+      "category": "Scam Keywords",
+      "description": "The web address contains words commonly used in scam links",
+      "severity": "medium"
+    },
+{
+      "featureIndex": 6,
+      "featureName": "has_port",
+      "condition": "== 1",
+      "category": "Suspicious Link",
+      "description": "This link uses a non-standard connection port",
+      "severity": "medium"
+    },
+    {
+      "featureIndex": 18,
+      "featureName": "has_encoded_chars",
+      "condition": "== 1",
+      "category": "Suspicious Link",
+      "description": "The web address contains hidden or encoded characters",
+      "severity": "medium"
+    }
+  ]
+}

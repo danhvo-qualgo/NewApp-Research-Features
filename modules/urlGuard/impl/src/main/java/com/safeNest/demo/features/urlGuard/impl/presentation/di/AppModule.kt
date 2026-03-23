@@ -12,7 +12,7 @@ import com.safeNest.demo.features.urlGuard.impl.detection.UrlDetectionImpl
 import com.safeNest.demo.features.urlGuard.impl.presentation.UrlGuardProviderImpl
 import com.safeNest.demo.features.urlGuard.impl.presentation.router.UrlGuardRouter
 import com.safeNest.demo.features.urlGuard.impl.urlGuard.AppTrustChecker
-import com.safenest.gate1.Gate1Classifier
+import com.safenest.urlanalyzer.gate1.Gate1Classifier
 import com.uney.core.router.Router
 import dagger.Binds
 import dagger.Module

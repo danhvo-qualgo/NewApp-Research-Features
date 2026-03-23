@@ -74,4 +74,33 @@
         android:layout_height="wrap_content"
         android:orientation="vertical" />
 
+    <!-- ══ Loading state ══════════════════════════════════════════════
+         Shown while AnalyzeUseCase is in-flight; hidden otherwise.
+         ═══════════════════════════════════════════════════════════════ -->
+    <LinearLayout
+        android:id="@+id/ll_loading_state"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:visibility="gone">
+
+        <ProgressBar
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            style="?android:attr/progressBarStyle"
+            android:indeterminate="true" />
+
+        <TextView
+            android:id="@+id/tv_loading_label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:text="@string/action_analyzing"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="@color/blocking_primary" />
+
+    </LinearLayout>
+
 </merge>

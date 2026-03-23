@@ -2,7 +2,7 @@ package com.safeNest.demo.features.urlGuard.impl.detection
 
 import android.util.Log
 import com.safeNest.demo.features.urlGuard.impl.detection.model.ModelDetectStatus
-import com.safenest.gate1.Gate1Classifier
+import com.safenest.urlanalyzer.gate1.Gate1Classifier
 import jakarta.inject.Inject
 
 class UrlDetectionImpl @Inject constructor(
@@ -13,9 +13,9 @@ class UrlDetectionImpl @Inject constructor(
     override fun detect(url: String): ModelDetectStatus {
         val response = classier1.classify(url)
         Log.d(TAG, "response for url $url: $response")
-        return when(response.data.verdict) {
+        return when(response.verdict) {
             "scam" -> ModelDetectStatus.Scam
-            "suspicious" -> ModelDetectStatus.Unknown
+            "suspicious" -> ModelDetectStatus.Warning
             else -> ModelDetectStatus.Safe
         }
     }

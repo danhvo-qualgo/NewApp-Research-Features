@@ -17,7 +17,6 @@ import com.safeNest.demo.features.urlGuard.impl.urlGuard.view.floatingbutton.Flo
 import com.safeNest.demo.features.urlGuard.impl.urlGuard.view.model.toActionCarViewIconBgColorRes
 import com.safeNest.demo.features.urlGuard.impl.urlGuard.view.model.toActionCardViewIcon
 import com.safeNest.demo.features.urlGuard.impl.urlGuard.view.model.toActionCardViewLabel
-import com.safeNest.demo.features.urlGuard.impl.urlGuard.view.model.toActionCardViewListAction
 
 /**
  * Orchestrates three system-overlay layers drawn on top of every app.
@@ -41,8 +40,7 @@ import com.safeNest.demo.features.urlGuard.impl.urlGuard.view.model.toActionCard
  *
  */
 class SecureView(
-    private val context: Context,
-    private val onDetailAction: () -> Unit) {
+    private val context: Context) {
 
     private val windowManager: WindowManager =
         context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
@@ -151,15 +149,11 @@ class SecureView(
     fun updateActionCard(
         feature: FloatingButtonFeature,
         status: DetectionStatus,
-        data: Any? = null) {
+        actions: List<QuickActionCardView.Action>) {
         feature.toActionCardViewLabel(context)?.let {
             actionCard.setAlertLabel(it)
         }
-        feature.toActionCardViewListAction(context, status, data) {
-            onDetailAction()
-        }.let {
-            if (it.isNotEmpty()) actionCard.setActions(it)
-        }
+        if (actions.isNotEmpty()) actionCard.setActions(actions)
 
         feature.toActionCardViewIcon(context).let {
             actionCard.setAlertIconDrawable(it)
