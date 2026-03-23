@@ -71,12 +71,113 @@ class AppTrustChecker @Inject constructor(
 
         /** Browser packages — accessibility events from these trigger URL scanning. */
         val BROWSER_PACKAGES: Set<String> = setOf(
+            // Chromium / Google
             "com.android.chrome",
+            "com.chrome.beta",
+            "com.chrome.dev",
+            // Firefox
             "org.mozilla.firefox",
             "org.mozilla.fenix",
+            // Opera
             "com.opera.browser",
-            "com.microsoft.emmx"
+            "com.opera.browser.beta",
+            "com.opera.mini.native",
+            "com.opera.mini.native.beta",
+            // Microsoft Edge
+            "com.microsoft.emmx",
+            // Cốc Cốc
+            "com.coccoc.trinhduyet",
+            // UC Browser
+            "com.UCMobile.intl",
+            "com.uc.browser.en"
         )
+
+        /** Social network apps — floating button is shown when these are in the foreground. */
+        val SOCIAL_NETWORK_PACKAGES: Set<String> = setOf(
+            // Facebook
+            "com.facebook.katana",
+            // Instagram
+            "com.instagram.android",
+            // Twitter / X
+            "com.twitter.android",
+            "com.x.android",
+            // TikTok
+            "com.zhiliaoapp.musically",
+            "com.ss.android.ugc.trill",
+            // LinkedIn
+            "com.linkedin.android",
+            // Pinterest
+            "com.pinterest",
+            // Snapchat
+            "com.snapchat.android",
+            // YouTube
+            "com.google.android.youtube"
+        )
+
+        /** OTT / messaging apps — floating button is shown when these are in the foreground. */
+        val OTT_PACKAGES: Set<String> = setOf(
+            // Zalo
+            "com.zing.zalo",
+            // Telegram
+            "com.telegram.messenger",
+            "org.telegram.messenger",
+            // Messenger
+            "com.facebook.orca",
+            // WhatsApp
+            "com.whatsapp",
+            "com.whatsapp.w4b",
+            // Viber
+            "com.viber.voip",
+            // Line
+            "jp.naver.line.android",
+            // Signal
+            "org.thoughtcrime.securesms",
+            // Skype
+            "com.skype.raider",
+            // Microsoft Teams
+            "com.microsoft.teams"
+        )
+
+        /** SMS / MMS apps — notifications from these are scanned for scam content. */
+        val SMS_PACKAGES: Set<String> = setOf(
+            // AOSP Messages
+            "com.android.mms",
+            // Google Messages
+            "com.google.android.apps.messaging",
+            // Samsung Messages
+            "com.samsung.android.messaging",
+            // MIUI Messages
+            "com.android.mms.miui",
+            // Huawei Messaging
+            "com.huawei.message",
+            // OPPO Messages
+            "com.coloros.mms",
+            "com.oppo.mms",
+            // Vivo Messages
+            "com.vivo.mms",
+            // OnePlus Messages
+            "com.oneplus.mms"
+        )
+
+        /** Known in-call UI packages across major OEMs. */
+        val CALL_PACKAGES: Set<String> = setOf(
+            "com.android.incallui",
+            "com.google.android.dialer",
+            "com.samsung.android.incallui",
+            "com.miui.incallui",
+            "com.huawei.incallui",
+            "com.oneplus.incallui",
+            "com.coloros.incallui",
+            "com.vivo.incallui"
+        )
+
+        /**
+         * Union of all app categories whose notifications should be scanned for scam/phishing
+         * content. Only notifications originating from a package in this set will be processed
+         * by [onNotificationPosted]; all others are silently ignored.
+         */
+        val NOTIFICATION_SCAN_PACKAGES: Set<String> =
+            OTT_PACKAGES + SOCIAL_NETWORK_PACKAGES + SMS_PACKAGES + CALL_PACKAGES
 
         /** Well-known apps always treated as trusted regardless of install source. */
         val TRUSTED_PACKAGES: Set<String> = setOf(
@@ -108,17 +209,5 @@ class AppTrustChecker @Inject constructor(
 
         /** Packages known to be malicious or high-risk. Extend with threat-intel data. */
         val DANGEROUS_PACKAGES: Set<String> = setOf()
-
-        /** Known in-call UI packages across major OEMs. */
-        val CALL_PACKAGES: Set<String> = setOf(
-            "com.android.incallui",
-            "com.google.android.dialer",
-            "com.samsung.android.incallui",
-            "com.miui.incallui",
-            "com.huawei.incallui",
-            "com.oneplus.incallui",
-            "com.coloros.incallui",
-            "com.vivo.incallui"
-        )
     }
 }

@@ -134,6 +134,24 @@ class SecureView(
     // ── Public API: floating button ───────────────────────────────────────────
 
     /**
+     * Make the floating button visible.
+     * Safe to call repeatedly — no-op if the button is already visible.
+     * Requires [showFirstTime] to have been called at least once beforehand.
+     */
+    fun showFloatingButton() {
+        floatingView.showInWindow()
+    }
+
+    /**
+     * Hide the floating button and dismiss the action card if open.
+     * Safe to call repeatedly — no-op if the button is already hidden.
+     */
+    fun hideFloatingButton() {
+        hideActionCard()
+        floatingView.hideInWindow()
+    }
+
+    /**
      * Update the floating button's icon and background colour.
      *
      * @param feature Determines the icon (shield, globe, phone, message).
