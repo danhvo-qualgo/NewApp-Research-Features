@@ -4,6 +4,7 @@ import android.content.Context
 import android.net.Uri
 import com.safeNest.demo.features.scamAnalyzer.api.models.AnalysisResult
 import com.safeNest.demo.features.scamAnalyzer.api.models.AnalysisResultType
+import com.safeNest.demo.features.scamAnalyzer.impl.domain.models.AnalyzeAudioResult
 import com.safeNest.demo.features.scamAnalyzer.impl.domain.models.AnalyzeImageResult
 import com.safeNest.demo.features.scamAnalyzer.impl.domain.models.AnalyzeTextResult
 import com.safeNest.demo.features.scamAnalyzer.impl.domain.models.AnalyzeUrlResult
@@ -36,7 +37,7 @@ class RemoteAnalyzerRepositoryImpl @Inject constructor(
     override suspend fun analyzeAudio(uri: Uri): ApiResult<AnalysisResult> {
         val mimeType = context.contentResolver.getType(uri) ?: "application/octet-stream"
 
-        return multipartApiClient.uploadMultipart<AnalyzeUrlResult>(
+        return multipartApiClient.uploadMultipart<AnalyzeAudioResult>(
             path = "/api/v1.0/analyze/audio",
             parts = listOf(
                 MultipartPart.FileStream(

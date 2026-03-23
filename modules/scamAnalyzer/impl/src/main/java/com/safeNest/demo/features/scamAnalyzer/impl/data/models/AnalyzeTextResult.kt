@@ -22,7 +22,6 @@ data class AnalyzeAudioResult(
 data class AnalyzeImageResult(
     val hasText: Boolean,
     val keyFindings: List<AnalyzeKeyFinding>,
-    val overview: String,
     val riskScore: Float,
     val verdict: AnalyzeVerdict,
 )
