@@ -20,6 +20,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Block
+import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -30,6 +31,10 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -38,17 +43,27 @@ import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import com.safeNest.demo.features.callProtection.api.domain.model.CallerIdInfo
 import com.safeNest.demo.features.callProtection.impl.R
+import com.safeNest.demo.features.callProtection.impl.domain.common.formatBeautifulNumber
 import com.safeNest.demo.features.callProtection.impl.presentation.ui.component.Toolbar
+import com.safeNest.demo.features.callProtection.impl.presentation.ui.numberinfo.dialog.AddToSafeListDialog
+import com.safeNest.demo.features.callProtection.impl.presentation.ui.numberinfo.dialog.BlocklistSuccessDialog
+import com.safeNest.demo.features.callProtection.impl.presentation.ui.numberinfo.dialog.ContributionSuccessDialog
 import com.safeNest.demo.features.designSystem.component.gradientBackground
 import com.safeNest.demo.features.designSystem.theme.DSSpacing
 import com.safeNest.demo.features.designSystem.theme.DSTypography
 import com.safeNest.demo.features.designSystem.theme.color.DSColors
 
 @Composable
-fun BlockedScamCallScreen(
+fun MissingCallScreen(
+    missingCallViewModel: MissingCallViewModel = hiltViewModel(),
+    callerIdInfo: CallerIdInfo,
+    onCallback: () -> Unit,
     onBack: () -> Unit
 ) {
+    var showDialog by remember { mutableStateOf(MissingCallDialogState.HIDE) }
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -79,18 +94,63 @@ fun BlockedScamCallScreen(
                         .verticalScroll(rememberScrollState())
                 ) {
                     Spacer(modifier = Modifier.height(DSSpacing.s6))
-                    ScamAlertCard()
+                    ScamAlertCard(
+                        callerIdInfo,
+                        onAddToBlocklist = {
+                            missingCallViewModel.addToBlocklist(callerIdInfo.phoneNumber)
+                            showDialog = MissingCallDialogState.ADD_TO_BLOCKLIST_SUCCESS
+                        },
+                        onAddToWhitelist = {
+                            showDialog = MissingCallDialogState.ADD_TO_WHITELIST
+                        },
+                        onCallback = onCallback
+                    )
 
                     Spacer(modifier = Modifier.height(DSSpacing.s6))
                     CommunityIntelligenceSection()
+                    Spacer(modifier = Modifier.height(DSSpacing.s6))
                 }
             }
+        }
+        if (showDialog == MissingCallDialogState.ADD_TO_BLOCKLIST_SUCCESS) {
+            BlocklistSuccessDialog(
+                onDismiss = {
+                },
+                onGotItClick = {
+                    onBack()
+                }
+            )
+        }
+        if (showDialog == MissingCallDialogState.ADD_TO_WHITELIST) {
+            AddToSafeListDialog(
+                onDismiss = {
+
+                },
+                onSubmit = { name, _ ->
+                    missingCallViewModel.addToWhitelist(callerIdInfo.phoneNumber, name)
+                    showDialog = MissingCallDialogState.ADD_TO_WHITELIST_SUCCESS
+                }
+            )
+        }
+        if (showDialog == MissingCallDialogState.ADD_TO_WHITELIST_SUCCESS) {
+            ContributionSuccessDialog(
+                onDismiss = {
+                },
+                onGotItClick = {
+                    onBack()
+                }
+            )
         }
     }
 }
 
 @Composable
-fun ScamAlertCard() {
+fun ScamAlertCard(
+    callerIdInfo: CallerIdInfo,
+    onAddToBlocklist: () -> Unit = {},
+    onAddToWhitelist: () -> Unit = {},
+    onCallback: () -> Unit = {}
+) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -103,7 +163,12 @@ fun ScamAlertCard() {
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(start = DSSpacing.s3, end = 1.dp, top = 1.dp, bottom = 1.dp),
-            shape = RoundedCornerShape(topStart = 12.dp, bottomStart = 12.dp, topEnd = 16.dp, bottomEnd = 16.dp),
+            shape = RoundedCornerShape(
+                topStart = 12.dp,
+                bottomStart = 12.dp,
+                topEnd = 16.dp,
+                bottomEnd = 16.dp
+            ),
             colors = CardDefaults.cardColors(containerColor = DSColors.surface1)
         ) {
             Column(
@@ -129,7 +194,7 @@ fun ScamAlertCard() {
                 Spacer(modifier = Modifier.height(DSSpacing.s3))
 
                 Text(
-                    text = "Scam tài chính",
+                    text = callerIdInfo.label,
                     style = DSTypography.caption1.bold,
                     color = DSColors.textError
                 )
@@ -137,7 +202,7 @@ fun ScamAlertCard() {
                 Spacer(modifier = Modifier.height(DSSpacing.s2))
 
                 Text(
-                    text = "+84 123 456 789",
+                    text = formatBeautifulNumber(callerIdInfo.phoneNumber),
                     style = DSTypography.h3.bold,
                     color = DSColors.textHeading
                 )
@@ -154,7 +219,7 @@ fun ScamAlertCard() {
                 Spacer(modifier = Modifier.height(DSSpacing.s6))
 
                 Button(
-                    onClick = { },
+                    onClick = onAddToBlocklist,
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(DSSpacing.s9),
@@ -171,7 +236,7 @@ fun ScamAlertCard() {
                 Spacer(modifier = Modifier.height(DSSpacing.s4))
 
                 TextButton(
-                    onClick = { },
+                    onClick = onAddToWhitelist,
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(DSSpacing.s9)
@@ -182,6 +247,30 @@ fun ScamAlertCard() {
                         text = "Add to Safelist",
                         style = DSTypography.body2.semiBold,
                         color = DSColors.textHeading
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(DSSpacing.s4))
+
+                Button(
+                    onClick = onCallback,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = DSColors.surfaceAction),
+                    shape = CircleShape
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Phone,
+                        contentDescription = "Phone",
+                        tint = DSColors.iconInverted,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(DSSpacing.s2))
+                    Text(
+                        text = "Callback",
+                        style = DSTypography.body2.bold,
+                        color = DSColors.textInverted
                     )
                 }
             }
@@ -271,10 +360,21 @@ fun InfoRow(icon: ImageVector, title: String, description: String) {
     }
 }
 
+enum class MissingCallDialogState {
+    ADD_TO_BLOCKLIST_SUCCESS,
+    ADD_TO_WHITELIST,
+    ADD_TO_WHITELIST_SUCCESS,
+    HIDE
+}
+
 @Composable
 @Preview
 fun BlockedScamCallScreenPreview() {
-    BlockedScamCallScreen {
-
-    }
+//    BlockedScamCallScreen(callerIdInfo = CallerIdInfo(
+//        phoneNumber = "+1 (555) 012-3456",
+//        label = "John Doe",
+//        type = CallerIdInfoType.SCAM
+//    ), {}, {}, {}) {
+//
+//    }
 }

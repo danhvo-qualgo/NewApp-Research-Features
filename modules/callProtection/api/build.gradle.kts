@@ -1,5 +1,6 @@
 plugins {
     alias(libs.plugins.uney.android.module)
+    alias(libsCustom.plugins.jetbrains.kotlin.serialization)
 }
 
 androidModule {

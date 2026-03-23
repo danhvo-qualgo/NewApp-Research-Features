@@ -1,36 +1,57 @@
 package com.safeNest.demo.features.callProtection.impl.presentation.ui.numberinfo
 
+import android.content.Intent
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Security
-import androidx.compose.material3.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.safeNest.demo.features.callProtection.api.domain.model.CallerIdInfo
+import com.safeNest.demo.features.callProtection.impl.presentation.ui.component.Toolbar
+import com.safeNest.demo.features.designSystem.component.gradientBackground
 import com.safeNest.demo.features.designSystem.theme.DSSpacing
 import com.safeNest.demo.features.designSystem.theme.DSTypography
 import com.safeNest.demo.features.designSystem.theme.color.DSColors
+import androidx.core.net.toUri
 
 @Composable
-fun SafetyFirstScreen(
+fun MakeCallConfirmScreen(
+    callerIdInfo: CallerIdInfo,
     onBack: () -> Unit
 ) {
-    val bgGradient = Brush.verticalGradient(
-        colors = listOf(Color(0xFFD5D9F9), DSColors.surface1)
-    )
+    val context = LocalContext.current
+    val bgGradient = gradientBackground
 
     Scaffold(
         containerColor = Color.Transparent,
@@ -39,10 +60,21 @@ fun SafetyFirstScreen(
             .background(brush = bgGradient)
             .systemBarsPadding(),
         topBar = {
-            TopNavigationBar()
+            Column(modifier = Modifier.background(DSColors.surface1)) {
+                Spacer(modifier = Modifier.statusBarsPadding())
+                Toolbar(
+                    text = "",
+                    onActionClick = onBack
+                )
+            }
         },
         bottomBar = {
-            DockBarActions()
+            DockBarActions() {
+                val intent = Intent(Intent.ACTION_DIAL).apply {
+                    data = "tel:${callerIdInfo.phoneNumber}".toUri()
+                }
+                context.startActivity(intent)
+            }
         }
     ) { paddingValues ->
         Column(
@@ -125,30 +157,9 @@ fun SafetyFirstScreen(
 }
 
 @Composable
-private fun TopNavigationBar() {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = DSSpacing.s6, vertical = DSSpacing.s4),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        IconButton(
-            onClick = { },
-            modifier = Modifier
-                .size(40.dp)
-                .background(DSColors.surface1, CircleShape)
-        ) {
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                contentDescription = "Back",
-                tint = DSColors.iconAction
-            )
-        }
-    }
-}
-
-@Composable
-private fun DockBarActions() {
+private fun DockBarActions(
+    onMakeCall: () -> Unit = {}
+) {
     Surface(
         color = DSColors.surface1.copy(alpha = 0.9f),
         modifier = Modifier.fillMaxWidth()
@@ -160,7 +171,7 @@ private fun DockBarActions() {
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Button(
-                onClick = { },
+                onClick = onMakeCall,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),
@@ -204,8 +215,8 @@ private fun DockBarActions() {
 
 @Composable
 @Preview
-fun SafetyFirstScreenPreview() {
-    SafetyFirstScreen {
-
-    }
+fun MakeCallConfirmScreenPreview() {
+//    MakeCallConfirmScreen {
+//
+//    }
 }

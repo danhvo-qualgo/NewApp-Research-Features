@@ -1,10 +1,8 @@
 package com.safeNest.demo.features.callProtection.impl.presentation.ui.blacklist
 
 import android.app.Activity
-import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
 import android.provider.CallLog
 import android.widget.Toast
 import androidx.compose.foundation.BorderStroke

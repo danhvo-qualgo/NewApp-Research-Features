@@ -1,11 +1,19 @@
 package com.safeNest.demo.features.callProtection.impl.presentation.service.handler
 
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
 import android.content.Context
+import android.graphics.BitmapFactory
+import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
+import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
 import com.safeNest.demo.features.callProtection.api.domain.model.CallerIdInfoType
 import com.safeNest.demo.features.callProtection.api.domain.model.GetCallerIdInfoUseCase
+import com.safeNest.demo.features.callProtection.impl.R
 import com.safeNest.demo.features.callProtection.impl.domain.common.normalizePhoneNumber
 import com.safeNest.demo.features.callProtection.impl.domain.usecase.AddCallTrackingUseCase
 import com.safeNest.demo.features.callProtection.impl.domain.usecase.EnableBlockListUseCase
@@ -14,7 +22,11 @@ import com.safeNest.demo.features.callProtection.impl.domain.usecase.GetCallTrac
 import com.safeNest.demo.features.callProtection.impl.domain.usecase.GetMasterBlocklistNumberUseCase
 import com.safeNest.demo.features.callProtection.impl.domain.usecase.GetWhitelistByNumberUseCase
 import com.safeNest.demo.features.callProtection.impl.domain.usecase.IsBlocklistPatternsUseCase
+import com.safeNest.demo.features.callProtection.impl.presentation.router.CallDetectionDeeplink
 import com.safeNest.demo.features.callProtection.impl.presentation.service.call.CallDetectionPopup
+import com.safeNest.demo.features.commonKotlin.IncomingCallData
+import com.safeNest.demo.features.commonKotlin.incomingCallSharedFlow
+import com.uney.core.router.RouterManager
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.first
 import javax.inject.Inject
@@ -31,18 +43,23 @@ class CallDetectionHandlerImpl @Inject constructor(
     private val getMasterWhitelistNumberUseCase: GetMasterBlocklistNumberUseCase,
     private val getCallerIdUseCase: GetCallerIdInfoUseCase,
     private val addCallTrackingUseCase: AddCallTrackingUseCase,
+    private val getCallTrackingUseCase: GetCallTrackingUseCase,
+    private val routerManager: RouterManager
 ) : CallDetectionHandler {
 
     override suspend fun onCallRing(phoneNumber: String, isIncoming: Boolean): CallResult {
         val normalizePhoneNumber = normalizePhoneNumber(phoneNumber)
-        Log.v("CallDetectionHandlerImpl", "normalizePhoneNumber: $normalizePhoneNumber")
+        Log.d("CallDetectionHandlerImpl", "normalizePhoneNumber: $normalizePhoneNumber")
         if (getMasterWhitelistNumberUseCase(normalizePhoneNumber).first() != null) {
+            Log.d("CallDetectionHandlerImpl", "normalizePhoneNumber: ${getMasterWhitelistNumberUseCase(normalizePhoneNumber).first()}")
             return CallResult.Allow()
         }
-        if (getMasterBlocklistNumberUseCase(normalizePhoneNumber).first() != null || getMasterBlocklistNumberUseCase(phoneNumber).first() != null) {
+        if ((getMasterBlocklistNumberUseCase(normalizePhoneNumber).first() != null
+            || getMasterBlocklistNumberUseCase(phoneNumber).first() != null) && isIncoming) {
+            Log.d("CallDetectionHandlerImpl", "normalizePhoneNumber: ${getMasterBlocklistNumberUseCase(normalizePhoneNumber).first()}")
             return CallResult.Reject
         }
-        Log.v("CallDetectionHandlerImpl", "start check whitelist: $normalizePhoneNumber")
+        Log.d("CallDetectionHandlerImpl", "start check whitelist: $normalizePhoneNumber")
 
         val isEnableWhitelist = enableWhiteListUseCase.isEnable().first()
         val isEnableBlacklist = enableBlockListUseCase.isEnable().first()
@@ -54,7 +71,7 @@ class CallDetectionHandlerImpl @Inject constructor(
         }
         Log.v("CallDetectionHandlerImpl", "start check blocklist: $normalizePhoneNumber")
 
-        if (isEnableBlacklist && (isBlocklistPatternsUseCase(phoneNumber).first()
+        if (isIncoming && isEnableBlacklist && (isBlocklistPatternsUseCase(phoneNumber).first()
                     || isBlocklistPatternsUseCase(normalizePhoneNumber).first())) {
             return CallResult.Reject
         }
@@ -63,9 +80,19 @@ class CallDetectionHandlerImpl @Inject constructor(
             Log.v("CallDetectionHandlerImpl", "onCallRing: $it")
             return when(it.type) {
                 CallerIdInfoType.SCAM -> {
+                    incomingCallSharedFlow.emit(IncomingCallData(
+                        phoneNumber = normalizePhoneNumber,
+                        message = "KinShield helped block  because it is identified as scam by community. Tap for more."
+                    ))
                     CallResult.Reject
                 }
                 else -> {
+                    if (it.type == CallerIdInfoType.SPAM) {
+                        incomingCallSharedFlow.emit(IncomingCallData(
+                            phoneNumber = normalizePhoneNumber,
+                            message = "The caller is identified by community as spam. Tap to see detail."
+                        ))
+                    }
                     Handler(Looper.getMainLooper()).post {
                         CallDetectionPopup.show(context, CallDetectionPopup.PopupContent(normalizePhoneNumber, it.label, it.type))
                     }
@@ -83,5 +110,67 @@ class CallDetectionHandlerImpl @Inject constructor(
 
     override suspend fun onCallEnd(phoneNumber: String) {
         CallDetectionPopup.dismiss(context)
+        val normalizePhoneNumber = normalizePhoneNumber(phoneNumber)
+        if (getMasterWhitelistNumberUseCase(normalizePhoneNumber).first() != null)
+            return
+
+        if (getMasterBlocklistNumberUseCase(normalizePhoneNumber).first() != null
+            || getMasterBlocklistNumberUseCase(phoneNumber).first() != null)
+            return
+        val count = getCallTrackingUseCase(normalizePhoneNumber)?.callCount ?: 0
+        if (count > 1) {
+            showSpamBlockedNotification(context, normalizePhoneNumber)
+        }
+    }
+
+    suspend fun showSpamBlockedNotification(context: Context, normalizePhoneNumber: String) {
+        val channelId = "safenest_spam_alerts"
+        getCallerIdUseCase(normalizePhoneNumber)?.let {
+
+            val channel = NotificationChannel(
+                channelId,
+                "Spam Alerts",
+                NotificationManager.IMPORTANCE_HIGH
+            )
+            val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            manager.createNotificationChannel(channel)
+
+            val intent = routerManager.getLaunchIntent(
+                CallDetectionDeeplink.entryPointMissingCall(
+                    callerIdInfo = it
+                )
+            )
+
+            val pendingIntent = PendingIntent.getActivity(
+                context,
+                0,
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+
+            val largeIcon = BitmapFactory.decodeResource(context.resources, R.drawable.ic_alert_spam)
+
+            val notification = NotificationCompat.Builder(context, channelId)
+                .setSmallIcon(R.drawable.ic_alert_spam)
+                .setLargeIcon(largeIcon)
+                .setContentTitle("Spam caller blocked")
+                .setContentText("SafeNest identified & blocked ${it.phoneNumber} as spam but you might want to check because they call you twice today")
+                .setStyle(
+                    NotificationCompat.BigTextStyle()
+                        .bigText("SafeNest identified & blocked ${it.phoneNumber} as spam but you might want to check because they call you twice today")
+                )
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setDefaults(NotificationCompat.DEFAULT_ALL)
+                .setAutoCancel(true)
+                .addAction(0, "View Details", pendingIntent)
+                .build()
+
+            try {
+                NotificationManagerCompat.from(context).notify(System.currentTimeMillis().toInt(), notification)
+            } catch (e: SecurityException) {
+                e.printStackTrace()
+            }
+        }
+
     }
 }

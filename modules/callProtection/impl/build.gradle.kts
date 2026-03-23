@@ -17,6 +17,7 @@ android {
 
 dependencies {
     implementation(project(":modules:callProtection:api"))
+    implementation(project(":modules:commonKotlin"))
     implementation(libs.core.router)
     implementation(libs.libphonenumber)
     implementation(libs.room)
