@@ -52,14 +52,9 @@ class OnDeviceAnalyzerRepositoryImpl @Inject constructor(
 
     @Serializable
     data class ModelResult(
-        val status: Int,
+        val category: AnalysisStatus,
         val reasons: List<Reason>
     ) {
-        fun getStatus() = when (status) {
-            0 -> AnalysisStatus.Safe
-            1 -> AnalysisStatus.Scam
-            else -> AnalysisStatus.Unverified
-        }
     }
 
     @Serializable
@@ -118,7 +113,7 @@ class OnDeviceAnalyzerRepositoryImpl @Inject constructor(
         return ApiResult.Success(
             AnalysisResult(
                 data = AnalysisResultType.Audio(uri.toString()),
-                status = result.getStatus(),
+                status = result.category,
                 keyFindings = result.reasons.map {
                     AnalysisItem(
                         title = it.title,
@@ -135,7 +130,7 @@ class OnDeviceAnalyzerRepositoryImpl @Inject constructor(
         return ApiResult.Success(
             AnalysisResult(
                 data = AnalysisResultType.Url(url),
-                status = result.getStatus(),
+                status = result.category,
                 keyFindings = result.reasons.map {
                     AnalysisItem(
                         title = it.title,
@@ -156,7 +151,7 @@ class OnDeviceAnalyzerRepositoryImpl @Inject constructor(
         return ApiResult.Success(
             AnalysisResult(
                 data = AnalysisResultType.Text(text, redacted),
-                status = result.getStatus(),
+                status = result.category,
                 keyFindings = result.reasons.map {
                     AnalysisItem(
                         title = it.title,
@@ -174,7 +169,7 @@ class OnDeviceAnalyzerRepositoryImpl @Inject constructor(
         return ApiResult.Success(
             AnalysisResult(
                 data = AnalysisResultType.Image(uri.toString(), text.isEmpty()),
-                status = result.getStatus(),
+                status = result.category,
                 keyFindings = result.reasons.map {
                     AnalysisItem(
                         title = it.title,

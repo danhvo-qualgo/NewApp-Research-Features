@@ -3,6 +3,7 @@ plugins {
 }
 
 androidModule {
+    serialization = true
 }
 
 android {

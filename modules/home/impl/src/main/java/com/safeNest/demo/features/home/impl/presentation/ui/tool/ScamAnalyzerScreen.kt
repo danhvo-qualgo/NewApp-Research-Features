@@ -69,12 +69,24 @@ fun ScamAnalyzerScreen(
     onRecordAudioClick: () -> Unit = {},
     onUploadAudioClick: (Uri) -> Unit = {},
     onUploadImageClick: (Uri) -> Unit = {},
-    scamAnalyzerViewModel: ScamAnalyzerViewModel = hiltViewModel()
+    scamAnalyzerViewModel: ScamAnalyzerViewModel = hiltViewModel(),
+    sharedText: String? = null,
+    onSharedTextConsumed: () -> Unit = {}
 ) {
-    var inputText by remember { mutableStateOf("") }
+    var inputText by remember(sharedText) { mutableStateOf(sharedText ?: "") }
     val uiState by scamAnalyzerViewModel.uiState.collectAsStateWithLifecycle()
     val context = androidx.compose.ui.platform.LocalContext.current
     val coroutineScope = rememberCoroutineScope()
+
+    LaunchedEffect(sharedText) {
+        Log.d("ScamAnalyzerScreen", "LaunchedEffect triggered with sharedText: $sharedText")
+        if (!sharedText.isNullOrBlank()) {
+            Log.d("ScamAnalyzerScreen", "Auto-filling text and analyzing: ${sharedText.take(50)}...")
+            inputText = sharedText
+            scamAnalyzerViewModel.analyzeText(sharedText)
+            onSharedTextConsumed()
+        }
+    }
 
     val audioPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument()

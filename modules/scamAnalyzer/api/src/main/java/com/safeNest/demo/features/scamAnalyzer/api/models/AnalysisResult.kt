@@ -1,10 +1,16 @@
 package com.safeNest.demo.features.scamAnalyzer.api.models
 
 import android.net.Uri
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 
+@Serializable
 enum class AnalysisStatus {
+    @SerialName("Safe")
     Safe,
+    @SerialName("Scam")
     Scam,
+    @SerialName("Unverified")
     Unverified,
 }
 
