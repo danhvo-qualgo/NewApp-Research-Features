@@ -44,7 +44,7 @@ class MyCallRedirectionService : CallRedirectionService() {
                     Handler(Looper.getMainLooper()).post {
                         Toast.makeText(
                             applicationContext,
-                            "Block Outgoing Calls $originalNumber",
+                            "Call blocked because it is not in Whitelist",
                             Toast.LENGTH_LONG
                         ).show()
                     }

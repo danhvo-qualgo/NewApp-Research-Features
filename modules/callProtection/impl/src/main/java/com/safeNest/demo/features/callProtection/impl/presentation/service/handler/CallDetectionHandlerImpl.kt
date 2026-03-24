@@ -5,7 +5,6 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.graphics.BitmapFactory
-import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
@@ -51,15 +50,12 @@ class CallDetectionHandlerImpl @Inject constructor(
     override suspend fun onCallRing(phoneNumber: String, isIncoming: Boolean): CallResult {
         val normalizePhoneNumber = normalizePhoneNumber(phoneNumber)
         Log.d("CallDetectionHandlerImpl", "normalizePhoneNumber: $normalizePhoneNumber")
-        val whitelist = getMasterWhitelistNumberUseCase(normalizePhoneNumber).first()
-        val blacklist = getMasterBlocklistNumberUseCase(normalizePhoneNumber).first()
-        Log.d("CallDetectionHandlerImpl", "whitelist: $whitelist")
-        Log.d("CallDetectionHandlerImpl", "blacklist: $blacklist")
         if (getMasterWhitelistNumberUseCase(normalizePhoneNumber).first() != null) {
             return CallResult.Allow()
         }
         if ((getMasterBlocklistNumberUseCase(normalizePhoneNumber).first() != null
             || getMasterBlocklistNumberUseCase(phoneNumber).first() != null) && isIncoming) {
+            callEvent(normalizePhoneNumber, "KinShield just block a call from your blocklist.")
             return CallResult.Reject
         }
         Log.d("CallDetectionHandlerImpl", "start check whitelist: $normalizePhoneNumber")
@@ -71,6 +67,7 @@ class CallDetectionHandlerImpl @Inject constructor(
             return getWhitelistByNumberUseCase(normalizePhoneNumber).first()?.let {
                 CallResult.Allow()
             } ?: run {
+                callEvent(normalizePhoneNumber, "Call blocked because it is not in Whitelist.")
                 onCallAnswer(normalizePhoneNumber)
                 CallResult.Reject
             }
@@ -80,9 +77,9 @@ class CallDetectionHandlerImpl @Inject constructor(
         if (isIncoming && isEnableBlacklist && (isBlocklistPatternsUseCase(phoneNumber).first()
                     || isBlocklistPatternsUseCase(normalizePhoneNumber).first())) {
             onCallAnswer(normalizePhoneNumber)
+            callEvent(normalizePhoneNumber, "KinShield just block a call from your blocklist.")
             return CallResult.Reject
         }
-        Log.v("CallDetectionHandlerImpl", "onCallRing: $normalizePhoneNumber")
 
         if (isIncoming)
             getCallerIdUseCase(normalizePhoneNumber)?.let {
@@ -91,19 +88,13 @@ class CallDetectionHandlerImpl @Inject constructor(
                     CallerIdInfoType.SCAM -> {
 
                         Log.v("CallDetectionHandlerImpl", "onCallRing scam: $it")
+                        callEvent(normalizePhoneNumber, "KinShield helped block  because it is identified as scam by community. Tap for more.")
                         onCallAnswer(normalizePhoneNumber)
-                        incomingCallSharedFlow.emit(IncomingCallData(
-                            phoneNumber = normalizePhoneNumber,
-                            message = "KinShield helped block  because it is identified as scam by community. Tap for more."
-                        ))
                         CallResult.Reject
                     }
                     else -> {
                         if (it.type == CallerIdInfoType.SPAM) {
-                            incomingCallSharedFlow.emit(IncomingCallData(
-                                phoneNumber = normalizePhoneNumber,
-                                message = "The caller is identified by community as spam. Tap to see detail."
-                            ))
+                            callEvent(normalizePhoneNumber, "The caller is identified by community as spam. Tap to see detail.")
                         }
 
                         Log.v("CallDetectionHandlerImpl", "onCallRing spam: $it")
@@ -135,6 +126,13 @@ class CallDetectionHandlerImpl @Inject constructor(
         if (count > 1) {
             showSpamBlockedNotification(context, normalizePhoneNumber)
         }
+    }
+
+    private suspend fun callEvent(phoneNumber: String, message: String) {
+        incomingCallSharedFlow.emit(IncomingCallData(
+            phoneNumber = phoneNumber,
+            message = message
+        ))
     }
 
     suspend fun showSpamBlockedNotification(context: Context, normalizePhoneNumber: String) {
