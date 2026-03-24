@@ -14,6 +14,7 @@ import android.util.Log
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import androidx.core.app.NotificationCompat
+import com.safeNest.demo.features.commonAndroid.openAppSettings
 import com.safeNest.demo.features.notificationInterceptor.api.NotificationObserver
 import com.safeNest.demo.features.scamAnalyzer.api.ScamAnalyzerProvider
 import com.safeNest.demo.features.scamAnalyzer.api.models.AnalysisInput
@@ -22,7 +23,6 @@ import com.safeNest.demo.features.urlGuard.impl.R
 import com.safeNest.demo.features.urlGuard.impl.detection.NotificationDetection
 import com.safeNest.demo.features.urlGuard.impl.detection.PhoneDetection
 import com.safeNest.demo.features.urlGuard.impl.detection.UrlDetection
-import com.safeNest.demo.features.urlGuard.impl.detection.model.ModelDetectStatus
 import com.safeNest.demo.features.urlGuard.impl.urlGuard.mapper.toModelDetectionStatus
 import com.safeNest.demo.features.urlGuard.impl.urlGuard.util.UserAllowedDomainGuard
 import com.safeNest.demo.features.urlGuard.impl.urlGuard.view.QuickActionCardView
@@ -86,7 +86,6 @@ class UrlGuardAccessibilityService : AccessibilityService() {
     // ── URL result cache ──────────────────────────────────────────────────────
     private data class UrlCacheEntry(
         val status: DetectionStatus,
-        val isMalicious: Boolean,
         val cachedAt: Long = System.currentTimeMillis()
     )
 
@@ -95,8 +94,6 @@ class UrlGuardAccessibilityService : AccessibilityService() {
             size > URL_CACHE_MAX_SIZE
     }
 
-    // ── Form scan ─────────────────────────────────────────────────────────────
-    private val userAllowedUrls = mutableSetOf<String>()
     private val formScanCache = object : LinkedHashMap<String, Boolean>(32, 0.75f, true) {
         override fun removeEldestEntry(eldest: Map.Entry<String, Boolean>) = size > 30
     }
@@ -164,7 +161,12 @@ class UrlGuardAccessibilityService : AccessibilityService() {
         // the service starts cleanly here and the overlay is attached lazily when the
         // app sends ACTION_SHOW_FLOATING (which it does on every onResume).
         secureView = SecureView(this).apply {
-            onGoBackClick = { hideBlockingPage() }
+            onGoBackClick = {
+                lastBlockedUrl
+                    ?.let { url -> UrlExtractor.extractDomain(url) }
+                    ?.let { domain -> allowedDomainGuard.allow(domain) }
+                hideBlockingPage()
+            }
             onProceedAnywayClick = {
                 // User consciously chose to proceed → whitelist the domain for
                 // this session so the blocking page won't re-trigger on the same site.
@@ -173,6 +175,7 @@ class UrlGuardAccessibilityService : AccessibilityService() {
                     ?.let { domain -> allowedDomainGuard.allow(domain) }
                 hideBlockingPage()
             }
+            onFloatingButtonClick = { onFloatingButtonTapped() }
         }
         tryAttachOverlay()
 
@@ -356,7 +359,6 @@ class UrlGuardAccessibilityService : AccessibilityService() {
             )
         )
         val detectedStatus: DetectionStatus
-        val isMalicious: Boolean
 
         // Cache hit
         val cached = urlCache[normalUrl]
@@ -371,25 +373,22 @@ class UrlGuardAccessibilityService : AccessibilityService() {
         val isHasSensitiveForm = triggerFormInspection(normalUrl).first()
         if (isHasSensitiveForm) {
             detectedStatus = DetectionStatus.WARNING
-            isMalicious = false
         } else {
-
             //val reputation = withContext(Dispatchers.IO) { ScamApiClient.checkUrl(normalUrl) }
-
-            val  modelDetectionStatus = urlDetection.detect(normalUrl)
-
+            val modelDetectionStatus = urlDetection.detect(normalUrl)
             detectedStatus = modelDetectionStatus.toModelDetectionStatus()
-            isMalicious = modelDetectionStatus == ModelDetectStatus.Scam
-
         }
         Log.d(TAG, "urlCache: $normalUrl -> $detectedStatus")
 
-        urlCache[normalUrl] = UrlCacheEntry(status = detectedStatus, isMalicious = isMalicious)
+        urlCache[normalUrl] = UrlCacheEntry(status = detectedStatus)
         applyUrlResult(normalUrl, detectedStatus, browserPkg)
 
     }
 
+    private var isDetailClick = false
     private fun onDetailAction() {
+        if(isDetailClick) return
+        isDetailClick = true
         val input = SurfaceDetector.getCurrent().toAnalysisInput()
         Log.d(TAG, "onDetail action input: ${input}")
         if (input == null) {
@@ -398,15 +397,64 @@ class UrlGuardAccessibilityService : AccessibilityService() {
             return
         }
         secureView.actionCard.showLoading()
+        secureView.showButtonLoading()
         serviceScope.launch {
             try {
                 withContext(Dispatchers.IO) { analyzeUseCase(input) }
             } finally {
+                isDetailClick = false
                 secureView.actionCard.hideLoading()
+                secureView.hideButtonLoading()
                 secureView.hideActionCard()
                 secureView.hideBlockingPage()
                 scamAnalyzerProvider.openActivity(this@UrlGuardAccessibilityService)
             }
+        }
+    }
+
+    /**
+     * Central handler for every floating-button tap.
+     *
+     * Routes based on the current [ScreenSurface]:
+     *
+     * • [ScreenSurface.App] whose package is **this app** (KinShield in foreground)
+     *     → show a toast tooltip explaining the button's purpose.
+     *
+     * • [ScreenSurface.Browser] (user is browsing)
+     *     → open KinShield and run the detail analysis on the current URL,
+     *        identical to tapping the "detail" action inside the quick-action card.
+     *
+     * • Everything else
+     *     → no-op for now; extend here as new surface types need button-tap handling.
+     */
+    private fun onFloatingButtonTapped() {
+        when (val surface = SurfaceDetector.getCurrent()) {
+            is ScreenSurface.App -> {
+                when(surface.packageName) {
+                    packageName -> {
+                        Log.d(TAG, "Floating button tapped — KinShield foreground, showing tooltip")
+                        secureView.showToastTooltip(
+                            getString(R.string.floating_button_idle_tooltip)
+                        )
+                    }
+
+                    in AppTrustChecker.OTT_PACKAGES,
+                    in AppTrustChecker.SOCIAL_NETWORK_PACKAGES -> {
+
+                    }
+                    else -> {
+                        Log.d(TAG, "Floating button tapped — other app foreground, open setting")
+                        this.openAppSettings(surface.packageName)
+                    }
+
+                }
+
+            }
+            is ScreenSurface.Browser -> {
+                Log.d(TAG, "Floating button tapped — Browser foreground, triggering detail action")
+                onDetailAction()
+            }
+            else -> Unit
         }
     }
 
@@ -480,9 +528,9 @@ class UrlGuardAccessibilityService : AccessibilityService() {
     private fun onSocialOrOttForeground(pkg: String) {
         isEventForcedVisible = false
         Log.d(TAG, "Social/OTT foreground: $pkg")
-        SurfaceDetector.update(ScreenSurface.App(pkg, DetectionStatus.SAFE))
+        SurfaceDetector.update(ScreenSurface.App(pkg, DetectionStatus.UNKNOWN))
         secureView.showFloatingButton()
-        secureView.updateButton(FloatingButtonFeature.APP_CHECK, DetectionStatus.SAFE)
+        secureView.updateButton(FloatingButtonFeature.APP_CHECK, DetectionStatus.UNKNOWN)
     }
 
     /**
@@ -635,6 +683,7 @@ class UrlGuardAccessibilityService : AccessibilityService() {
                 val result = notificationDetection.detectNotificationContent(notificationContent)
                 secureView.updateButton(FloatingButtonFeature.SMS_CHECK, result)
                 secureView.updateActionCard(FloatingButtonFeature.SMS_CHECK, result, buildActions(FloatingButtonFeature.SMS_CHECK, result))
+                showFloatingButtonFromEvent()
             }
         }.also { mainHandler.postDelayed(it, CALL_DEBOUNCE_MS) }
     }
@@ -704,12 +753,6 @@ class UrlGuardAccessibilityService : AccessibilityService() {
 
     private fun triggerFormInspection(normalUrl: String): Flow<Boolean> {
         return callbackFlow {
-            val domain = UrlExtractor.extractDomain(normalUrl)
-//            if (normalUrl in userAllowedUrls) {
-//                trySend(false)
-//                close()
-//                return@callbackFlow
-//            }
             val cacheResult = formScanCache[normalUrl]
             if (cacheResult != null) {
                 trySend(cacheResult)
@@ -722,6 +765,7 @@ class UrlGuardAccessibilityService : AccessibilityService() {
                     Log.w(TAG, "Sensitive form detected at $normalUrl: $detectedFields")
 
                 }
+
                 formScanCache[normalUrl] = hasSensitiveForm
                 trySend(hasSensitiveForm)
                 close()

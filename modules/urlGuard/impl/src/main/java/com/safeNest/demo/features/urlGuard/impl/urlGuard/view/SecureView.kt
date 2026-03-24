@@ -2,6 +2,8 @@ package com.safeNest.demo.features.urlGuard.impl.urlGuard.view
 
 import android.content.Context
 import android.graphics.PixelFormat
+import android.os.Handler
+import android.os.Looper
 import android.util.DisplayMetrics
 import android.util.Log
 import android.view.Gravity
@@ -13,6 +15,7 @@ import com.safeNest.demo.features.urlGuard.impl.R
 import com.safeNest.demo.features.urlGuard.impl.urlGuard.DetectionStatus
 import com.safeNest.demo.features.urlGuard.impl.urlGuard.FloatingButtonFeature
 import com.safeNest.demo.features.urlGuard.impl.urlGuard.util.CardPositionCalculator
+import com.safeNest.demo.features.urlGuard.impl.urlGuard.view.SecureView.Companion.TOAST_TOOLTIP_DURATION_MS
 import com.safeNest.demo.features.urlGuard.impl.urlGuard.view.floatingbutton.FloatingView
 import com.safeNest.demo.features.urlGuard.impl.urlGuard.view.model.toActionCarViewIconBgColorRes
 import com.safeNest.demo.features.urlGuard.impl.urlGuard.view.model.toActionCardViewIcon
@@ -66,6 +69,13 @@ class SecureView(
     private var actionCardParams   : WindowManager.LayoutParams? = null
     private var currentFeature    : FloatingButtonFeature = FloatingButtonFeature.DEFAULT
 
+    // ── Layer 4: Toast tooltip (text-only, auto-dismisses after 1 s) ──────────
+
+    private val toastTooltip       = ToastTooltipView(context)
+    private var isToastTooltipShown = false
+    private val toastHandler        = Handler(Looper.getMainLooper())
+    private val dismissToastRunnable = Runnable { hideToastTooltip() }
+
     /** True while the fullscreen blocking page is visible on screen. */
     val isBlockingPageVisible: Boolean
         get() = blockingPage.isVisible
@@ -78,11 +88,18 @@ class SecureView(
     /** Forwarded to [BlockingPageView.onProceedAnywayClick]. */
     var onProceedAnywayClick: (() -> Unit)? = null
 
+    /**
+     * Called every time the user taps the floating button.
+     * The host (service) is responsible for deciding what to do based on the
+     * current [ScreenSurface]; [SecureView] no longer auto-toggles the action card.
+     */
+    var onFloatingButtonClick: (() -> Unit)? = null
+
     // ── Initialisation ────────────────────────────────────────────────────────
 
     init {
-        // Tap FloatingView → toggle the alert tooltip
-        floatingView.setOnClickListener { toggleAlertCard() }
+        // Tap FloatingView → delegate to host via callback
+        floatingView.setOnClickListener { onFloatingButtonClick?.invoke() }
 
         // Wire blocking-page buttons through to our public callbacks
         blockingPage.onGoBackClick        = { onGoBackClick?.invoke() }
@@ -122,6 +139,7 @@ class SecureView(
      */
     fun dismiss() {
         hideActionCard()
+        hideToastTooltip()
         // blockingPage was pre-added in show() — remove it directly.
         if (blockingPage.isAttachedToWindow) {
             try { windowManager.removeView(blockingPage) } catch (e: Exception) {
@@ -162,6 +180,20 @@ class SecureView(
         floatingView.update(feature, status)
     }
 
+    // ── Public API: floating button loading state ─────────────────────────────
+
+    /**
+     * Show an indeterminate spinner on the floating button, replacing the icon.
+     * The previous icon and status colour are saved and restored by [hideButtonLoading].
+     */
+    fun showButtonLoading() = floatingView.showLoading()
+
+    /**
+     * Remove the loading spinner and restore the floating button to the state
+     * it was in before [showButtonLoading] was called.
+     */
+    fun hideButtonLoading() = floatingView.hideLoading()
+
     // ── Public API: quick action card ─────────────────────────────────────────────
 
     fun updateActionCard(
@@ -186,7 +218,7 @@ class SecureView(
     fun showActionCard() {
         if (isActionCardShown) return     // already visible — content already updated above
 
-        val p = buildTooltipParams()
+        val p = buildOverlayParams(actionCard)
         windowManager.addView(actionCard, p)
         actionCardParams   = p
         isActionCardShown  = true
@@ -203,6 +235,38 @@ class SecureView(
         }
         isActionCardShown = false
         actionCardParams  = null
+    }
+
+    // ── Public API: toast tooltip ─────────────────────────────────────────────
+
+    /**
+     * Show a text-only tooltip anchored next to the floating button.
+     *
+     * - Uses the same [CardPositionCalculator] algorithm as the action card so it
+     *   never overlaps the button or goes off-screen.
+     * - If a tooltip is already visible it is dismissed first (no stacking).
+     * - The tooltip disappears automatically after [TOAST_TOOLTIP_DURATION_MS].
+     */
+    fun showToastTooltip(text: CharSequence) {
+        hideToastTooltip()
+        toastTooltip.setText(text)
+        val p = buildOverlayParams(toastTooltip)
+        windowManager.addView(toastTooltip, p)
+        isToastTooltipShown = true
+        toastHandler.postDelayed(dismissToastRunnable, TOAST_TOOLTIP_DURATION_MS)
+    }
+
+    /**
+     * Dismiss the toast tooltip immediately.
+     * No-op if the tooltip is not currently shown.
+     */
+    fun hideToastTooltip() {
+        toastHandler.removeCallbacks(dismissToastRunnable)
+        if (!isToastTooltipShown) return
+        try { windowManager.removeView(toastTooltip) } catch (e: Exception) {
+            Log.w(TAG, "hideToastTooltip: removeView failed", e)
+        }
+        isToastTooltipShown = false
     }
 
     // ── Public API: blocking page ─────────────────────────────────────────────
@@ -277,7 +341,8 @@ class SecureView(
     }
 
     /**
-     * Build [WindowManager.LayoutParams] for the alert tooltip.
+     * Build [WindowManager.LayoutParams] for any overlay card anchored next to the
+     * floating button.
      *
      * Delegates all positioning logic to [CardPositionCalculator], which runs a
      * two-phase "Push & Shift" algorithm:
@@ -293,15 +358,14 @@ class SecureView(
      *
      *  Phase 3 – clamp to screen bounds as a last resort.
      *
-     * The card is measured before the call so the algorithm has exact dimensions.
+     * [view] is measured here so the algorithm has its exact pixel dimensions.
      */
-    private fun buildTooltipParams(): WindowManager.LayoutParams {
-        // Measure the card so the calculator has its exact pixel dimensions.
-        val maxCardW = (displayMetrics.widthPixels  * 0.80f).toInt()
-        val maxCardH = (displayMetrics.heightPixels * 0.60f).toInt()
-        actionCard.measure(
-            View.MeasureSpec.makeMeasureSpec(maxCardW, View.MeasureSpec.AT_MOST),
-            View.MeasureSpec.makeMeasureSpec(maxCardH, View.MeasureSpec.AT_MOST)
+    private fun buildOverlayParams(view: View): WindowManager.LayoutParams {
+        val maxW = (displayMetrics.widthPixels  * 0.80f).toInt()
+        val maxH = (displayMetrics.heightPixels * 0.60f).toInt()
+        view.measure(
+            View.MeasureSpec.makeMeasureSpec(maxW, View.MeasureSpec.AT_MOST),
+            View.MeasureSpec.makeMeasureSpec(maxH, View.MeasureSpec.AT_MOST)
         )
 
         val btnParams = floatingView.windowLayoutParams
@@ -310,8 +374,8 @@ class SecureView(
             btnY         = btnParams.y,
             btnWidth     = btnParams.width,
             btnHeight    = btnParams.height,
-            cardWidth    = actionCard.measuredWidth,
-            cardHeight   = actionCard.measuredHeight,
+            cardWidth    = view.measuredWidth,
+            cardHeight   = view.measuredHeight,
             screenWidth  = displayMetrics.widthPixels,
             screenHeight = displayMetrics.heightPixels,
             density      = displayMetrics.density
@@ -340,5 +404,8 @@ class SecureView(
 
     companion object {
         private const val TAG = "SecureView"
+
+        /** How long the toast tooltip stays on screen before auto-dismissing. */
+        private const val TOAST_TOOLTIP_DURATION_MS = 1_000L
     }
 }
