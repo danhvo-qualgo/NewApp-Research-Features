@@ -132,7 +132,8 @@ class CallDetectionHandlerImpl @Inject constructor(
     private suspend fun callEvent(phoneNumber: String, message: String, type: IncomingCallType) {
         incomingCallSharedFlow.emit(IncomingCallData(
             phoneNumber = phoneNumber,
-            message = message
+            message = message,
+            incomingCallType = type
         ))
     }
 

@@ -23,6 +23,7 @@ import android.view.WindowManager;
 import android.view.animation.LinearInterpolator;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
+import android.widget.ProgressBar;
 
 import androidx.annotation.MainThread;
 import androidx.core.content.ContextCompat;
@@ -129,6 +130,19 @@ public class FloatingView extends FrameLayout implements ViewTreeObserver.OnPreD
     private final GradientDrawable bgDrawable;
     /** Icon centred inside the button. */
     private final ImageView iconView;
+
+    // ── Loading state ─────────────────────────────────────────────────────────
+
+    /** Indeterminate spinner shown while an async operation is in progress. */
+    private ProgressBar loadingView;
+    /** True while loading is active — guards against re-entrant calls. */
+    private boolean isLoading = false;
+    /** Snapshots taken at the moment [showLoading] is called — restored by [hideLoading]. */
+    private DetectionStatus    savedStatus;
+    private FloatingButtonFeature savedFeature;
+    /** Tracks the last applied values so we can restore them. */
+    private DetectionStatus    currentStatus  = DetectionStatus.UNKNOWN;
+    private FloatingButtonFeature currentFeature = FloatingButtonFeature.DEFAULT;
 
     // ─────────────────────────────────────────────────────────────────────────
 
@@ -282,6 +296,66 @@ public class FloatingView extends FrameLayout implements ViewTreeObserver.OnPreD
         catch (Exception e) { e.printStackTrace(); }
     }
 
+    // ── Loading overlay ───────────────────────────────────────────────────────
+
+    /**
+     * Swap the icon for an indeterminate circular spinner, signalling that an
+     * async operation (e.g. URL analysis) is in progress.
+     *
+     * The current [DetectionStatus] and [FloatingButtonFeature] are saved and
+     * fully restored when [hideLoading] is called.
+     * Safe to call from any thread — posts to the main thread internally.
+     */
+    @MainThread
+    public void showLoading() {
+        if (isLoading) return;
+        isLoading = true;
+
+        // Snapshot state so we can restore it later.
+        savedStatus  = currentStatus;
+        savedFeature = currentFeature;
+
+        // Hide the feature icon.
+        iconView.setVisibility(INVISIBLE);
+
+        // Lazy-create the spinner the first time it is needed.
+        if (loadingView == null) {
+            loadingView = new ProgressBar(getContext());
+            loadingView.setIndeterminate(true);
+            loadingView.setIndeterminateTintList(ColorStateList.valueOf(Color.WHITE));
+            int spinnerSize = (int) (getResources().getDimension(R.dimen.floating_button_size) * 0.55f);
+            LayoutParams lp = new LayoutParams(spinnerSize, spinnerSize, Gravity.CENTER);
+            addView(loadingView, lp);
+        }
+        loadingView.setVisibility(VISIBLE);
+
+        // Stay fully opaque and non-draggable while loading.
+        cancelIdleFade();
+        setAlpha(1.0f);
+        draggingEnabled = false;
+    }
+
+    /**
+     * Remove the loading spinner and restore the button to the icon + colours
+     * it had before [showLoading] was called.
+     * Safe to call even if loading is not currently active (no-op).
+     */
+    @MainThread
+    public void hideLoading() {
+        if (!isLoading) return;
+        isLoading = false;
+
+        // Restore appearance.
+        if (loadingView != null) loadingView.setVisibility(GONE);
+        iconView.setVisibility(VISIBLE);
+        if (savedStatus  != null) applyStatus(savedStatus);
+        if (savedFeature != null) applyFeature(savedFeature);
+
+        // Re-enable dragging and schedule the normal idle fade.
+        draggingEnabled = true;
+        scheduleIdleFade();
+    }
+
     // ── Touch / drag ──────────────────────────────────────────────────────────
 
     @Override
@@ -410,6 +484,7 @@ public class FloatingView extends FrameLayout implements ViewTreeObserver.OnPreD
     // ── Private helpers ───────────────────────────────────────────────────────
 
     private void applyStatus(DetectionStatus status) {
+        currentStatus = status;
         int fillColor = ContextCompat.getColor(getContext(), status.getColorRes());
         bgDrawable.setColor(fillColor);
 
@@ -423,6 +498,7 @@ public class FloatingView extends FrameLayout implements ViewTreeObserver.OnPreD
     }
 
     private void applyFeature(FloatingButtonFeature feature) {
+        currentFeature = feature;
         iconView.setImageResource(feature.getIconRes());
     }
 

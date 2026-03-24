@@ -18,7 +18,7 @@ enum class FloatingButtonFeature(
 
 /** Result of a detection scan — drives the button's background colour. */
 enum class DetectionStatus(@ColorRes val colorRes: Int) {
-    UNKNOWN(R.color.floating_unknown),
+    UNKNOWN(R.color.blocking_primary),
     SAFE(R.color.floating_safe),
     WARNING(R.color.floating_warning),
     DANGEROUS(R.color.floating_dangerous)

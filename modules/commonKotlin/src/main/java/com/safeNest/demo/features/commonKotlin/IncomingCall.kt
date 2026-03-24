@@ -6,7 +6,8 @@ val incomingCallSharedFlow: MutableSharedFlow<IncomingCallData> = MutableSharedF
 
 data class IncomingCallData(
     val phoneNumber: String,
-    val message: String
+    val message: String,
+    val incomingCallType: IncomingCallType
 )
 
 enum class IncomingCallType {

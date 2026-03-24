@@ -2,7 +2,7 @@ package com.safeNest.demo.features.notificationInterceptor.impl.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.safeNest.demo.features.notificationInterceptor.impl.data.NotificationCategory
+import com.safeNest.demo.features.notificationInterceptor.api.model.NotificationCategory
 import com.safeNest.demo.features.notificationInterceptor.impl.data.NotificationRecord
 import com.safeNest.demo.features.notificationInterceptor.impl.data.NotificationStore
 import dagger.hilt.android.lifecycle.HiltViewModel

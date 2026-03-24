@@ -1,5 +1,7 @@
 package com.safeNest.demo.features.urlGuard.impl.urlGuard
 
+import com.safeNest.demo.features.commonKotlin.IncomingCallType
+
 /**
  * Represents what is currently visible on the user's screen,
  * as detected by [UrlGuardAccessibilityService].
@@ -32,7 +34,8 @@ sealed class ScreenSurface {
     // ── Active or incoming phone call ─────────────────────────────────────────
     data class ActiveCall(
         val phoneNumber: String?,
-        val status: DetectionStatus = DetectionStatus.UNKNOWN
+        val status: DetectionStatus = DetectionStatus.UNKNOWN,
+        val fromEvent: IncomingCallType? = null
     ) : ScreenSurface()
 
     // ── A status-bar notification was posted ──────────────────────────────────

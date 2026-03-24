@@ -283,4 +283,9 @@ class HomeActivity : ComponentActivity() {
             }
         }
     }
+
+    override fun onResume() {
+        super.onResume()
+        urlGuardProvider.startService(this)
+    }
 }

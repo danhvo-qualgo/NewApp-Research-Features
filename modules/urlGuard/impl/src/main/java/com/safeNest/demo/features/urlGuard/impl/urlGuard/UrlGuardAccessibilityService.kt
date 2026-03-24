@@ -9,11 +9,17 @@ import android.content.Intent
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
+import android.provider.Settings
 import android.util.Log
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import androidx.core.app.NotificationCompat
+import com.safeNest.demo.features.callProtection.impl.presentation.router.CallDetectionDeeplink
+import com.safeNest.demo.features.commonAndroid.openAppSettings
+import com.safeNest.demo.features.commonKotlin.IncomingCallType
+import com.safeNest.demo.features.commonKotlin.incomingCallSharedFlow
 import com.safeNest.demo.features.notificationInterceptor.api.NotificationObserver
+import com.safeNest.demo.features.notificationInterceptor.api.model.NotificationCategory
 import com.safeNest.demo.features.scamAnalyzer.api.ScamAnalyzerProvider
 import com.safeNest.demo.features.scamAnalyzer.api.models.AnalysisInput
 import com.safeNest.demo.features.scamAnalyzer.api.useCase.AnalyzeUseCase
@@ -21,12 +27,12 @@ import com.safeNest.demo.features.urlGuard.impl.R
 import com.safeNest.demo.features.urlGuard.impl.detection.NotificationDetection
 import com.safeNest.demo.features.urlGuard.impl.detection.PhoneDetection
 import com.safeNest.demo.features.urlGuard.impl.detection.UrlDetection
-import com.safeNest.demo.features.urlGuard.impl.detection.model.ModelDetectStatus
 import com.safeNest.demo.features.urlGuard.impl.urlGuard.mapper.toModelDetectionStatus
 import com.safeNest.demo.features.urlGuard.impl.urlGuard.util.UserAllowedDomainGuard
 import com.safeNest.demo.features.urlGuard.impl.urlGuard.view.QuickActionCardView
 import com.safeNest.demo.features.urlGuard.impl.urlGuard.view.SecureView
 import com.safeNest.demo.features.urlGuard.impl.urlGuard.view.model.toActionCardViewListAction
+import com.uney.core.router.RouterManager
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -74,6 +80,8 @@ class UrlGuardAccessibilityService : AccessibilityService() {
     lateinit var appTrustChecker: AppTrustChecker
     @Inject
     lateinit var analyzeUseCase: AnalyzeUseCase
+    @Inject
+    lateinit var routerManager: RouterManager
     // ── UI layer ──────────────────────────────────────────────────────────────
     private lateinit var secureView: SecureView
 
@@ -85,7 +93,6 @@ class UrlGuardAccessibilityService : AccessibilityService() {
     // ── URL result cache ──────────────────────────────────────────────────────
     private data class UrlCacheEntry(
         val status: DetectionStatus,
-        val isMalicious: Boolean,
         val cachedAt: Long = System.currentTimeMillis()
     )
 
@@ -94,8 +101,6 @@ class UrlGuardAccessibilityService : AccessibilityService() {
             size > URL_CACHE_MAX_SIZE
     }
 
-    // ── Form scan ─────────────────────────────────────────────────────────────
-    private val userAllowedUrls = mutableSetOf<String>()
     private val formScanCache = object : LinkedHashMap<String, Boolean>(32, 0.75f, true) {
         override fun removeEldestEntry(eldest: Map.Entry<String, Boolean>) = size > 30
     }
@@ -123,6 +128,15 @@ class UrlGuardAccessibilityService : AccessibilityService() {
     private var isOverlayShown = false
 
     /**
+     * True when an external event (notification, scam alert, etc.) has explicitly
+     * requested the floating button to be shown while the user is on the home screen.
+     * While this flag is set, [onLauncherForeground] will NOT hide the button.
+     * Cleared automatically when the user navigates to any non-launcher screen.
+     */
+    @Volatile
+    private var isEventForcedVisible = false
+
+    /**
      * All launcher/home packages on this device.
      * Resolved lazily once so we don't hit PackageManager on every event.
      */
@@ -148,10 +162,18 @@ class UrlGuardAccessibilityService : AccessibilityService() {
                     as android.view.WindowManager
         )
 
-        // Initialise UI overlay — not shown yet.
-        // Shown lazily via ACTION_SHOW_FLOATING sent from UrlGuardActivity.
+        // Initialise the SecureView object. The actual WindowManager.addView() calls
+        // are deferred to tryAttachOverlay() so they only run once SYSTEM_ALERT_WINDOW
+        // is granted. If the user enables A11y before granting the overlay permission,
+        // the service starts cleanly here and the overlay is attached lazily when the
+        // app sends ACTION_SHOW_FLOATING (which it does on every onResume).
         secureView = SecureView(this).apply {
-            onGoBackClick = { hideBlockingPage() }
+            onGoBackClick = {
+                lastBlockedUrl
+                    ?.let { url -> UrlExtractor.extractDomain(url) }
+                    ?.let { domain -> allowedDomainGuard.allow(domain) }
+                hideBlockingPage()
+            }
             onProceedAnywayClick = {
                 // User consciously chose to proceed → whitelist the domain for
                 // this session so the blocking page won't re-trigger on the same site.
@@ -160,15 +182,26 @@ class UrlGuardAccessibilityService : AccessibilityService() {
                     ?.let { domain -> allowedDomainGuard.allow(domain) }
                 hideBlockingPage()
             }
+            onFloatingButtonClick = { onFloatingButtonTapped() }
         }
+        tryAttachOverlay()
 
         serviceScope.launch {
             notificationObserver.notificationFlow.collect { record ->
+                if(record.category == NotificationCategory.SYSTEM) return@collect
                 onNotificationPosted(
                     record.appSenderPkgName,
                     record.title ?: "",
-                    record.content ?: ""
+                    record.content ?: "",
+                    record.category
                 )
+            }
+        }
+
+        serviceScope.launch {
+            incomingCallSharedFlow.collect { eventCall ->
+                handleCallEvent(eventCall.phoneNumber, eventCall.message, eventCall.incomingCallType)
+
             }
         }
 
@@ -177,6 +210,29 @@ class UrlGuardAccessibilityService : AccessibilityService() {
 
         // Start in Idle state
         SurfaceDetector.update(ScreenSurface.Idle)
+    }
+
+    /**
+     * Attaches all overlay layers to the WindowManager exactly once.
+     *
+     * This is a no-op if:
+     *  - the overlay is already attached ([isOverlayShown] == true), OR
+     *  - [Settings.canDrawOverlays] returns false (SYSTEM_ALERT_WINDOW not yet granted).
+     *
+     * Calling this from both [onServiceConnected] and [onStartCommand] ensures the
+     * overlay is initialised regardless of which permission (A11y vs overlay) the user
+     * grants first.
+     */
+    private fun tryAttachOverlay() {
+        if (isOverlayShown) return
+        if (!Settings.canDrawOverlays(this)) {
+            Log.w(TAG, "SYSTEM_ALERT_WINDOW not granted — overlay deferred until permission is granted")
+            return
+        }
+        secureView.showFirstTime()      // adds BlockingPage + FloatingView to WindowManager
+        secureView.hideFloatingButton() // hidden by default; shown per foreground-app logic
+        isOverlayShown = true
+        Log.i(TAG, "Overlay attached")
     }
 
     override fun onDestroy() {
@@ -206,21 +262,20 @@ class UrlGuardAccessibilityService : AccessibilityService() {
      * so we can safely touch [secureView] here.
      */
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        if (!::secureView.isInitialized) return START_NOT_STICKY
+        // Lazy-attach the overlay in case SYSTEM_ALERT_WINDOW was granted after
+        // the A11y service already started (e.g. user enabled A11y first).
+        tryAttachOverlay()
         when (intent?.action) {
             ACTION_SHOW_FLOATING -> {
                 Log.d(TAG, "onStartCommand: SHOW_FLOATING")
-                if (!isOverlayShown) {
-                    secureView.showFirstTime()
-                    isOverlayShown = true
-                }
+                onHostAppForeground()
+                secureView.showFloatingButton()
             }
 
             ACTION_HIDE_FLOATING -> {
                 Log.d(TAG, "onStartCommand: HIDE_FLOATING")
-                if (isOverlayShown) {
-                    secureView.dismiss()
-                    isOverlayShown = false
-                }
+                secureView.hideFloatingButton()
             }
         }
         return START_NOT_STICKY
@@ -233,8 +288,11 @@ class UrlGuardAccessibilityService : AccessibilityService() {
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         if (event == null) return
         val pkg = event.packageName?.toString() ?: return
-        if (pkg == packageName) return  // ignore our own overlay events
-        Log.d(TAG, "current event: $event")
+        if(pkg == packageName) return
+        // When the user navigates into the host app itself, show the floating button.
+        // TYPE_WINDOW_STATE_CHANGED = activity/fragment transition (user is in the app).
+        // All other own-package events (overlay content changes) are still ignored.
+        Log.d(TAG, "EVENT : $event")
 
         when (event.eventType) {
             // ── A new window / screen came to the foreground ──────────────────
@@ -242,7 +300,12 @@ class UrlGuardAccessibilityService : AccessibilityService() {
             AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED -> {
                 when (pkg) {
                     in AppTrustChecker.BROWSER_PACKAGES -> onBrowserForeground(pkg)
-                    in AppTrustChecker.CALL_PACKAGES -> onCallForeground(pkg, event)
+
+                    //                    pkg in AppTrustChecker.CALL_PACKAGES -> onCallForeground(pkg, event)
+                    in AppTrustChecker.SOCIAL_NETWORK_PACKAGES,
+                    in AppTrustChecker.OTT_PACKAGES -> onSocialOrOttForeground(pkg)
+
+                    in launcherPackages -> onLauncherForeground()
                     else -> onAppForeground(pkg)
                 }
             }
@@ -260,6 +323,7 @@ class UrlGuardAccessibilityService : AccessibilityService() {
     // =========================================================================
 
     private fun onBrowserForeground(pkg: String) {
+        isEventForcedVisible = false
         // Blocking page is a fullscreen overlay on top of the browser — while it is
         // visible the browser is still technically "in the foreground" from the A11y
         // perspective and keeps firing events. Ignore those so the blocking page state
@@ -269,8 +333,6 @@ class UrlGuardAccessibilityService : AccessibilityService() {
         if (pkg != lastBrowserPackage) lastCheckedUrl = null
         lastBrowserPackage = pkg
         SurfaceDetector.update(ScreenSurface.Browser(pkg, null, DetectionStatus.UNKNOWN))
-//        secureView.updateButton(FloatingButtonFeature.SAFE_BROWSING, DetectionStatus.UNKNOWN)
-//        secureView.updateActionCard(FloatingButtonFeature.SAFE_BROWSING, DetectionStatus.UNKNOWN)
         if(isAddressBarFocused(pkg)) return
         scheduleUrlCheck()
     }
@@ -290,7 +352,8 @@ class UrlGuardAccessibilityService : AccessibilityService() {
         pendingUrlCheck = Runnable {
             pendingUrlCheck = null
             serviceScope.launch {
-                val url = UrlExtractor.extract(rootInActiveWindow)
+                val url = UrlExtractor.extract(rootInActiveWindow, lastBrowserPackage)
+                Log.d(TAG, "extract url: $url")
                 if (!url.isNullOrBlank() && url != lastCheckedUrl) {
                     lastCheckedUrl = url
                     checkAndBlockIfNeeded(url)
@@ -312,7 +375,6 @@ class UrlGuardAccessibilityService : AccessibilityService() {
             )
         )
         val detectedStatus: DetectionStatus
-        val isMalicious: Boolean
 
         // Cache hit
         val cached = urlCache[normalUrl]
@@ -327,25 +389,22 @@ class UrlGuardAccessibilityService : AccessibilityService() {
         val isHasSensitiveForm = triggerFormInspection(normalUrl).first()
         if (isHasSensitiveForm) {
             detectedStatus = DetectionStatus.WARNING
-            isMalicious = false
         } else {
-
             //val reputation = withContext(Dispatchers.IO) { ScamApiClient.checkUrl(normalUrl) }
-
-            val  modelDetectionStatus = urlDetection.detect(normalUrl)
-
+            val modelDetectionStatus = urlDetection.detect(normalUrl)
             detectedStatus = modelDetectionStatus.toModelDetectionStatus()
-            isMalicious = modelDetectionStatus == ModelDetectStatus.Scam
-
         }
         Log.d(TAG, "urlCache: $normalUrl -> $detectedStatus")
 
-        urlCache[normalUrl] = UrlCacheEntry(status = detectedStatus, isMalicious = isMalicious)
+        urlCache[normalUrl] = UrlCacheEntry(status = detectedStatus)
         applyUrlResult(normalUrl, detectedStatus, browserPkg)
 
     }
 
+    private var isDetailClick = false
     private fun onDetailAction() {
+        if(isDetailClick) return
+        isDetailClick = true
         val input = SurfaceDetector.getCurrent().toAnalysisInput()
         Log.d(TAG, "onDetail action input: ${input}")
         if (input == null) {
@@ -354,15 +413,92 @@ class UrlGuardAccessibilityService : AccessibilityService() {
             return
         }
         secureView.actionCard.showLoading()
+        secureView.showButtonLoading()
         serviceScope.launch {
             try {
                 withContext(Dispatchers.IO) { analyzeUseCase(input) }
             } finally {
+                isDetailClick = false
                 secureView.actionCard.hideLoading()
+                secureView.hideButtonLoading()
                 secureView.hideActionCard()
                 secureView.hideBlockingPage()
                 scamAnalyzerProvider.openActivity(this@UrlGuardAccessibilityService)
             }
+        }
+    }
+
+    /**
+     * Central handler for every floating-button tap.
+     *
+     * Routes based on the current [ScreenSurface]:
+     *
+     * • [ScreenSurface.App] whose package is **this app** (KinShield in foreground)
+     *     → show a toast tooltip explaining the button's purpose.
+     *
+     * • [ScreenSurface.Browser] (user is browsing)
+     *     → open KinShield and run the detail analysis on the current URL,
+     *        identical to tapping the "detail" action inside the quick-action card.
+     *
+     * • Everything else
+     *     → no-op for now; extend here as new surface types need button-tap handling.
+     */
+    private fun onFloatingButtonTapped() {
+        when (val surface = SurfaceDetector.getCurrent()) {
+            is ScreenSurface.App -> {
+                when(surface.packageName) {
+                    packageName -> {
+                        Log.d(TAG, "Floating button tapped — KinShield foreground, showing tooltip")
+                        secureView.showToastTooltip(
+                            getString(R.string.floating_button_idle_tooltip)
+                        )
+                    }
+
+                    in AppTrustChecker.OTT_PACKAGES,
+                    in AppTrustChecker.SOCIAL_NETWORK_PACKAGES -> {
+
+                    }
+                    else -> {
+                        Log.d(TAG, "Floating button tapped — other app foreground, open setting")
+                        this.openAppSettings(surface.packageName)
+                    }
+
+                }
+
+            }
+            is ScreenSurface.Browser -> {
+                Log.d(TAG, "Floating button tapped — Browser foreground, triggering detail action")
+                onDetailAction()
+            }
+
+            is ScreenSurface.ActiveCall -> {
+                serviceScope.launch {
+                    val phone = surface.phoneNumber ?: return@launch
+                    //val getCallerInfo = phoneDetection.getCallerInfo(phone) ?: return@launch
+                    val uri = when(surface.fromEvent) {
+                        IncomingCallType.BLOCKLIST -> CallDetectionDeeplink.entryPointBlocklist()
+                        IncomingCallType.CALLER_ID -> {
+                            val getCallerInfo =  phoneDetection.getCallerInfo(phone) ?: return@launch
+                            CallDetectionDeeplink.entryPointMissingCall(getCallerInfo)
+                        }
+
+                        IncomingCallType.WHITELIST -> {
+                            CallDetectionDeeplink.entryPointWhitelist()
+                        }
+                        else -> null
+                    }
+
+                    uri?.let {
+                        Log.d(TAG, "tapp open detaill screen with uri: $it")
+                        routerManager.getLaunchIntent(it)?.also { intent ->
+                            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            Log.d(TAG, "tapp open detail screen with intent: $intent")
+                            this@UrlGuardAccessibilityService.startActivity(intent)
+                        }
+                    }
+                }
+            }
+            else -> Unit
         }
     }
 
@@ -395,7 +531,7 @@ class UrlGuardAccessibilityService : AccessibilityService() {
         SurfaceDetector.update(ScreenSurface.Browser(browserPkg, normalUrl, status))
         secureView.updateButton(FloatingButtonFeature.SAFE_BROWSING, status)
         secureView.updateActionCard(FloatingButtonFeature.SAFE_BROWSING, status, buildActions(FloatingButtonFeature.SAFE_BROWSING, status))
-
+        secureView.showFloatingButton()
         when (status) {
             DetectionStatus.DANGEROUS,
             DetectionStatus.WARNING -> {
@@ -414,7 +550,61 @@ class UrlGuardAccessibilityService : AccessibilityService() {
     }
 
     // =========================================================================
-    // 2.2 Call detection
+    // 2.2 Social network / OTT app detection
+    // =========================================================================
+
+    /**
+     * The host app (KinShield) itself came to the foreground.
+     * Always show the floating button.
+     */
+    private fun onHostAppForeground() {
+        isEventForcedVisible = false
+        Log.d(TAG, "Host app foreground — showing floating button")
+        SurfaceDetector.update(ScreenSurface.App(packageName, DetectionStatus.SAFE))
+        secureView.showFloatingButton()
+        secureView.updateButton(FloatingButtonFeature.APP_CHECK, DetectionStatus.SAFE)
+    }
+
+    /**
+     * A known social-network or OTT app entered the foreground.
+     * Always show the floating button — no permission evaluation needed.
+     */
+    private fun onSocialOrOttForeground(pkg: String) {
+        isEventForcedVisible = false
+        Log.d(TAG, "Social/OTT foreground: $pkg")
+        SurfaceDetector.update(ScreenSurface.App(pkg, DetectionStatus.UNKNOWN))
+        secureView.showFloatingButton()
+        secureView.updateButton(FloatingButtonFeature.APP_CHECK, DetectionStatus.UNKNOWN)
+    }
+
+    /**
+     * The home-screen / launcher came to the foreground.
+     * Hides the floating button unless an event has explicitly forced it visible
+     * (e.g. an incoming scam notification while on the home screen).
+     */
+    private fun onLauncherForeground() {
+        if (isEventForcedVisible) {
+            Log.d(TAG, "Launcher foreground — button kept visible by event trigger")
+            return
+        }
+        Log.d(TAG, "Launcher foreground — hiding floating button")
+        SurfaceDetector.update(ScreenSurface.Idle)
+        secureView.hideFloatingButton()
+    }
+
+    /**
+     * Force the floating button to stay visible on the home screen.
+     * Call this from any event-driven path (notification scam, incoming call alert, etc.)
+     * that should surface the button even when the launcher is in the foreground.
+     * The flag is automatically cleared next time the user opens a real app.
+     */
+    fun showFloatingButtonFromEvent() {
+        isEventForcedVisible = true
+        secureView.showFloatingButton()
+    }
+
+    // =========================================================================
+    // 2.3 Call detection
     // =========================================================================
 
     private fun onCallForeground(pkg: String, event: AccessibilityEvent) {
@@ -451,6 +641,23 @@ class UrlGuardAccessibilityService : AccessibilityService() {
         SurfaceDetector.update(ScreenSurface.ActiveCall(phoneNumber, detectionStatus))
     }
 
+    private fun handleCallEvent(phoneNumber: String, message: String, callEventType: IncomingCallType) {
+        pendingCallCheck?.let { mainHandler.removeCallbacks(it) }
+        pendingCallCheck = Runnable {
+            pendingCallCheck = null
+            Log.d(TAG, "Incomming phone number: $phoneNumber")
+            Log.d(TAG, "Incomming call event: $callEventType")
+            serviceScope.launch {
+                val detectionStatus = phoneDetection.detectPhone(phoneNumber)
+                SurfaceDetector.update(ScreenSurface.ActiveCall(phoneNumber, detectionStatus, callEventType))
+                secureView.updateButton(FloatingButtonFeature.CALL_PROTECTION, detectionStatus)
+                showFloatingButtonFromEvent()
+                Log.d(TAG, "show tool tip with message: $message")
+                secureView.showToastTooltip(message)
+            }
+        }.also { mainHandler.postDelayed(it, CALL_DEBOUNCE_MS) }
+    }
+
     private fun extractPhoneNumberFromTree(root: AccessibilityNodeInfo?): String? {
         root ?: return null
         val text = root.text?.toString()
@@ -484,34 +691,15 @@ class UrlGuardAccessibilityService : AccessibilityService() {
     // 2.3 Notification detection
     // =========================================================================
 
-    private fun onNotificationPosted(pkg: String, event: AccessibilityEvent) {
-        val texts = event.text
-        val title = texts.getOrNull(0)?.toString()?.takeIf { it.isNotBlank() }
-        val content = texts.drop(1)
-            .mapNotNull { it?.toString() }
-            .filter { it.isNotBlank() }
-            .joinToString(" ")
-            .takeIf { it.isNotBlank() }
-
-        Log.d(TAG, "Notification from [$pkg] content=${texts}")
-        SurfaceDetector.update(
-            ScreenSurface.Notification(
-                pkg,
-                title,
-                content,
-                DetectionStatus.UNKNOWN
-            )
-        )
-        scheduleNotificationCheck(texts.joinToString("\n"))
-
-//        secureView.updateButton(FloatingButtonFeature.SMS_CHECK, DetectionStatus.UNKNOWN)
-//        secureView.updateActionCard(FloatingButtonFeature.SMS_CHECK, DetectionStatus.UNKNOWN)
-    }
-
     /** Handle notification from notification listener service
      */
-    private fun onNotificationPosted(pkg: String, title: String, content: String) {
-        Log.d(TAG, "Notification from [$pkg] content=$content title=$title")
+    private fun onNotificationPosted(pkg: String, title: String, content: String, notificationCategory: NotificationCategory) {
+        if (pkg !in AppTrustChecker.NOTIFICATION_SCAN_PACKAGES) {
+            Log.d(TAG, "Notification from [$pkg] skipped — not in monitored app list")
+            return
+        }
+
+        Log.d(TAG, "Notification from [$pkg] content=$content title=$title category=$notificationCategory")
         SurfaceDetector.update(
             ScreenSurface.Notification(
                 pkg,
@@ -521,18 +709,23 @@ class UrlGuardAccessibilityService : AccessibilityService() {
             )
         )
 
-        scheduleNotificationCheck(content)
-
+        scheduleNotificationCheck(content, notificationCategory)
     }
 
-    private fun scheduleNotificationCheck(notificationContent: String) {
+    private fun scheduleNotificationCheck(notificationContent: String, notificationCategory: NotificationCategory) {
         pendingCallCheck?.let { mainHandler.removeCallbacks(it) }
         pendingCallCheck = Runnable {
             pendingCallCheck = null
             serviceScope.launch {
-                val result = notificationDetection.detectNotificationContent(notificationContent)
+                val result = if(notificationCategory == NotificationCategory.CALL) {
+                    DetectionStatus.WARNING
+                } else {
+                    notificationDetection.detectNotificationContent(notificationContent)
+                }
+
                 secureView.updateButton(FloatingButtonFeature.SMS_CHECK, result)
                 secureView.updateActionCard(FloatingButtonFeature.SMS_CHECK, result, buildActions(FloatingButtonFeature.SMS_CHECK, result))
+                showFloatingButtonFromEvent()
             }
         }.also { mainHandler.postDelayed(it, CALL_DEBOUNCE_MS) }
     }
@@ -543,17 +736,14 @@ class UrlGuardAccessibilityService : AccessibilityService() {
     // =========================================================================
 
     private fun onAppForeground(pkg: String) {
+        isEventForcedVisible = false
         if (appTrustChecker.isSystemApp(pkg)) {
             Log.d(TAG, "AppTrust skipped — system app [$pkg]")
-//            secureView.updateButton(FloatingButtonFeature.APP_CHECK, DetectionStatus.SAFE)
-//            secureView.updateActionCard(FloatingButtonFeature.APP_CHECK, DetectionStatus.SAFE)
-//            SurfaceDetector.update(ScreenSurface.Idle)
+            secureView.hideFloatingButton()
             return
         }
 
         SurfaceDetector.update(ScreenSurface.App(pkg, DetectionStatus.UNKNOWN))
-//        secureView.updateButton(FloatingButtonFeature.APP_CHECK, DetectionStatus.UNKNOWN)
-//        secureView.updateActionCard(FloatingButtonFeature.APP_CHECK, DetectionStatus.UNKNOWN)
         scheduleAppTrustCheck(pkg)
     }
 
@@ -562,8 +752,7 @@ class UrlGuardAccessibilityService : AccessibilityService() {
         if (cached != null) {
             Log.d(TAG, "AppTrust cache hit [$pkg]")
             SurfaceDetector.update(ScreenSurface.App(pkg, cached))
-            secureView.updateButton(FloatingButtonFeature.APP_CHECK, cached)
-            secureView.updateActionCard(FloatingButtonFeature.APP_CHECK, cached, buildActions(FloatingButtonFeature.APP_CHECK, cached, pkg))
+            applyAppTrustResult(cached, pkg)
             return
         }
 
@@ -575,11 +764,28 @@ class UrlGuardAccessibilityService : AccessibilityService() {
                 val current = SurfaceDetector.getCurrent()
                 if (current is ScreenSurface.App && current.packageName == pkg) {
                     SurfaceDetector.update(current.copy(status = status))
-                    secureView.updateButton(FloatingButtonFeature.APP_CHECK, status)
-                    secureView.updateActionCard(FloatingButtonFeature.APP_CHECK, status, buildActions(FloatingButtonFeature.APP_CHECK, status, pkg))
+                    applyAppTrustResult(status, pkg)
                 }
             }
         }.also { mainHandler.postDelayed(it, APP_DEBOUNCE_MS) }
+    }
+
+    /**
+     * Shows or hides the floating button based on the app-trust [status].
+     * Button is shown only when the app has dangerous-level permissions (WARNING or DANGEROUS).
+     */
+    private fun applyAppTrustResult(status: DetectionStatus, pkg: String) {
+        if (status == DetectionStatus.WARNING || status == DetectionStatus.DANGEROUS) {
+            secureView.showFloatingButton()
+            secureView.updateButton(FloatingButtonFeature.APP_CHECK, status)
+            secureView.updateActionCard(
+                FloatingButtonFeature.APP_CHECK,
+                status,
+                buildActions(FloatingButtonFeature.APP_CHECK, status, pkg)
+            )
+        } else {
+            secureView.hideFloatingButton()
+        }
     }
 
 
@@ -589,12 +795,6 @@ class UrlGuardAccessibilityService : AccessibilityService() {
 
     private fun triggerFormInspection(normalUrl: String): Flow<Boolean> {
         return callbackFlow {
-            val domain = UrlExtractor.extractDomain(normalUrl)
-//            if (normalUrl in userAllowedUrls) {
-//                trySend(false)
-//                close()
-//                return@callbackFlow
-//            }
             val cacheResult = formScanCache[normalUrl]
             if (cacheResult != null) {
                 trySend(cacheResult)
@@ -607,6 +807,7 @@ class UrlGuardAccessibilityService : AccessibilityService() {
                     Log.w(TAG, "Sensitive form detected at $normalUrl: $detectedFields")
 
                 }
+
                 formScanCache[normalUrl] = hasSensitiveForm
                 trySend(hasSensitiveForm)
                 close()
@@ -673,22 +874,7 @@ class UrlGuardAccessibilityService : AccessibilityService() {
         const val ACTION_SHOW_FLOATING = "com.safeNest.ACTION_SHOW_FLOATING"
         const val ACTION_HIDE_FLOATING = "com.safeNest.ACTION_HIDE_FLOATING"
 
-        // ── Known address bar view IDs per browser package ───────────────────
-        val BROWSER_ADDRESS_BAR_IDS = mapOf(
-            "com.android.chrome"           to "com.android.chrome:id/url_bar",
-            "com.chrome.beta"              to "com.chrome.beta:id/url_bar",
-            "com.chrome.dev"               to "com.chrome.dev:id/url_bar",
-            "com.chrome.canary"            to "com.chrome.canary:id/url_bar",
-            "org.mozilla.firefox"          to "org.mozilla.firefox:id/mozac_browser_toolbar_url_view",
-            "org.mozilla.firefox_beta"     to "org.mozilla.firefox_beta:id/mozac_browser_toolbar_url_view",
-            "com.brave.browser"            to "com.brave.browser:id/url_bar",
-            "com.microsoft.emmx"           to "com.microsoft.emmx:id/url_bar",
-            "com.opera.browser"            to "com.opera.browser:id/url_field",
-            "com.opera.mini.native"        to "com.opera.mini.native:id/url_field",
-            "com.sec.android.app.sbrowser" to "com.sec.android.app.sbrowser:id/location_bar_edit_text",
-            "com.kiwibrowser.browser"      to "com.kiwibrowser.browser:id/url_bar",
-            "com.vivaldi.browser"          to "com.vivaldi.browser:id/url_bar",
-        )
+        // Address-bar view IDs are now owned by UrlExtractor.ADDRESS_BAR_VIEW_IDS
     }
 
     // =========================================================================
@@ -707,7 +893,7 @@ class UrlGuardAccessibilityService : AccessibilityService() {
     fun isAddressBarFocused(pkg: String): Boolean {
         val root = rootInActiveWindow ?: return false
 
-        val knownId = BROWSER_ADDRESS_BAR_IDS[pkg]
+        val knownId = UrlExtractor.ADDRESS_BAR_VIEW_IDS[pkg]
         if (knownId != null) {
             val nodes = root.findAccessibilityNodeInfosByViewId(knownId)
             if (nodes.isNotEmpty()) {
