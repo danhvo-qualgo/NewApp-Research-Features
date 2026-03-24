@@ -13,6 +13,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.core.app.NotificationManagerCompat
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.ui.NavDisplay
 import com.safeNest.demo.features.callProtection.api.domain.model.CallerIdInfo
@@ -32,6 +33,10 @@ import kotlinx.serialization.json.Json
 class CallDetectionActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        val notificationId = intent.getIntExtra("EXTRA_NOTIFICATION_ID", -1)
+        if (notificationId != -1) {
+            NotificationManagerCompat.from(this).cancel(notificationId)
+        }
         enableEdgeToEdge(
             statusBarStyle = SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT),
             navigationBarStyle = SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT)
