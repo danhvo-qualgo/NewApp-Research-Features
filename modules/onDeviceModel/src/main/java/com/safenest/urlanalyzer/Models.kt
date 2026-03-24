@@ -21,7 +21,7 @@ data class KeyFinding(
 data class Gate1Result(
     val verdict: String,          // "safe", "suspicious", "scam"
     val riskScore: Float,         // confidence 0.0–1.0
-    val features: FloatArray,     // raw 30-float vector
+    val features: FloatArray,     // raw 33-float vector (LightGBM v1.0)
     val keyFindings: List<KeyFinding>,
     val responseTimeMs: Double
 )

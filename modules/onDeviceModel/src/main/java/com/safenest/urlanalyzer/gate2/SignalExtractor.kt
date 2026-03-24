@@ -8,8 +8,8 @@
 package com.safenest.urlanalyzer.gate2
 
 import android.content.Context
-import com.safenest.urlanalyzer.AnalyzerData
-import com.safenest.urlanalyzer.Gate2Signal
+import com.safenest.urlanalyzer.*
+import org.json.JSONArray
 import org.json.JSONObject
 
 class SignalExtractor(context: Context) {

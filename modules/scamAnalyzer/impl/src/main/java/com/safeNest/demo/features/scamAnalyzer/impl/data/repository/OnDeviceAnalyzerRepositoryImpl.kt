@@ -8,6 +8,7 @@ import com.safeNest.demo.features.scamAnalyzer.api.models.AnalysisResult
 import com.safeNest.demo.features.scamAnalyzer.api.models.AnalysisResultType
 import com.safeNest.demo.features.scamAnalyzer.api.models.AnalysisStatus
 import com.safeNest.demo.features.scamAnalyzer.impl.data.extractor.MlKitOcrExtractor
+import com.safeNest.demo.features.scamAnalyzer.impl.data.store.AnalyzeStore
 import com.safeNest.demo.features.scamAnalyzer.impl.data.utils.DeepResearchService
 import com.safeNest.demo.features.scamAnalyzer.impl.data.utils.DeepResearchSummarizer
 import com.safeNest.demo.features.scamAnalyzer.impl.data.utils.TextRedactor
@@ -16,6 +17,13 @@ import com.safeNest.demo.features.scamAnalyzer.impl.domain.repository.AnalyzerRe
 import com.safeNest.demo.features.scamAnalyzer.impl.utils.ModelManager
 import com.safeNest.demo.features.scamAnalyzer.impl.utils.asr.WhisperModelManager
 import com.safeNest.demo.features.scamAnalyzer.impl.utils.asr.WhisperTranscriber
+import com.safenest.urlanalyzer.URLAnalyzerOrchestrator
+import com.safenest.urlanalyzer.gate1.Gate1Classifier
+import com.safenest.urlanalyzer.gate2.Gate2Classifier
+import com.safenest.urlanalyzer.gate2.LMClient
+import com.safenest.urlanalyzer.gate2.PromptBuilder
+import com.safenest.urlanalyzer.gate2.SignalExtractor
+import com.safenest.urlanalyzer.local_analyzer.LocalURLAnalyzer
 import com.uney.core.network.api.models.ApiResult
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.toList
@@ -23,20 +31,20 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import javax.inject.Inject
 import javax.inject.Singleton
-import com.safeNest.demo.features.scamAnalyzer.impl.data.store.AnalyzeStore
 
 @Singleton
 class OnDeviceAnalyzerRepositoryImpl @Inject constructor(
-    @ApplicationContext
+    @param:ApplicationContext
     private val context: Context,
     private val entityExtractor: EntityExtractor,
     private val modelManager: ModelManager,
     private val whisperModelManager: WhisperModelManager,
     private val analyzeStore: AnalyzeStore,
+    private val gate1Classifier: Gate1Classifier,
 ) : AnalyzerRepository {
     companion object {
         private const val TAG = "OnDeviceAnalyzer"
-        
+
         private suspend fun getPrompt(
             msg: String,
             summary: String,
@@ -124,16 +132,41 @@ class OnDeviceAnalyzerRepositoryImpl @Inject constructor(
         )
     }
 
+    private val urlClassifier by lazy { createUrlClassifier() }
+
+    private fun createUrlClassifier(): URLAnalyzerOrchestrator {
+        val signalExtractor = SignalExtractor(context)
+        val promptBuilder = PromptBuilder(context)
+        val lmClient = LMClient(modelManager.analyzer.getModelFolder()?.absolutePath.orEmpty())
+        lmClient.load(promptBuilder.buildSystemPrompt())
+
+        val gate2Classifier = Gate2Classifier(signalExtractor, promptBuilder, lmClient)
+
+        val localAnalyzer =
+            LocalURLAnalyzer(gate1Classifier.brandNames, gate1Classifier.brandDomains)
+
+        return URLAnalyzerOrchestrator(
+            gate1 = gate1Classifier,
+            gate2 = gate2Classifier,
+            lmClient = lmClient,
+            localAnalyzer = localAnalyzer
+        )
+    }
+
     override suspend fun analyzeUrl(url: String): ApiResult<AnalysisResult> {
-        val (_, result) = analyzeText(url)
+        val result = urlClassifier.analyze(url)
 
         return ApiResult.Success(
             AnalysisResult(
                 data = AnalysisResultType.Url(url),
-                status = result.category,
-                keyFindings = result.reasons.map {
+                status = when (result.verdict) {
+                    "scam" -> AnalysisStatus.Scam
+                    "safe" -> AnalysisStatus.Safe
+                    else -> AnalysisStatus.Unverified
+                },
+                keyFindings = result.keyFindings.map {
                     AnalysisItem(
-                        title = it.title,
+                        title = it.category,
                         description = it.description
                     )
                 }

@@ -1,5 +1,7 @@
-// build.gradle.kts — Android library module for Gate 1 classifier
-// Add this module to your app's settings.gradle.kts: include(":gate1")
+// build.gradle.kts — Android library module for URL Analyzer (Gate 1 + Gate 2)
+//
+// Gate 1: ONNX Runtime (LightGBM) + C feature extraction via NDK
+// Gate 2: MNN LLM engine (Qwen3 0.6B) + local URL analyzers
 
 plugins {
     alias(libs.plugins.uney.android.module)
@@ -19,7 +21,7 @@ android {
 
         externalNativeBuild {
             cmake {
-                cppFlags("")
+                cppFlags("-std=c++17")
                 arguments("-DANDROID_STL=c++_shared")
             }
         }
@@ -38,7 +40,10 @@ android {
 }
 
 dependencies {
+    // Gate 1: ONNX Runtime for LightGBM inference
     implementation("com.microsoft.onnxruntime:onnxruntime-android:1.22.0")
+    
+    // Coroutines for LocalURLAnalyzer (parallel sub-analyses)
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
 }
 

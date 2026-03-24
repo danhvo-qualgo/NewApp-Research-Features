@@ -6,8 +6,6 @@
 
 package com.safenest.urlanalyzer.local_analyzer
 
-import java.net.IDN
-
 object HomographAnalyzer {
 
     // Confusables map — matches iOS confusables
@@ -73,7 +71,7 @@ object HomographAnalyzer {
             result["isIDN"] = true
             // Convert to punycode via IDN class
             try {
-                val ascii = IDN.toASCII(domain)
+                val ascii = java.net.IDN.toASCII(domain)
                 if (ascii != domain) {
                     result["punycode"] = ascii
                 }

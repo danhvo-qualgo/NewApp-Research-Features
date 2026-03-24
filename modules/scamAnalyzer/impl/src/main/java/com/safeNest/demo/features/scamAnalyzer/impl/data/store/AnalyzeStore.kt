@@ -30,6 +30,7 @@ class AnalyzeStore @Inject constructor(
               - CONTEXT: {context}
             
             Output: Valid JSON
+              - category must be one of "Safe", "Scam" or "Unverified"
               {
                 "category": "Safe|Scam|Unverified", 
                 "reasons":[

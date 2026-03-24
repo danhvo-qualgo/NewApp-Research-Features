@@ -1,2 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest package="com.safenest.gate1" />
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Required for Gate 2's local analyzers (SSL check, page fetch) -->
+    <!-- Gate 1 is fully offline and doesn't need this permission -->
+    <uses-permission android:name="android.permission.INTERNET" />
+</manifest>

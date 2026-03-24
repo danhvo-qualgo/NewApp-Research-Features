@@ -1,14 +1,14 @@
 /*
  * Gate1Classifier.kt — SafeNest Gate 1 URL Safety Classifier for Android.
  *
- * Uses ONNX Runtime Mobile (or TFLite) for inference and JNI for C feature extraction.
- * Includes keyFindings mapping from the 30-float feature vector.
+ * LightGBM v1.0 — 33 engineered features, no CNN branch.
+ * Uses ONNX Runtime for inference and JNI for C feature extraction.
+ * Includes keyFindings mapping from the 33-float feature vector.
  *
  * Mirrors iOS Gate1Classifier.swift.
  *
  * Dependencies:
  *   1. ONNX Runtime Android (com.microsoft.onnxruntime:onnxruntime-android)
- *      — OR TFLite (org.tensorflow:tensorflow-lite)
  *   2. gate1_features.c compiled via NDK (JNI bridge)
  *   3. brands.bin + brands.csv in assets/
  *   4. gate1_keyfinding_mappings.json in assets/
@@ -20,76 +20,72 @@ import ai.onnxruntime.OnnxTensor
 import ai.onnxruntime.OrtEnvironment
 import ai.onnxruntime.OrtSession
 import android.content.Context
-import android.util.Log
-import com.safenest.urlanalyzer.Gate1Result
-import com.safenest.urlanalyzer.KeyFinding
+import com.safenest.urlanalyzer.*
 import org.json.JSONObject
 import java.io.BufferedReader
 import java.io.InputStreamReader
-import kotlin.math.exp
-
+import java.nio.FloatBuffer
 
 class Gate1Classifier(
     private val context: Context,
     private val threshold: Float = 0.2f,
     private val suspiciousConfidence: Float = 0.5f
-) {
+) : AutoCloseable {
 
-    // TODO: Replace with actual ONNX Runtime or TFLite model instance
-     private lateinit var session: OrtSession
-     private lateinit var env: OrtEnvironment
+    private val ortEnv: OrtEnvironment = OrtEnvironment.getEnvironment()
+    private val session: OrtSession
+    private var brandsPtr: Long = 0L
 
-    private lateinit var keyFindingRules: List<KeyFindingRule>
+    private val keyFindingRules: List<KeyFindingRule>
+
+    /** Brand names extracted from CSV — exposed for LocalURLAnalyzer. */
     var brandNames: List<String> = emptyList()
         private set
+
+    /** Brand domains extracted from CSV — exposed for LocalURLAnalyzer. */
     var brandDomains: Set<String> = emptySet()
         private set
 
     init {
-        // Load keyfinding mappings
-        keyFindingRules = loadKeyFindingRules()
+        // Load ONNX model from assets
+        val modelBytes = context.assets.open("gate1_lightgbm.onnx").readBytes()
+        session = ortEnv.createSession(modelBytes)
 
-        // Load brand data from CSV
+        // Load brands.bin via JNI (for C-side allowlist + feature extraction)
+        val brandsBytes = context.assets.open("brands.bin").readBytes()
+        brandsPtr = nativeLoadBrands(brandsBytes)
+        require(brandsPtr != 0L) { "Failed to load brands.bin" }
+
+        // Load brands.csv for Kotlin-side brand matching (LocalURLAnalyzer)
         loadBrandsFromCSV()
 
-        // Load ONNX model
-        loadModel()
+        // Load keyfinding mappings
+        keyFindingRules = loadKeyFindingRules()
     }
 
     companion object {
-        const val TAG = "Gate1Classifier"
         init {
-            // Load native C library (gate1_features via JNI)
             System.loadLibrary("gate1_features")
         }
     }
 
-    // JNI declarations — implemented in gate1_jni.c
-    private external fun nativeLoadBrands(assetData: ByteArray): Long
-    private external fun nativeFreeBrands(brandsPtr: Long)
+    // ── JNI Native Methods ──
+
+    private external fun nativeLoadBrands(data: ByteArray): Long
+    private external fun nativeFreeBrands(ptr: Long)
     private external fun nativeIsAllowlisted(url: String, brandsPtr: Long): Boolean
     private external fun nativeExtractFeatures(url: String, brandsPtr: Long): FloatArray
-    private external fun nativeEncodeUrl(url: String): IntArray
 
-    private var brandsPtr: Long = 0L
+    // ── Classification ──
 
-    private fun loadModel() {
-        // Load brands.bin via JNI
-        val brandsData = context.assets.open("brands.bin").use { it.readBytes() }
-        brandsPtr = nativeLoadBrands(brandsData)
-
-        // TODO: Initialize ONNX Runtime
-         env = OrtEnvironment.getEnvironment()
-         val modelBytes = context.assets.open("gate1_late_fusion.onnx").use { it.readBytes() }
-         session = env.createSession(modelBytes)
-    }
-
+    /**
+     * Classify a URL. Returns Gate1Result for pipeline integration.
+     */
     fun classify(url: String): Gate1Result {
         val start = System.nanoTime()
 
-        // 1. Allowlist gate
+        // 1. Allowlist gate (native)
         if (brandsPtr != 0L && nativeIsAllowlisted(url, brandsPtr)) {
-            Log.d(TAG, "url in allowlist $url")
             val elapsed = (System.nanoTime() - start) / 1_000_000.0
             return Gate1Result(
                 verdict = "safe",
@@ -100,31 +96,39 @@ class Gate1Classifier(
             )
         }
 
-        // 2. Extract features (C library via JNI)
-        val featureArray = if (brandsPtr != 0L) {
+        // 2. Extract features (C library via JNI → 33 floats)
+        val features = if (brandsPtr != 0L) {
             nativeExtractFeatures(url, brandsPtr)
         } else {
-            FloatArray(30)
+            FloatArray(33)
         }
 
-        // 3. Encode URL for CNN branch
-        val urlIds = nativeEncodeUrl(url)
+        // 3. ONNX Runtime inference — LightGBM outputs probabilities directly
+        val featTensor = OnnxTensor.createTensor(
+            ortEnv, FloatBuffer.wrap(features), longArrayOf(1, 33)
+        )
 
-        // 4. Model inference
-        // TODO: Run ONNX or TFLite inference
-        // For now, use feature-based heuristic as placeholder
-        val probability = runInference(featureArray, urlIds)
+        val results = session.run(mapOf("features" to featTensor))
 
-        // 5. Compute confidence and verdict
+        // LightGBM ONNX outputs: [labels, probabilities]
+        // probabilities is a list of maps: [{0: p0, 1: p1}]
+        @Suppress("UNCHECKED_CAST")
+        val probMaps = results[1].value as List<Map<Long, Float>>
+        val probability = probMaps[0][1L] ?: 0.0f
+
+        featTensor.close()
+        results.close()
+
+        // 4. Compute confidence (threshold-relative)
         val isScam = probability >= threshold
-        val confidence: Float = when {
-            probability < 0 -> 0f
-            isScam -> ((probability - threshold) / (1f - threshold)).coerceAtMost(1f)
-            else -> ((threshold - probability) / threshold).coerceAtMost(1f)
+        val confidence = if (isScam) {
+            ((probability - threshold) / (1.0f - threshold)).coerceIn(0f, 1f)
+        } else {
+            ((threshold - probability) / threshold).coerceIn(0f, 1f)
         }
 
+        // 5. Determine verdict
         val verdict = when {
-            probability < 0 -> "safe"
             confidence < suspiciousConfidence -> "suspicious"
             isScam -> "scam"
             else -> "safe"
@@ -132,7 +136,7 @@ class Gate1Classifier(
 
         // 6. Map features to key findings (only when not safe)
         val keyFindings = if (verdict != "safe") {
-            mapKeyFindings(featureArray)
+            mapKeyFindings(features)
         } else {
             emptyList()
         }
@@ -141,34 +145,21 @@ class Gate1Classifier(
         return Gate1Result(
             verdict = verdict,
             riskScore = confidence,
-            features = featureArray,
+            features = features,
             keyFindings = keyFindings,
             responseTimeMs = elapsed
         )
     }
 
-    private fun runInference(features: FloatArray, urlIds: IntArray): Float {
-        val urlLongIds = LongArray(urlIds.size) { urlIds[it].toLong() }
-        val featureTensor = OnnxTensor.createTensor(env, arrayOf(features))
-        val urlTensor = OnnxTensor.createTensor(env, arrayOf(urlLongIds))
-        return try {
-            val results = session.run(mapOf("features" to featureTensor, "url_ids" to urlTensor))
-            results.use {
-                val logit = (it[0].value as FloatArray)[0]
-                1f / (1f + exp(-logit))
-            }
-        } finally {
-            featureTensor.close()
-            urlTensor.close()
+    override fun close() {
+        if (brandsPtr != 0L) {
+            nativeFreeBrands(brandsPtr)
+            brandsPtr = 0L
         }
-
-        // TFLite:
-        //   interpreter.run(inputArray, outputArray)
-        //   val logit = outputArray[0][0]
-        //   return 1f / (1f + exp(-logit))
+        session.close()
     }
 
-    // MARK: - KeyFinding Mapping
+    // ── KeyFinding Mapping ──
 
     private data class KeyFindingRule(
         val featureIndex: Int,
@@ -185,7 +176,6 @@ class Gate1Classifier(
 
         for (rule in keyFindingRules) {
             if (rule.featureIndex >= features.size) continue
-            // One finding per category — first matching rule wins
             if (rule.category !in seenCategories &&
                 rule.op(features[rule.featureIndex], rule.threshold)
             ) {
@@ -256,7 +246,7 @@ class Gate1Classifier(
         return null
     }
 
-    // MARK: - Brand Data
+    // ── Brand Data (Kotlin-side, for LocalURLAnalyzer) ──
 
     private fun loadBrandsFromCSV() {
         try {
@@ -296,14 +286,5 @@ class Gate1Classifier(
         } catch (e: Exception) {
             // Brands not available — continue without typosquat detection
         }
-    }
-
-    fun close() {
-        if (brandsPtr != 0L) {
-            nativeFreeBrands(brandsPtr)
-            brandsPtr = 0L
-        }
-        // session.close()
-        // env.close()
     }
 }

@@ -32,6 +32,7 @@ dependencies {
     implementation(project(":modules:scamAnalyzer:api"))
     implementation(libs.core.router)
     implementation(project(":modules:designSystem"))
+    implementation(project(":modules:onDeviceModel"))
     implementation(libsCustom.googlecode.libphonenumber)
     implementation(libsCustom.google.mlkit.textRecognition)
     implementation(libs.mlkit.text.recognition)

@@ -12,10 +12,13 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ContentPaste
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -31,6 +34,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontFamily
@@ -51,6 +55,7 @@ fun CustomPromptScreen(
     settingsViewModel: SettingsViewModel = hiltViewModel()
 ) {
     val uiState by settingsViewModel.uiState.collectAsStateWithLifecycle()
+    val clipboardManager = LocalClipboardManager.current
 
     Column(
         modifier = Modifier
@@ -157,31 +162,97 @@ fun CustomPromptScreen(
                     elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    TextField(
-                        value = uiState.customPrompt,
-                        onValueChange = settingsViewModel::updateCustomPrompt,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(400.dp),
-                        textStyle = DSTypography.caption2.regular.copy(
-                            fontFamily = FontFamily.Monospace
-                        ),
-                        colors = TextFieldDefaults.colors(
-                            focusedContainerColor = DSColors.surface1,
-                            unfocusedContainerColor = DSColors.surface1,
-                            focusedIndicatorColor = DSColors.borderAction,
-                            unfocusedIndicatorColor = DSColors.borderPrimary,
-                            focusedTextColor = DSColors.textBody,
-                            unfocusedTextColor = DSColors.textBody
-                        ),
-                        placeholder = {
-                            Text(
-                                text = "Enter your custom prompt...",
-                                style = DSTypography.caption2.regular,
-                                color = DSColors.textNeutral
-                            )
+                    Box {
+                        TextField(
+                            value = uiState.customPrompt,
+                            onValueChange = settingsViewModel::updateCustomPrompt,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(400.dp),
+                            textStyle = DSTypography.caption2.regular.copy(
+                                fontFamily = FontFamily.Monospace
+                            ),
+                            colors = TextFieldDefaults.colors(
+                                focusedContainerColor = DSColors.surface1,
+                                unfocusedContainerColor = DSColors.surface1,
+                                focusedIndicatorColor = DSColors.borderAction,
+                                unfocusedIndicatorColor = DSColors.borderPrimary,
+                                focusedTextColor = DSColors.textBody,
+                                unfocusedTextColor = DSColors.textBody
+                            ),
+                            placeholder = {
+                                Text(
+                                    text = "Enter your custom prompt...",
+                                    style = DSTypography.caption2.regular,
+                                    color = DSColors.textNeutral
+                                )
+                            }
+                        )
+                        
+                        // Embedded action buttons at bottom
+                        Row(
+                            modifier = Modifier
+                                .align(Alignment.BottomEnd)
+                                .padding(DSSpacing.s3),
+                            horizontalArrangement = Arrangement.spacedBy(DSSpacing.s2)
+                        ) {
+                            // Paste button
+                            Surface(
+                                onClick = {
+                                    clipboardManager.getText()?.let { annotatedString ->
+                                        settingsViewModel.updateCustomPrompt(annotatedString.text)
+                                    }
+                                },
+                                shape = CircleShape,
+                                color = DSColors.surface2,
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = DSSpacing.s3, vertical = DSSpacing.s2),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(DSSpacing.s1)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.ContentPaste,
+                                        contentDescription = "Paste",
+                                        tint = DSColors.iconAction,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                    Text(
+                                        text = "Paste",
+                                        style = DSTypography.caption2.medium,
+                                        color = DSColors.textAction
+                                    )
+                                }
+                            }
+                            
+                            // Clear button
+                            Surface(
+                                onClick = {
+                                    settingsViewModel.updateCustomPrompt("")
+                                },
+                                shape = CircleShape,
+                                color = DSColors.surface2,
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = DSSpacing.s3, vertical = DSSpacing.s2),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(DSSpacing.s1)
+                                ) {
+                                    Icon(
+                                        imageVector = ImageVector.vectorResource(R.drawable.ic_trash),
+                                        contentDescription = "Clear",
+                                        tint = DSColors.iconError,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                    Text(
+                                        text = "Clear",
+                                        style = DSTypography.caption2.medium,
+                                        color = DSColors.textError
+                                    )
+                                }
+                            }
                         }
-                    )
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(DSSpacing.s4))

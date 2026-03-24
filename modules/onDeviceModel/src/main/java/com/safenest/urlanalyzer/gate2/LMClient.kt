@@ -1,62 +1,83 @@
 /*
- * LMClient.kt — On-device SLM wrapper using llama.cpp Android bindings.
+ * LMClient.kt — On-device SLM wrapper using MNN LLM engine.
  *
  * Mirrors iOS LMClient.swift.
- * Wraps the Qwen3 0.6B GGUF model.
+ * Wraps the Qwen3 0.6B model via MNN's Llm C++ API (same engine as cpp/).
  * Temperature: 0.0.
  *
- * Streams output and stops generation as soon as a complete JSON
- * response is detected — skips <think> blocks without waiting.
+ * Streams output via the ProgressListener JNI callback pattern (matching
+ * cpp/llm_jni.cpp's TokenStreamBuf). Stops generation as soon as a
+ * complete JSON response is detected — skips <think> blocks.
  *
- * Integration options:
- *   1. llama.cpp Android example (JNI bindings)
- *      https://github.com/ggml-org/llama.cpp/tree/master/examples/llama.android
- *   2. llama.cpp via pre-built AAR
+ * The native side is handled by cpp/llm_jni.cpp which provides:
+ *   - nativeCreate(configPath)  → jlong (opaque Llm* pointer)
+ *   - nativeGenerate(ptr, prompt, listener)
+ *   - nativeRelease(ptr)
  *
- * The same Qwen3-0.6B-Q4_K_M.gguf file from the iOS build works here.
+ * The ProgressListener interface:
+ *   - onProgress(chunk: String): Boolean  — return false to stop
+ *   - onFinish()
  */
 
 package com.safenest.urlanalyzer.gate2
 
 import android.util.Log
+import com.safeNest.demo.features.scamAnalyzer.impl.utils.PhishingLlmAnalyzer
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import org.json.JSONObject
 
+/**
+ * Callback interface for streaming token output from the MNN LLM engine.
+ * Matches the JNI contract in cpp/llm_jni.cpp (TokenStreamBuf).
+ */
+interface ProgressListener {
+    /** Called with each UTF-8 chunk. Return false to stop generation. */
+    fun onProgress(chunk: String): Boolean
+    /** Called when generation is complete. */
+    fun onFinish()
+}
+
 class LMClient(
-    private val ggufPath: String,
-    private val maxTokens: Int = 1024
+    private val modelConfigPath: String,
+    private val maxTokens: Int = 512
 ) {
 
     companion object {
         /** Prefill injected into the assistant turn to force JSON output. */
         const val PREFILL = "{\"verdict\":\""
-
-        init {
-            // Load llama.cpp native library
-            // System.loadLibrary("llama")
-        }
     }
 
     var isReady: Boolean = false
         private set
 
     private var systemPrompt: String = ""
+    private var nativePtr: Long = 0L
 
-    // JNI declarations — to be implemented with llama.cpp bindings
-    // private external fun nativeLoadModel(path: String, temp: Float, maxTokens: Int): Long
-    // private external fun nativeFreeModel(modelPtr: Long)
-    // private external fun nativeGenerate(modelPtr: Long, prompt: String, callback: (String) -> Unit)
-    // private external fun nativeStop(modelPtr: Long)
+    // JNI bridge — delegates to PhishingLlmAnalyzer which matches the
+    // existing cpp/llm_jni.cpp JNI function names. Do NOT rename these;
+    // the JNI symbol names are baked into the pre-built native library.
+    private fun nativeCreate(configPath: String): Long =
+        PhishingLlmAnalyzer.nativeCreate(configPath)
+    private fun nativeGenerate(ptr: Long, prompt: String, listener: ProgressListener) =
+        PhishingLlmAnalyzer.nativeGenerate(ptr, prompt, listener)
+    private fun nativeRelease(ptr: Long) =
+        PhishingLlmAnalyzer.nativeRelease(ptr)
 
     /**
-     * Validate model can load. Call once at startup.
+     * Load the MNN LLM model. Call once at startup.
+     *
+     * @param systemPrompt The system prompt for the chat template.
      */
     fun load(systemPrompt: String) {
         this.systemPrompt = systemPrompt
-        // TODO: Test-load model to verify it works
-        // val testPtr = nativeLoadModel(ggufPath, 0f, maxTokens)
-        // isReady = testPtr != 0L
-        // if (isReady) nativeFreeModel(testPtr)
-        isReady = true // Placeholder
+        nativePtr = nativeCreate(modelConfigPath)
+        isReady = nativePtr != 0L
+        if (isReady) {
+            Log.i("LMClient", "MNN LLM model loaded successfully")
+        } else {
+            Log.e("LMClient", "Failed to load MNN LLM model from: $modelConfigPath")
+        }
     }
 
     /**
@@ -77,14 +98,22 @@ class LMClient(
 
     /**
      * Send a prompt and get the full response string.
-     * Streams output and stops as soon as valid JSON is detected.
+     * Streams output via MNN's TokenStreamBuf and stops as soon as valid JSON is detected.
      */
     suspend fun complete(userPrompt: String): String {
         if (!isReady) return ""
 
         val fullPrompt = buildPrompt(userPrompt)
 
-        var fullOutput = StringBuilder()
+        // nativeGenerate is a blocking JNI call — run on IO dispatcher
+        // to avoid blocking the calling coroutine's thread.
+        return withContext(Dispatchers.IO) {
+            completeBlocking(fullPrompt)
+        }
+    }
+
+    private fun completeBlocking(fullPrompt: String): String {
+        val fullOutput = StringBuilder()
         var parsedJSON: String? = null
         var insideThink = false
         // Pre-seed tracker: prefill already contributed "{" (depth 1)
@@ -92,58 +121,59 @@ class LMClient(
         var braceDepth = 1
         val jsonBuffer = StringBuilder(PREFILL)
 
-        // TODO: Replace with actual llama.cpp JNI streaming call.
-        // The callback pattern mirrors the iOS LLM.swift bot.update closure:
-        //
-        // val modelPtr = nativeLoadModel(ggufPath, 0f, maxTokens)
-        // nativeGenerate(modelPtr, fullPrompt) { delta ->
-        //     // This callback fires for each generated token
-        //     fullOutput.append(delta)
-        //     val output = fullOutput.toString()
-        //
-        //     // Track <think> blocks — skip content inside them
-        //     if (output.endsWith("<think>") ||
-        //         (output.contains("<think>") && !output.contains("</think>"))) {
-        //         insideThink = true
-        //     }
-        //     if (output.contains("</think>")) {
-        //         insideThink = false
-        //         jsonStarted = false
-        //         braceDepth = 0
-        //         jsonBuffer.clear()
-        //         return@nativeGenerate
-        //     }
-        //     if (insideThink) return@nativeGenerate
-        //
-        //     // Accumulate characters and track brace depth
-        //     for (ch in delta) {
-        //         when {
-        //             ch == '{' -> {
-        //                 jsonStarted = true
-        //                 braceDepth++
-        //                 jsonBuffer.append(ch)
-        //             }
-        //             ch == '}' && jsonStarted -> {
-        //                 braceDepth--
-        //                 jsonBuffer.append(ch)
-        //                 if (braceDepth == 0) {
-        //                     val candidate = jsonBuffer.toString()
-        //                     if (isValidResponse(candidate)) {
-        //                         parsedJSON = candidate
-        //                         nativeStop(modelPtr)
-        //                         return@nativeGenerate
-        //                     }
-        //                     jsonStarted = false
-        //                     jsonBuffer.clear()
-        //                 }
-        //             }
-        //             jsonStarted -> jsonBuffer.append(ch)
-        //         }
-        //     }
-        // }
-        // nativeFreeModel(modelPtr)
+        val listener = object : ProgressListener {
+            override fun onProgress(chunk: String): Boolean {
+                fullOutput.append(chunk)
+                val output = fullOutput.toString()
 
-        Log.w("LMClient", "llama.cpp JNI not yet integrated — returning empty response")
+                // Track <think> blocks — skip content inside them
+                if (output.endsWith("<think>") ||
+                    (output.contains("<think>") && !output.contains("</think>"))
+                ) {
+                    insideThink = true
+                }
+                if (output.contains("</think>")) {
+                    insideThink = false
+                    jsonStarted = false
+                    braceDepth = 0
+                    jsonBuffer.clear()
+                    return true // continue
+                }
+                if (insideThink) return true // continue
+
+                // Accumulate characters and track brace depth
+                for (ch in chunk) {
+                    when {
+                        ch == '{' -> {
+                            jsonStarted = true
+                            braceDepth++
+                            jsonBuffer.append(ch)
+                        }
+                        ch == '}' && jsonStarted -> {
+                            braceDepth--
+                            jsonBuffer.append(ch)
+                            if (braceDepth == 0) {
+                                val candidate = jsonBuffer.toString()
+                                if (isValidResponse(candidate)) {
+                                    parsedJSON = candidate
+                                    return false // stop generation
+                                }
+                                jsonStarted = false
+                                jsonBuffer.clear()
+                            }
+                        }
+                        jsonStarted -> jsonBuffer.append(ch)
+                    }
+                }
+                return true // continue
+            }
+
+            override fun onFinish() {
+                // No-op — we handle completion in the caller
+            }
+        }
+
+        nativeGenerate(nativePtr, fullPrompt, listener)
 
         // Return early-terminated JSON if found
         if (parsedJSON != null) return parsedJSON!!
@@ -161,6 +191,17 @@ class LMClient(
             obj.has("verdict") && obj.get("verdict") is String && obj.has("risk_score")
         } catch (e: Exception) {
             false
+        }
+    }
+
+    /**
+     * Release native resources.
+     */
+    fun release() {
+        if (nativePtr != 0L) {
+            nativeRelease(nativePtr)
+            nativePtr = 0L
+            isReady = false
         }
     }
 }

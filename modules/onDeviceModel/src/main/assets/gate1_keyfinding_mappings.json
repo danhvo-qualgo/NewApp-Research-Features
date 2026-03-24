@@ -1,9 +1,9 @@
 {
   "mappings": [
     {
-      "featureIndex": 26,
-      "featureName": "typosquat_is_match",
-      "condition": "== 1",
+      "featureIndex": 24,
+      "featureName": "typosquat_similarity",
+      "condition": ">= 0.7",
       "category": "Impersonation",
       "description": "This website's name closely resembles a well-known brand",
       "severity": "high"
@@ -17,11 +17,11 @@
       "severity": "high"
     },
     {
-      "featureIndex": 29,
-      "featureName": "typosquat_containment",
-      "condition": "> 0",
+      "featureIndex": 31,
+      "featureName": "brand_in_subdomain",
+      "condition": "== 1",
       "category": "Impersonation",
-      "description": "This website's name contains a well-known brand name",
+      "description": "This website's subdomain contains a well-known brand name",
       "severity": "high"
     },
     {
@@ -64,7 +64,7 @@
       "description": "The web address contains words commonly used in scam links",
       "severity": "medium"
     },
-{
+    {
       "featureIndex": 6,
       "featureName": "has_port",
       "condition": "== 1",

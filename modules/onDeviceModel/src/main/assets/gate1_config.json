@@ -1,25 +1,17 @@
 {
   "model": {
-    "architecture": "LateFusionURLClassifier",
+    "architecture": "LightGBM",
     "version": "1.0",
-    "date": "2026-03-18",
-    "vocab_size": 98,
-    "embed_dim": 64,
-    "conv_channels": 128,
-    "n_conv_layers": 2,
-    "kernel_size": 5,
-    "fc_dim": 256,
-    "max_len": 200,
-    "n_features": 30,
+    "date": "2026-03-23",
+    "n_features": 33,
     "threshold": 0.2,
-    "suspicious_confidence": 0.5,
-    "url_encoding": "min(ord(ch), 96) + 1"
+    "suspicious_confidence": 0.5
   },
   "feature_names": [
     "url_length",
     "domain_length",
-    "path_length",
-    "path_depth",
+    "subdomain_depth",
+    "domain_char_entropy",
     "subdomain_count",
     "has_ip_address",
     "has_port",
@@ -33,7 +25,7 @@
     "tld_length",
     "has_dash",
     "consecutive_char_repeat",
-    "query_param_count",
+    "suspicious_tld_x_has_dash",
     "has_encoded_chars",
     "suspicious_keyword_count",
     "homograph_score",
@@ -42,70 +34,104 @@
     "is_idn",
     "typosquat_similarity",
     "typosquat_distance",
-    "typosquat_is_match",
+    "typosquat_risk_score",
     "typosquat_is_tld_swap",
     "typosquat_sounds_alike",
-    "typosquat_containment"
+    "relative_edit_distance",
+    "homoglyph_edit_ratio",
+    "brand_in_subdomain",
+    "scam_db_hit"
   ],
   "suspicious_tlds": [
-    "xyz",
-    "top",
-    "buzz",
-    "click",
-    "fun",
-    "sbs",
-    "cfd",
-    "icu",
-    "gq",
-    "ml",
-    "tk",
-    "ga",
-    "cf",
-    "cam",
-    "rest",
+    "bar",
     "beauty",
+    "bid",
+    "buzz",
+    "cam",
+    "cc",
+    "cf",
+    "cfd",
+    "click",
+    "club",
+    "country",
+    "cricket",
+    "cyou",
+    "date",
+    "download",
+    "faith",
+    "fun",
+    "ga",
+    "gdn",
+    "gq",
     "hair",
-    "quest",
-    "one",
-    "monster",
-    "today",
-    "world",
-    "life",
+    "icu",
+    "info",
+    "link",
     "live",
+    "loan",
+    "ml",
+    "monster",
+    "one",
+    "online",
+    "party",
+    "pw",
+    "quest",
+    "racing",
+    "rest",
+    "review",
+    "sbs",
+    "science",
+    "site",
+    "store",
+    "stream",
+    "support",
     "surf",
-    "bar"
+    "tk",
+    "today",
+    "top",
+    "trade",
+    "webcam",
+    "win",
+    "work",
+    "world",
+    "xyz"
   ],
   "suspicious_keywords": [
-    "login",
-    "verify",
-    "secure",
     "account",
-    "update",
-    "confirm",
-    "banking",
-    "password",
-    "credential",
-    "signin",
-    "auth",
-    "wallet",
-    "suspend",
-    "restore",
-    "unlock",
     "alert",
-    "urgent",
-    "immediately",
-    "expire",
-    "unusual",
-    "limited",
-    "offer",
-    "free",
-    "prize",
-    "winner",
-    "gift",
-    "reward",
+    "apple",
+    "authenticate",
+    "bank",
+    "banking",
     "bonus",
-    "claim",
-    "congratulation"
+    "confirm",
+    "credential",
+    "expired",
+    "free",
+    "gift",
+    "immediately",
+    "login",
+    "microsoft",
+    "offer",
+    "password",
+    "paypal",
+    "prize",
+    "promo",
+    "recover",
+    "restore",
+    "reward",
+    "secure",
+    "security",
+    "sign-in",
+    "signin",
+    "support",
+    "suspend",
+    "unlock",
+    "update",
+    "urgent",
+    "verification",
+    "verify",
+    "wallet"
   ],
   "compound_tlds": [
     "com.vn",
@@ -180,22 +206,6 @@
       "j",
       "Cyrillic"
     ],
-    "һ": [
-      "h",
-      "Cyrillic"
-    ],
-    "ԁ": [
-      "d",
-      "Cyrillic"
-    ],
-    "ԛ": [
-      "q",
-      "Cyrillic"
-    ],
-    "ԝ": [
-      "w",
-      "Cyrillic"
-    ],
     "α": [
       "a",
       "Greek"
@@ -215,66 +225,6 @@
     "ν": [
       "v",
       "Greek"
-    ],
-    "ρ": [
-      "p",
-      "Greek"
-    ],
-    "τ": [
-      "t",
-      "Greek"
-    ],
-    "υ": [
-      "u",
-      "Greek"
-    ],
-    "ω": [
-      "w",
-      "Greek"
-    ],
-    "ı": [
-      "i",
-      "Latin Extended"
-    ],
-    "ḅ": [
-      "b",
-      "Latin Extended"
-    ],
-    "ḷ": [
-      "l",
-      "Latin Extended"
-    ],
-    "ṃ": [
-      "m",
-      "Latin Extended"
-    ],
-    "ṇ": [
-      "n",
-      "Latin Extended"
-    ],
-    "đ": [
-      "d",
-      "Latin Extended"
-    ],
-    "ł": [
-      "l",
-      "Latin Extended"
-    ],
-    "0": [
-      "o",
-      "ASCII Homoglyph"
-    ],
-    "1": [
-      "l",
-      "ASCII Homoglyph"
-    ],
-    "3": [
-      "e",
-      "ASCII Homoglyph"
-    ],
-    "5": [
-      "s",
-      "ASCII Homoglyph"
     ]
   }
 }

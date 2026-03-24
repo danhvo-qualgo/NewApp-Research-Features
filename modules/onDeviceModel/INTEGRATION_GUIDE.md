@@ -1,243 +1,242 @@
-# SafeNest Gate 1 — Android Integration Guide
+# URL Analyzer Android — Integration Guide (2026-03-23)
 
-## Overview
+## What Changed
 
-Gate 1 is an on-device URL safety classifier. It runs entirely locally — no network calls needed.
+**Gate 1 is a new model.** Everything else (Gate 2, local analyzers, orchestrator) is the
+same pipeline from `url_analyzer_android`, just reorganized to sit alongside the new Gate 1.
 
-**Architecture:** LateFusionURLClassifier (CNN + MLP, late fusion)
+| Component | Before | Now |
+|---|---|---|
+| Gate 1 architecture | Late-fusion hybrid (CNN + features) | **LightGBM** (features only) |
+| Gate 1 features | 30 | **33** |
+| Gate 1 inference | Placeholder (not implemented) | **Working** (ONNX Runtime) |
+| Gate 1 model file | `gate1_hybrid.onnx` | **`gate1_lightgbm.onnx`** (3.3 MB) |
+| Gate 1 URL encoding | `nativeEncodeUrl()` needed | **Removed** (no CNN branch) |
+| Gate 1 threshold | 0.45 / 0.55 | **0.2** (tuned for high recall) |
+| Gate 2 SLM runtime | llama.cpp (placeholder JNI) | **MNN** (reuses your existing `PhishingLlmAnalyzer`) |
+| Gate 2 JNI | Not wired | **Wired** via `PhishingLlmAnalyzer` bridge |
 
-- CNN branch: character-level URL embeddings → independent logit
-- MLP branch: 30 engineered features (typosquat, homograph, lexical) → independent logit
-- Fusion: learnable positive scalar weights combine branch logits (prevents cross-branch suppression)
-- Allowlist gate: 3,652 known-safe brand domains, O(1) hash lookup
+### Gate 1 Performance
 
-**Performance (500-URL unseen QA test set, threshold=0.2):**
-
-| Metric          | Value           |
-| --------------- | --------------- |
-| Recall          | 98.4%           |
-| Precision       | 96.9%           |
-| F1              | 0.976           |
-| AUC-ROC         | 0.993           |
-| False negatives | 4               |
-| False positives | 8               |
-| Inference time  | <10ms on-device |
+| Metric | Value |
+|---|---|
+| Recall (scam) | 91.2% |
+| Precision (scam) | 95.6% |
+| AUC-ROC | 0.980 |
+| Inference | <1ms |
+| 490/490 test URLs | 100% match vs Python training pipeline |
 
 ---
 
-## Package Contents
+## Important: MNN / PhishingLlmAnalyzer Bridge
+
+Gate 2's `LMClient.kt` needs to call MNN for LLM inference. Rather than duplicating
+the JNI bindings, it **delegates to your existing `PhishingLlmAnalyzer`** class:
+
+```
+LMClient.kt  →  PhishingLlmAnalyzer.kt  →  llm_jni.cpp (unchanged)
+                 (bridge class)               (your existing MNN native code)
+```
+
+`PhishingLlmAnalyzer.kt` lives in `gate2/` but declares:
+
+```kotlin
+package com.safeNest.demo.features.scamAnalyzer.impl.utils
+```
+
+This matches the JNI symbols in your existing `libmnnllmphishing.so`. **Do not rename it.**
+
+The `cpp/` folder in this package is a **reference copy** of your MNN native code —
+use your existing build, not this copy.
+
+---
+
+## Package Layout
 
 ```
 android/
-├── Gate1Classifier.kt             # Android classifier wrapper
-├── gate1_jni.c                    # JNI bridge for C library
-├── CMakeLists.txt                 # NDK build config
-├── build.gradle.kts               # Module config
-├── gate1_late_fusion.onnx         # ONNX model — 1.0 MB
-├── brands.bin                     # Brand allowlist — 86 KB
-├── gate1_config.json              # Thresholds & config (OTA-updatable)
-└── native/                        # C feature extraction library
-    ├── include/gate1_features.h   # Public API
-    ├── src/gate1_features.c       # Implementation (~600 lines)
-    └── CMakeLists.txt             # Build config
+├── gate1/                          # NEW — Gate 1 LightGBM
+│   ├── Gate1Classifier.kt         #   ONNX inference + keyFinding mapping
+│   └── native/                    #   C feature extraction (33 features)
+│       ├── include/gate1_features.h
+│       └── src/
+│           ├── gate1_features.c   #   Byte-for-byte identical to iOS
+│           └── gate1_jni.c        #   4 JNI methods
+│
+├── gate2/                          # Gate 2 SLM (from url_analyzer_android)
+│   ├── Gate2Classifier.kt         #   Signals → prompt → SLM → parse JSON
+│   ├── SignalExtractor.kt         #   Config-driven signal extraction
+│   ├── PromptBuilder.kt           #   Prompt assembly from templates
+│   ├── LMClient.kt                #   MNN wrapper with streaming + early stop
+│   └── PhishingLlmAnalyzer.kt     #   JNI bridge (matches your existing native)
+│
+├── local_analyzer/                 # URL sub-analyzers (from url_analyzer_android)
+│   ├── LocalURLAnalyzer.kt        #   Orchestrates 4 parallel sub-analyses
+│   ├── HomographAnalyzer.kt       #   Unicode confusable detection
+│   ├── TyposquatAnalyzer.kt       #   Levenshtein brand matching
+│   ├── SSLChecker.kt              #   TLS cert extraction
+│   └── PageFetcher.kt             #   HTTP GET + HTML parsing
+│
+├── Models.kt                       # Shared types (Gate1Result, Gate2Result, etc.)
+├── URLAnalyzerOrchestrator.kt      # Decision router: Gate 1 → maybe Gate 2
+├── ResultCombiner.kt               # Verdict matrix + weighted risk score
+├── URLAnalyzerError.kt             # Error types
+│
+├── config/                          # JSON configs → copy to assets/
+│   ├── gate1_config.json           #   Model metadata, thresholds, feature names
+│   ├── gate1_keyfinding_mappings.json  # Feature index → human-readable finding
+│   ├── gate2_signal_mappings.json  #   Signal extraction rules
+│   └── gate2_prompts.json          #   System + user prompt templates
+│
+├── assets/                          # Binary assets → copy to assets/
+│   ├── gate1_lightgbm.onnx        #   LightGBM ONNX model (3.3 MB)
+│   └── brands.bin                  #   Binary brand allowlist (86 KB)
+│
+├── cpp/                             # REFERENCE COPY of your MNN native code
+│   ├── llm_jni.cpp                 #   (use your existing build, not this copy)
+│   ├── include/ llm_include/ jniLibs/
+│   └── SETUP.md
+│
+├── CMakeLists.txt                   # Unified native build config
+└── build.gradle.kts                 # Dependencies
 ```
 
 ---
 
-## Integration Steps
+## Step-by-Step Integration
 
-### 1. Add the module
+### 1. Kotlin Source
 
-Copy this directory as a module in your project, then in `settings.gradle.kts`:
+Copy into your module's source tree, preserving package structure:
 
-```kotlin
-include(":gate1")
+| Source | Target package |
+|---|---|
+| `Models.kt`, `URLAnalyzerOrchestrator.kt`, `ResultCombiner.kt`, `URLAnalyzerError.kt` | `com.safenest.urlanalyzer` |
+| `gate1/Gate1Classifier.kt` | `com.safenest.urlanalyzer.gate1` |
+| `gate2/*.kt` | `com.safenest.urlanalyzer.gate2` |
+| `gate2/PhishingLlmAnalyzer.kt` | `com.safeNest.demo.features.scamAnalyzer.impl.utils` (must match JNI) |
+| `local_analyzer/*.kt` | `com.safenest.urlanalyzer.local_analyzer` |
+
+### 2. Native Code (Gate 1 only)
+
+Copy into your NDK build:
+
+```
+app/src/main/cpp/
+├── gate1_jni.c                  # from gate1/native/src/
+├── gate1_features.c             # from gate1/native/src/
+└── include/gate1_features.h     # from gate1/native/include/
 ```
 
-In your app's `build.gradle.kts`:
+Add to your `CMakeLists.txt`:
+
+```cmake
+add_library(gate1_features SHARED gate1_jni.c gate1_features.c)
+target_include_directories(gate1_features PRIVATE include)
+target_link_libraries(gate1_features log m)
+target_link_options(gate1_features PRIVATE "-Wl,-z,max-page-size=16384")
+```
+
+Gate 2 uses your **existing** `libmnnllmphishing.so` — no new native build needed.
+
+### 3. Assets
+
+Copy to `app/src/main/assets/`:
+
+```
+gate1_lightgbm.onnx              # from assets/
+brands.bin                        # from assets/
+brands.csv                        # your existing brand CSV
+gate1_keyfinding_mappings.json    # from config/
+gate1_config.json                 # from config/
+gate2_signal_mappings.json        # from config/
+gate2_prompts.json                # from config/
+```
+
+### 4. Dependencies
+
+Add to `build.gradle.kts`:
 
 ```kotlin
 dependencies {
-    implementation(project(":gate1"))
+    // Gate 1: ONNX Runtime
+    implementation("com.microsoft.onnxruntime:onnxruntime-android:1.17.0")
+
+    // Local analyzer: coroutines for parallel sub-analyses
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
+
+    // Gate 2: MNN — your existing dependency, no change needed
 }
 ```
 
-### 2. Add assets
+### 5. Manifest
 
-Copy to `gate1/src/main/assets/`:
+```xml
+<uses-permission android:name="android.permission.INTERNET" />
+```
 
-- `gate1_late_fusion.onnx`
-- `brands.bin`
-- `gate1_config.json`
+Only needed for Gate 2's local analyzers (SSL check, page fetch). Gate 1 is fully offline.
 
-### 3. Usage
+---
+
+## Usage
+
+### Full Pipeline (Gate 1 + Gate 2)
 
 ```kotlin
-// Initialize (once, at app startup)
-val classifier = Gate1Classifier(context)
+val gate1 = Gate1Classifier(context)
 
-// Classify a URL — returns unified response (same shape as Gate 2 Backend API)
-val response = classifier.classify("https://techc0mbank.com")
+val signalExtractor = SignalExtractor(context)
+val promptBuilder = PromptBuilder(context)
+val lmClient = LMClient(mnnModelConfigPath)
+lmClient.load(promptBuilder.buildSystemPrompt())
 
-when (response.data.verdict) {
-    "scam" -> {
-        // Show verdict immediately, then call Gate 2 for keyFindings
-        Log.w("Gate1", "SCAM — risk: ${"%.0f".format(response.data.riskScore * 100)}%")
-        // escalateToGate2(url)  // fills in keyFindings async
-    }
-    "suspicious" -> {
-        // Borderline — escalate to Gate 2 for a second opinion
-        Log.w("Gate1", "SUSPICIOUS — escalating to Gate 2")
-        // escalateToGate2(url)
-    }
-    else -> Log.i("Gate1", "SAFE — risk: ${"%.0f".format(response.data.riskScore * 100)}%")
-}
+val gate2 = Gate2Classifier(signalExtractor, promptBuilder, lmClient)
+val localAnalyzer = LocalURLAnalyzer(gate1.brandNames, gate1.brandDomains)
 
-// Batch classify
-val responses = classifier.classify(listOf(
-    "https://google.com",           // → safe (allowlisted, riskScore: 1.0)
-    "https://g00gle.com",           // → scam (homoglyph)
-    "https://evil-phishing.xyz",    // → scam
-))
+val orchestrator = URLAnalyzerOrchestrator(gate1, gate2, lmClient, localAnalyzer)
 
-// Don't forget to close when done
-classifier.close()
+// In a coroutine:
+val result = orchestrator.analyze("https://vietcombank-verify.xyz/login")
+// result.verdict       → "scam"
+// result.keyFindings   → [KeyFinding(category="Impersonation", ...)]
+// result.source        → "gate1_and_gate2"
 ```
 
-### 4. Build requirements
-
-- NDK 26+ (for CMake C compilation)
-- ONNX Runtime Android: already declared in `build.gradle.kts`
-- Min SDK: 24 (Android 7.0)
-
----
-
-## Response Format
-
-Gate 1 returns a **unified response** matching the Gate 2 Backend API shape, so the mobile team can use one UI layer for both gates.
-
-```json
-{
-  "data": {
-    "riskScore": 0.8125,
-    "verdict": "scam",
-    "keyFindings": []
-  },
-  "responseTime": "4ms",
-  "timestamp": 1733328600000
-}
-```
-
-| Field                | Type           | Description                                                              |
-| -------------------- | -------------- | ------------------------------------------------------------------------ |
-| `data.riskScore`   | Float 0.0–1.0 | Confidence in the verdict (threshold-relative). Use for UI display.      |
-| `data.verdict`     | String         | `"safe"`, `"suspicious"`, or `"scam"`                              |
-| `data.keyFindings` | List           | Always `[]` from Gate 1. Gate 2 populates this with detailed findings. |
-| `responseTime`     | String         | Inference time, e.g.`"4ms"`                                            |
-| `timestamp`        | Long           | Unix epoch milliseconds                                                  |
-
-### Verdict logic
-
-| Condition                                 | Verdict          | riskScore |
-| ----------------------------------------- | ---------------- | --------- |
-| Allowlisted domain                        | `"safe"`       | 1.0       |
-| Confidence <`suspicious_confidence`     | `"suspicious"` | 0.0–0.5  |
-| Probability ≥ threshold, high confidence | `"scam"`       | 0.5–1.0  |
-| Probability < threshold, high confidence  | `"safe"`       | 0.5–1.0  |
-
-### Gate 2 comparison
-
-| Field            | Gate 1                                     | Gate 2                                                 |
-| ---------------- | ------------------------------------------ | ------------------------------------------------------ |
-| `riskScore`    | Threshold-relative confidence              | Model confidence                                       |
-| `verdict`      | `"safe"` / `"suspicious"` / `"scam"` | Same                                                   |
-| `keyFindings`  | `[]` (no content analysis)               | Detailed findings with category, description, severity |
-| `responseTime` | ~4ms (on-device)                           | ~2500ms (backend)                                      |
-
-> **Backend escalation:** When `verdict` is `"suspicious"` or `"scam"`, forward the URL to the **Gate 2 Backend API**. For suspicious URLs, Gate 2 provides a second opinion. For scam URLs, Gate 2 enriches the result with `keyFindings` — detailed explanations (e.g. "typosquat of vietcombank.com.vn", "page harvests banking credentials") that give the user a reason, not just a verdict. Gate 1 responds in ~4ms; Gate 2's `keyFindings` arrive ~2.5s later to fill in the detail.
-
----
-
-## How riskScore Works
-
-`riskScore` is **not** the raw model probability. The classification threshold is 0.2 (not 0.5), so raw probability would be confusing to users. Instead, `riskScore` is rescaled relative to the decision boundary:
-
-- **Scam side** (prob ≥ 0.2): `riskScore = (prob − 0.2) / 0.8` → 0% at boundary, 100% at prob=1.0
-- **Safe side** (prob < 0.2): `riskScore = (0.2 − prob) / 0.2` → 0% at boundary, 100% at prob=0.0
-- **Allowlisted**: `riskScore = 1.0`
-
-### Suspicious zone
-
-When `riskScore < suspicious_confidence` (default 0.5), the verdict is `"suspicious"` regardless of which side of the threshold it falls on.
-
-```
-riskScore:   0%           50%                    100%
-             |─ suspicious ─|─── safe or scam ───|
-                            suspicious_confidence
-```
-
----
-
-## Threshold Tuning
-
-Default threshold: **0.2** (recall-biased — prioritizes catching scams; Gate 2 removes false positives)
-
-Performance on 500-URL QA test set:
-
-| Threshold      | Recall          | Precision       | F1              | FP          | FN          |
-| -------------- | --------------- | --------------- | --------------- | ----------- | ----------- |
-| 0.50           | 88.4%           | 98.0%           | 0.929           | —          | —          |
-| 0.30           | 90.4%           | 94.9%           | 0.926           | —          | —          |
-| **0.20** | **98.4%** | **96.9%** | **0.976** | **8** | **4** |
-| 0.10           | 99.2%           | 93.3%           | 0.962           | —          | —          |
-| 0.05           | 100%            | 91.9%           | 0.958           | —          | —          |
-
----
-
-## Configuration & OTA Updates
-
-All tunable parameters live in `gate1_config.json`:
-
-```json
-{
-  "model": {
-    "threshold": 0.2,
-    "suspicious_confidence": 0.5
-  }
-}
-```
-
-| Parameter                 | Default | Description                                             |
-| ------------------------- | ------- | ------------------------------------------------------- |
-| `threshold`             | 0.2     | Classification boundary (`prob >= threshold` → scam) |
-| `suspicious_confidence` | 0.5     | Below this riskScore →`"suspicious"` verdict         |
-
-### Config-driven initialization
+### Gate 1 Only (Fast Mode)
 
 ```kotlin
-val configJson = JSONObject(context.assets.open("gate1_config.json").bufferedReader().readText())
-val modelConfig = configJson.getJSONObject("model")
-
-val classifier = Gate1Classifier(
-    context,
-    threshold = modelConfig.getDouble("threshold").toFloat(),
-    suspiciousConfidence = modelConfig.getDouble("suspicious_confidence").toFloat()
-)
+val gate1 = Gate1Classifier(context)
+val result = gate1.classify("https://example.com")
+// result.verdict, result.riskScore, result.keyFindings
+gate1.close()
 ```
 
-### OTA update
+---
 
-Host on your CDN: `gate1_late_fusion.onnx`, `gate1_config.json`, `brands.bin`. On app launch, check for new versions, download to cache, reinitialize with fresh config values.
+## Decision Router Logic
 
-Tuning `threshold` or `suspicious_confidence` server-side takes effect on next app launch — no Play Store review needed.
+The orchestrator only escalates to Gate 2 when needed:
+
+| Gate 1 says | Action |
+|---|---|
+| **safe** | Return immediately (~1ms) |
+| **suspicious** + has keyFindings | Return Gate 1 result (fast) |
+| **suspicious** + no keyFindings | Escalate to Gate 2 |
+| **scam** + low confidence (<0.2) | Return Gate 1 result |
+| **scam** + high confidence (≥0.2) | Escalate to Gate 2 |
+
+Gate 2 costs ~3-15s (MNN inference + network I/O for SSL/page checks).
 
 ---
 
 ## Size Impact
 
-| Asset                | Size              |
-| -------------------- | ----------------- |
-| ONNX model           | 1.0 MB            |
-| brands.bin           | 86 KB             |
-| C library (compiled) | ~50 KB            |
-| **Total**      | **~1.1 MB** |
+| Component | Size |
+|---|---|
+| `gate1_lightgbm.onnx` | 3.3 MB |
+| `brands.bin` | 86 KB |
+| `libgate1_features.so` | ~50 KB |
+| JSON configs (4 files) | ~5 KB |
+| **Gate 1 total** | **~3.4 MB** |
+| Qwen3 MNN model (Gate 2) | ~378 MB (already in your app) |

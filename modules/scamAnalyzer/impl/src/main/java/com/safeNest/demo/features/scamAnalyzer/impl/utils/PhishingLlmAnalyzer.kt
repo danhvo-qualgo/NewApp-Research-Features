@@ -33,6 +33,11 @@ class PhishingLlmAnalyzer {
 
     private var nativePtr: Long = 0L
 
+    @Volatile
+    private var modelFolder: File? = null
+
+    fun getModelFolder() = modelFolder
+
     /**
      * Loads the MNN model. Blocking — must be called on IO dispatcher.
      * @throws RuntimeException if the native layer fails to load the model.
@@ -42,6 +47,7 @@ class PhishingLlmAnalyzer {
         val ptr = withContext(dispatcher) { nativeCreate(configPath) }
         if (ptr == 0L) throw RuntimeException("Failed to load MNN model from $configPath")
         nativePtr = ptr
+        this.modelFolder = modelFolder
         Log.i(TAG, "Model loaded: $configPath")
     }
 

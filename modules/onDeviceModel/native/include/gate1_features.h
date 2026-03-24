@@ -1,8 +1,14 @@
 /*
- * gate1_features.h — SafeNest Gate 1 URL Safety Classifier
+ * gate1_features.h — SafeNest Gate 1 URL Safety Classifier (LightGBM v1.0)
  *
- * Portable C99 library for URL feature extraction, encoding, and allowlist check.
+ * Portable C99 library for URL feature extraction and allowlist check.
  * Designed for iOS (via bridging header) and Android (via JNI).
+ *
+ * Changes from v0 (Late Fusion, 30 features):
+ *   - 33 features (added: subdomain_depth, domain_char_entropy, typosquat_risk_score,
+ *     relative_edit_distance, homoglyph_edit_ratio, brand_in_subdomain,
+ *     suspicious_tld_x_has_dash, scam_db_hit)
+ *   - No URL encoding needed (LightGBM is features-only, no CNN branch)
  */
 #ifndef GATE1_FEATURES_H
 #define GATE1_FEATURES_H
@@ -16,26 +22,19 @@ extern "C" {
 
 /* ── Constants ────────────────────────────────────────────────────────────── */
 
-#define GATE1_N_FEATURES     30
-#define GATE1_MAX_URL_LEN   200
-#define GATE1_VOCAB_SIZE     98
+#define GATE1_N_FEATURES     33
 #define GATE1_THRESHOLD     0.2f
 
 /* ── Types ────────────────────────────────────────────────────────────────── */
 
-/** Extracted feature vector (30 floats). */
+/** Extracted feature vector (33 floats). */
 typedef struct {
     float values[GATE1_N_FEATURES];
 } Gate1Features;
 
-/** Encoded URL (integer IDs for model input). */
-typedef struct {
-    int32_t ids[GATE1_MAX_URL_LEN];
-} Gate1URLEncoding;
-
 /** Classification result. */
 typedef struct {
-    float probability;  /* Sigmoid of model logit, 0.0-1.0 */
+    float probability;  /* Model output probability, 0.0-1.0 */
     int   is_scam;      /* 1 if prob >= threshold, 0 otherwise */
     int   is_allowlisted; /* 1 if domain was in allowlist */
 } Gate1Result;
@@ -64,13 +63,9 @@ int gate1_brand_count(const Gate1BrandList* brands);
  *  Returns 1 if allowlisted (safe), 0 otherwise. */
 int gate1_is_allowlisted(const char* url, const Gate1BrandList* brands);
 
-/** Extract 30 engineered features from a URL.
+/** Extract 33 engineered features from a URL.
  *  Requires brand list for typosquat/containment features. */
 Gate1Features gate1_extract_features(const char* url, const Gate1BrandList* brands);
-
-/** Encode URL characters to integer IDs for model input.
- *  Encoding: min(ord(ch), 96) + 1, zero-padded to GATE1_MAX_URL_LEN. */
-Gate1URLEncoding gate1_encode_url(const char* url);
 
 /* ── Utility ──────────────────────────────────────────────────────────────── */
 

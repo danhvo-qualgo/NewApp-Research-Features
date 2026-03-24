@@ -21,7 +21,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ContentPaste
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -42,6 +41,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
@@ -75,13 +75,16 @@ fun ScamAnalyzerScreen(
 ) {
     var inputText by remember(sharedText) { mutableStateOf(sharedText ?: "") }
     val uiState by scamAnalyzerViewModel.uiState.collectAsStateWithLifecycle()
-    val context = androidx.compose.ui.platform.LocalContext.current
+    val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
 
     LaunchedEffect(sharedText) {
         Log.d("ScamAnalyzerScreen", "LaunchedEffect triggered with sharedText: $sharedText")
         if (!sharedText.isNullOrBlank()) {
-            Log.d("ScamAnalyzerScreen", "Auto-filling text and analyzing: ${sharedText.take(50)}...")
+            Log.d(
+                "ScamAnalyzerScreen",
+                "Auto-filling text and analyzing: ${sharedText.take(50)}..."
+            )
             inputText = sharedText
             scamAnalyzerViewModel.analyzeText(sharedText)
             onSharedTextConsumed()
@@ -239,7 +242,12 @@ private fun TextInputArea(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(top = DSSpacing.s4, start = DSSpacing.s4, end = DSSpacing.s4, bottom = DSSpacing.s3)
+                .padding(
+                    top = DSSpacing.s4,
+                    start = DSSpacing.s4,
+                    end = DSSpacing.s4,
+                    bottom = DSSpacing.s3
+                )
         ) {
             BasicTextField(
                 value = text,
@@ -493,7 +501,8 @@ private suspend fun copyUriToCache(
                 null
             )?.use { cursor ->
                 if (cursor.moveToFirst()) {
-                    val nameIndex = cursor.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
+                    val nameIndex =
+                        cursor.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
                     if (nameIndex >= 0) {
                         val name = cursor.getString(nameIndex)
                         if (!name.isNullOrEmpty()) {
@@ -515,13 +524,14 @@ private suspend fun copyUriToCache(
                         else -> ".jpg"
                     }
                 }
+
                 else -> ""
             }
             fileName = "${type}_${System.currentTimeMillis()}$extension"
         }
 
         val destinationFile = java.io.File(cacheDir, fileName)
-        
+
         // Copy file content
         context.contentResolver.openInputStream(contentUri)?.use { input ->
             destinationFile.outputStream().use { output ->
@@ -529,7 +539,10 @@ private suspend fun copyUriToCache(
             }
         }
 
-        Log.d("ScamAnalyzerScreen", "File copied: ${destinationFile.absolutePath}, size: ${destinationFile.length()}")
+        Log.d(
+            "ScamAnalyzerScreen",
+            "File copied: ${destinationFile.absolutePath}, size: ${destinationFile.length()}"
+        )
         Uri.fromFile(destinationFile)
     } catch (e: Exception) {
         Log.e("ScamAnalyzerScreen", "Error copying file to cache", e)

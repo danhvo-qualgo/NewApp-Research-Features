@@ -10,20 +10,19 @@
 package com.safenest.urlanalyzer.local_analyzer
 
 import java.net.URL
-import java.security.SecureRandom
 import java.security.cert.X509Certificate
 import java.text.SimpleDateFormat
-import java.util.Locale
-import java.util.TimeZone
-import javax.net.ssl.HostnameVerifier
+import java.util.*
 import javax.net.ssl.HttpsURLConnection
 import javax.net.ssl.SSLContext
 import javax.net.ssl.TrustManager
 import javax.net.ssl.X509TrustManager
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 object SSLChecker {
 
-    suspend fun analyze(url: String): Map<String, Any?> {
+    suspend fun analyze(url: String): Map<String, Any?> = withContext(Dispatchers.IO) {
         val result = mutableMapOf<String, Any?>(
             "valid" to false,
             "issuer" to "",
@@ -33,10 +32,10 @@ object SSLChecker {
             "subjectAltNames" to emptyList<String>()
         )
 
-        if (!url.startsWith("https://")) return result
+        if (!url.startsWith("https://")) return@withContext result
 
         try {
-            val connection = URL(url).openConnection() as? HttpsURLConnection ?: return result
+            val connection = URL(url).openConnection() as? HttpsURLConnection ?: return@withContext result
             connection.requestMethod = "HEAD"
             connection.connectTimeout = 5000
             connection.readTimeout = 5000
@@ -49,9 +48,9 @@ object SSLChecker {
             })
 
             val sslContext = SSLContext.getInstance("TLS")
-            sslContext.init(null, trustAll, SecureRandom())
+            sslContext.init(null, trustAll, java.security.SecureRandom())
             connection.sslSocketFactory = sslContext.socketFactory
-            connection.hostnameVerifier = HostnameVerifier { _, _ -> true }
+            connection.hostnameVerifier = javax.net.ssl.HostnameVerifier { _, _ -> true }
 
             try {
                 connection.connect()
@@ -101,7 +100,7 @@ object SSLChecker {
             // Connection failed — valid stays false
         }
 
-        return result
+        result
     }
 
     private fun extractCNFromDN(dn: String): String? {

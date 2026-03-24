@@ -49,6 +49,9 @@ class AnalyzeUseCaseImpl @Inject constructor(
             analyzerResultRepository.cacheResult(castResult.data)
 
             castResult.data
-        }.getOrNull()
+        }.onFailure {
+            Log.d("AnalyzeUseCase", "", it)
+        }
+            .getOrNull()
     }
 }

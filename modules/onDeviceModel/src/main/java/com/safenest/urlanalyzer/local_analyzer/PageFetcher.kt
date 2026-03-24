@@ -8,17 +8,17 @@ package com.safenest.urlanalyzer.local_analyzer
 
 import java.net.HttpURLConnection
 import java.net.URL
-import java.security.SecureRandom
-import java.security.cert.X509Certificate
-import javax.net.ssl.HostnameVerifier
 import javax.net.ssl.HttpsURLConnection
 import javax.net.ssl.SSLContext
 import javax.net.ssl.TrustManager
 import javax.net.ssl.X509TrustManager
+import java.security.cert.X509Certificate
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 object PageFetcher {
 
-    suspend fun analyze(url: String, timeoutMs: Long = 10_000L): Map<String, Any?> {
+    suspend fun analyze(url: String, timeoutMs: Long = 10_000L): Map<String, Any?> = withContext(Dispatchers.IO) {
         val result = mutableMapOf<String, Any?>(
             "reachable" to false,
             "statusCode" to 0,
@@ -47,9 +47,9 @@ object PageFetcher {
                     override fun getAcceptedIssuers(): Array<X509Certificate> = arrayOf()
                 })
                 val sslContext = SSLContext.getInstance("TLS")
-                sslContext.init(null, trustAll, SecureRandom())
+                sslContext.init(null, trustAll, java.security.SecureRandom())
                 connection.sslSocketFactory = sslContext.socketFactory
-                connection.hostnameVerifier = HostnameVerifier { _, _ -> true }
+                connection.hostnameVerifier = javax.net.ssl.HostnameVerifier { _, _ -> true }
             }
 
             try {
@@ -72,13 +72,13 @@ object PageFetcher {
             // Request failed — reachable stays false
         }
 
-        return result
+        result
     }
 
     // MARK: - HTML Parsing (simple regex, no WebView)
 
     private fun extractTitle(html: String): String {
-        val pattern = Regex("<title[^>]*>(.*?)</title>", setOf( RegexOption.DOT_MATCHES_ALL, RegexOption.IGNORE_CASE))
+        val pattern = Regex("<title[^>]*>(.*?)</title>", setOf(RegexOption.DOT_MATCHES_ALL, RegexOption.IGNORE_CASE))
         val match = pattern.find(html) ?: return ""
         return match.groupValues[1].trim().take(200)
     }

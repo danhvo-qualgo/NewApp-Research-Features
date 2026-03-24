@@ -8,10 +8,7 @@
 package com.safenest.urlanalyzer.gate2
 
 import android.util.Log
-import com.safenest.urlanalyzer.AnalyzerData
-import com.safenest.urlanalyzer.Gate1Result
-import com.safenest.urlanalyzer.Gate2Result
-import com.safenest.urlanalyzer.KeyFinding
+import com.safenest.urlanalyzer.*
 import org.json.JSONObject
 
 class Gate2Classifier(

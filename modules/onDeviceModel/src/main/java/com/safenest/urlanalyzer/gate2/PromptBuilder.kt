@@ -8,15 +8,13 @@
 package com.safenest.urlanalyzer.gate2
 
 import android.content.Context
-import com.safenest.urlanalyzer.AnalyzerData
-import com.safenest.urlanalyzer.Gate1Result
-import com.safenest.urlanalyzer.Gate2Signal
+import com.safenest.urlanalyzer.*
 import org.json.JSONObject
 
 class PromptBuilder(context: Context) {
 
-    private lateinit var systemPrompt: String
-    private lateinit var userTemplate: String
+    private val systemPrompt: String
+    private val userTemplate: String
 
     init {
         val jsonStr = context.assets.open("gate2_prompts.json")
