@@ -25,6 +25,7 @@ import com.safeNest.demo.features.callProtection.impl.domain.usecase.IsBlocklist
 import com.safeNest.demo.features.callProtection.impl.presentation.router.CallDetectionDeeplink
 import com.safeNest.demo.features.callProtection.impl.presentation.service.call.CallDetectionPopup
 import com.safeNest.demo.features.commonKotlin.IncomingCallData
+import com.safeNest.demo.features.commonKotlin.IncomingCallType
 import com.safeNest.demo.features.commonKotlin.incomingCallSharedFlow
 import com.uney.core.router.RouterManager
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -55,7 +56,7 @@ class CallDetectionHandlerImpl @Inject constructor(
         }
         if ((getMasterBlocklistNumberUseCase(normalizePhoneNumber).first() != null
             || getMasterBlocklistNumberUseCase(phoneNumber).first() != null) && isIncoming) {
-            callEvent(normalizePhoneNumber, "KinShield just block a call from your blocklist.")
+            callEvent(normalizePhoneNumber, "KinShield just block a call from your blocklist.", IncomingCallType.BLOCKLIST)
             return CallResult.Reject
         }
         Log.d("CallDetectionHandlerImpl", "start check whitelist: $normalizePhoneNumber")
@@ -67,7 +68,7 @@ class CallDetectionHandlerImpl @Inject constructor(
             return getWhitelistByNumberUseCase(normalizePhoneNumber).first()?.let {
                 CallResult.Allow()
             } ?: run {
-                callEvent(normalizePhoneNumber, "Call blocked because it is not in Whitelist.")
+                callEvent(normalizePhoneNumber, "Call blocked because it is not in Whitelist.", IncomingCallType.WHITELIST)
                 onCallAnswer(normalizePhoneNumber)
                 CallResult.Reject
             }
@@ -77,7 +78,7 @@ class CallDetectionHandlerImpl @Inject constructor(
         if (isIncoming && isEnableBlacklist && (isBlocklistPatternsUseCase(phoneNumber).first()
                     || isBlocklistPatternsUseCase(normalizePhoneNumber).first())) {
             onCallAnswer(normalizePhoneNumber)
-            callEvent(normalizePhoneNumber, "KinShield just block a call from your blocklist.")
+            callEvent(normalizePhoneNumber, "KinShield just block a call from your blocklist.", IncomingCallType.BLOCKLIST)
             return CallResult.Reject
         }
 
@@ -88,13 +89,13 @@ class CallDetectionHandlerImpl @Inject constructor(
                     CallerIdInfoType.SCAM -> {
 
                         Log.v("CallDetectionHandlerImpl", "onCallRing scam: $it")
-                        callEvent(normalizePhoneNumber, "KinShield helped block  because it is identified as scam by community. Tap for more.")
+                        callEvent(normalizePhoneNumber, "KinShield helped block  because it is identified as scam by community. Tap for more.",IncomingCallType.CALLER_ID)
                         onCallAnswer(normalizePhoneNumber)
                         CallResult.Reject
                     }
                     else -> {
                         if (it.type == CallerIdInfoType.SPAM) {
-                            callEvent(normalizePhoneNumber, "The caller is identified by community as spam. Tap to see detail.")
+                            callEvent(normalizePhoneNumber, "The caller is identified by community as spam. Tap to see detail.",IncomingCallType.CALLER_ID)
                         }
 
                         Log.v("CallDetectionHandlerImpl", "onCallRing spam: $it")
@@ -128,7 +129,7 @@ class CallDetectionHandlerImpl @Inject constructor(
         }
     }
 
-    private suspend fun callEvent(phoneNumber: String, message: String) {
+    private suspend fun callEvent(phoneNumber: String, message: String, type: IncomingCallType) {
         incomingCallSharedFlow.emit(IncomingCallData(
             phoneNumber = phoneNumber,
             message = message

@@ -1,5 +1,6 @@
 package com.safeNest.demo.features.callProtection.impl.presentation
 
+import android.content.Intent
 import android.graphics.Color
 import android.net.Uri
 import android.os.Bundle
@@ -33,10 +34,7 @@ import kotlinx.serialization.json.Json
 class CallDetectionActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val notificationId = intent.getIntExtra("EXTRA_NOTIFICATION_ID", -1)
-        if (notificationId != -1) {
-            NotificationManagerCompat.from(this).cancel(notificationId)
-        }
+        checkAndClearNotification(intent = intent)
         enableEdgeToEdge(
             statusBarStyle = SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT),
             navigationBarStyle = SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT)
@@ -48,6 +46,20 @@ class CallDetectionActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
 
+    }
+
+    private fun checkAndClearNotification(intent: Intent) {
+        val notificationId = intent.getIntExtra("EXTRA_NOTIFICATION_ID", -1)
+        if (notificationId != -1) {
+            NotificationManagerCompat.from(this).cancel(notificationId)
+            intent.removeExtra("EXTRA_NOTIFICATION_ID")
+        }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        checkAndClearNotification(intent)
     }
 
     @Composable

@@ -9,3 +9,7 @@ data class IncomingCallData(
     val message: String
 )
 
+enum class IncomingCallType {
+    BLOCKLIST, WHITELIST, CALLER_ID
+}
+
