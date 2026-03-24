@@ -30,7 +30,10 @@ class AppTrustChecker @Inject constructor(
 //        val isPlayStore = installSrc == "com.android.vending"
 //        val isDangerous = DANGEROUS_PACKAGES.contains(pkg)
 //        val isKnownSafe = TRUSTED_PACKAGES.contains(pkg)
-        if(pkg in TRUSTED_PACKAGES) return DetectionStatus.SAFE
+        if(pkg in TRUSTED_PACKAGES) {
+            Log.d(TAG, "App package [$pkg] → is trusted app")
+            return DetectionStatus.SAFE
+        }
         val appPermission = getAppPermissionInfoUseCase.invoke(pkg)
         Log.d(TAG, "App package [$pkg] → permission: $appPermission")
         val containSensitivePermission = appPermission.any { it.protectionLevel == PermissionProtectionLevel.DANGEROUS}
@@ -171,6 +174,12 @@ class AppTrustChecker @Inject constructor(
             "com.coloros.incallui",
             "com.vivo.incallui"
         )
+        /** System app */
+        val SYSTEM_APP_PACKAGES: Set<String> = setOf(
+            "com.android.settings",
+            "com.android.vending",
+            "com.google.android.apps.maps"
+        )
 
         /**
          * Union of all app categories whose notifications should be scanned for scam/phishing
@@ -182,8 +191,8 @@ class AppTrustChecker @Inject constructor(
 
         /** Well-known apps always treated as trusted regardless of install source. */
         val TRUSTED_PACKAGES: Set<String> = setOf(
-            "com.vnptit.vneid",
-            "vn.gdt.etaxmobile"
+            "com.vnid",
+            "com.etax.icanhan"
         )
 
         /** Packages known to be malicious or high-risk. Extend with threat-intel data. */

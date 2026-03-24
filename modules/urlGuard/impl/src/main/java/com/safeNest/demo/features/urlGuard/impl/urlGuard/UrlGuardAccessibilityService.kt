@@ -401,15 +401,10 @@ class UrlGuardAccessibilityService : AccessibilityService() {
 
     }
 
-    private var isDetailClick = false
     private fun onDetailAction() {
-        if(isDetailClick) return
-        isDetailClick = true
         val input = SurfaceDetector.getCurrent().toAnalysisInput()
         Log.d(TAG, "onDetail action input: ${input}")
         if (input == null) {
-            secureView.hideBlockingPage()
-            scamAnalyzerProvider.openActivity(this)
             return
         }
         secureView.actionCard.showLoading()
@@ -418,7 +413,6 @@ class UrlGuardAccessibilityService : AccessibilityService() {
             try {
                 withContext(Dispatchers.IO) { analyzeUseCase(input) }
             } finally {
-                isDetailClick = false
                 secureView.actionCard.hideLoading()
                 secureView.hideButtonLoading()
                 secureView.hideActionCard()
@@ -747,7 +741,6 @@ class UrlGuardAccessibilityService : AccessibilityService() {
         isEventForcedVisible = false
         if (appTrustChecker.isSystemApp(pkg)) {
             Log.d(TAG, "AppTrust skipped — system app [$pkg]")
-            secureView.hideFloatingButton()
             return
         }
 
@@ -783,7 +776,7 @@ class UrlGuardAccessibilityService : AccessibilityService() {
      * Button is shown only when the app has dangerous-level permissions (WARNING or DANGEROUS).
      */
     private fun applyAppTrustResult(status: DetectionStatus, pkg: String) {
-        if (status == DetectionStatus.WARNING || status == DetectionStatus.DANGEROUS) {
+//        if (status == DetectionStatus.WARNING || status == DetectionStatus.DANGEROUS) {
             secureView.showFloatingButton()
             secureView.updateButton(FloatingButtonFeature.APP_CHECK, status)
             secureView.updateActionCard(
@@ -791,9 +784,9 @@ class UrlGuardAccessibilityService : AccessibilityService() {
                 status,
                 buildActions(FloatingButtonFeature.APP_CHECK, status, pkg)
             )
-        } else {
-            secureView.hideFloatingButton()
-        }
+//        } else {
+//            secureView.hideFloatingButton()
+//        }
     }
 
 
@@ -815,7 +808,6 @@ class UrlGuardAccessibilityService : AccessibilityService() {
                     Log.w(TAG, "Sensitive form detected at $normalUrl: $detectedFields")
 
                 }
-
                 formScanCache[normalUrl] = hasSensitiveForm
                 trySend(hasSensitiveForm)
                 close()
