@@ -471,6 +471,11 @@ class UrlGuardAccessibilityService : AccessibilityService() {
                 onDetailAction()
             }
 
+            is ScreenSurface.Notification -> {
+                Log.d(TAG, "Floating button tapped — Notification handle, triggering detail action")
+                onDetailAction()
+            }
+
             is ScreenSurface.ActiveCall -> {
                 serviceScope.launch {
                     val phone = surface.phoneNumber ?: return@launch
@@ -717,14 +722,17 @@ class UrlGuardAccessibilityService : AccessibilityService() {
         pendingCallCheck = Runnable {
             pendingCallCheck = null
             serviceScope.launch {
-                val result = if(notificationCategory == NotificationCategory.CALL) {
-                    DetectionStatus.WARNING
+                val (result, message) = if(notificationCategory == NotificationCategory.CALL) {
+                    DetectionStatus.WARNING to "Be cautious with unexpected video calls"
                 } else {
-                    notificationDetection.detectNotificationContent(notificationContent)
+                    notificationDetection.detectNotificationContent(notificationContent) to "The message you just received can be scam, be careful. Tap for more detail."
                 }
 
                 secureView.updateButton(FloatingButtonFeature.SMS_CHECK, result)
                 secureView.updateActionCard(FloatingButtonFeature.SMS_CHECK, result, buildActions(FloatingButtonFeature.SMS_CHECK, result))
+                if(result == DetectionStatus.WARNING || result == DetectionStatus.DANGEROUS) {
+                    secureView.showToastTooltip(message)
+                }
                 showFloatingButtonFromEvent()
             }
         }.also { mainHandler.postDelayed(it, CALL_DEBOUNCE_MS) }
