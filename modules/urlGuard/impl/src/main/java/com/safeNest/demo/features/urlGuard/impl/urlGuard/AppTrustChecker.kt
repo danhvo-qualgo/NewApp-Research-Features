@@ -30,6 +30,7 @@ class AppTrustChecker @Inject constructor(
 //        val isPlayStore = installSrc == "com.android.vending"
 //        val isDangerous = DANGEROUS_PACKAGES.contains(pkg)
 //        val isKnownSafe = TRUSTED_PACKAGES.contains(pkg)
+        if(pkg in TRUSTED_PACKAGES) return DetectionStatus.SAFE
         val appPermission = getAppPermissionInfoUseCase.invoke(pkg)
         Log.d(TAG, "App package [$pkg] → permission: $appPermission")
         val containSensitivePermission = appPermission.any { it.protectionLevel == PermissionProtectionLevel.DANGEROUS}
@@ -181,30 +182,8 @@ class AppTrustChecker @Inject constructor(
 
         /** Well-known apps always treated as trusted regardless of install source. */
         val TRUSTED_PACKAGES: Set<String> = setOf(
-            // Google
-            "com.google.android.gm",
-            "com.google.android.apps.maps",
-            "com.google.android.youtube",
-            "com.google.android.apps.docs",
-            "com.google.android.keep",
-            // Social / messaging
-            "com.whatsapp",
-            "com.facebook.katana",
-            "com.instagram.android",
-            "com.twitter.android",
-            "com.telegram.messenger",
-            "org.telegram.messenger",
-            // Entertainment
-            "com.netflix.mediaclient",
-            "com.spotify.music",
-            // Shopping / finance
-            "com.amazon.mShop.android.shopping",
-            "com.paypal.android.p2pmobile",
-            // Vietnamese apps
-            "vn.momo.party",
-            "com.vnpay.hdbank",
-            "com.zalopay.wallet",
-            "vn.tiki.app.tikishopping"
+            "com.vnptit.vneid",
+            "vn.gdt.etaxmobile"
         )
 
         /** Packages known to be malicious or high-risk. Extend with threat-intel data. */

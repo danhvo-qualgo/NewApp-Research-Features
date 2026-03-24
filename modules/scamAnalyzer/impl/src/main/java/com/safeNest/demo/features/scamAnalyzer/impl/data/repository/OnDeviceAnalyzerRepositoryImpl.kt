@@ -137,6 +137,7 @@ class OnDeviceAnalyzerRepositoryImpl @Inject constructor(
     private val urlClassifier = GlobalScope.async { createUrlClassifier() }
 
     private suspend fun createUrlClassifier(): URLAnalyzerOrchestrator {
+        modelManager.ensureReady()
         val signalExtractor = SignalExtractor(context)
         val promptBuilder = PromptBuilder(context)
         val lmClient =
