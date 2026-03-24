@@ -21,8 +21,6 @@ class BlocklistViewModel @Inject constructor(
     private val enableBlockListUseCase: EnableBlockListUseCase
 ) : ViewModel() {
     val defaultBlockPatterns: List<String> = listOf(
-        "1900****",
-        "1800****",
         "028********",
         "024********",
         "0203*******", "0204*******", "0205*******", "0206*******", "0207*******",
@@ -41,8 +39,10 @@ class BlocklistViewModel @Inject constructor(
     )
     init {
         viewModelScope.launch(Dispatchers.IO) {
+            addBlacklistPatternUseCase("1900****", "Service number")
+            addBlacklistPatternUseCase("1800****", "Service number")
             defaultBlockPatterns.forEach {
-                addBlacklistPatternUseCase(it, "Spam")
+                addBlacklistPatternUseCase(it, "Landline")
             }
         }
     }
