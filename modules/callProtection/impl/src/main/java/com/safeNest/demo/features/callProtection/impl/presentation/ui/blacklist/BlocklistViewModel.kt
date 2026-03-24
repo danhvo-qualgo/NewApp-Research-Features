@@ -39,11 +39,11 @@ class BlocklistViewModel @Inject constructor(
     )
     init {
         viewModelScope.launch(Dispatchers.IO) {
-            addBlacklistPatternUseCase("1900****", "Service number")
-            addBlacklistPatternUseCase("1800****", "Service number")
             defaultBlockPatterns.forEach {
                 addBlacklistPatternUseCase(it, "Landline")
             }
+            addBlacklistPatternUseCase("1800****", "Service number")
+            addBlacklistPatternUseCase("1900****", "Service number")
         }
     }
 

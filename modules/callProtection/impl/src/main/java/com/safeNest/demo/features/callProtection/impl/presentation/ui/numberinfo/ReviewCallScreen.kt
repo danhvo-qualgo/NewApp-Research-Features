@@ -13,15 +13,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
-import androidx.compose.material.icons.filled.Block
-import androidx.compose.material.icons.filled.HelpOutline
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -46,7 +41,6 @@ import com.safeNest.demo.features.callProtection.api.domain.model.CallerIdInfoTy
 import com.safeNest.demo.features.callProtection.impl.R
 import com.safeNest.demo.features.callProtection.impl.domain.common.formatBeautifulNumber
 import com.safeNest.demo.features.callProtection.impl.presentation.ui.component.Toolbar
-import com.safeNest.demo.features.callProtection.impl.presentation.ui.numberinfo.dialog.AddToSafeListDialog
 import com.safeNest.demo.features.callProtection.impl.presentation.ui.numberinfo.dialog.BlocklistSuccessDialog
 import com.safeNest.demo.features.callProtection.impl.presentation.ui.numberinfo.dialog.ContributionSuccessDialog
 import com.safeNest.demo.features.callProtection.impl.presentation.ui.numberinfo.dialog.DSCheckbox
@@ -135,7 +129,7 @@ fun ReviewCallScreen(
                         iconBg = DSColors.surfaceErrorLightest,
                         onClick = {
                             missingCallViewModel.addToBlocklist(callerIdInfo.phoneNumber)
-                            showDialog == ReviewCallDialogState.ADD_TO_BLOCKLIST_SUCCESS
+                            showDialog = ReviewCallDialogState.ADD_TO_BLOCKLIST_SUCCESS
                         }
                     )
 
@@ -146,7 +140,7 @@ fun ReviewCallScreen(
                         iconBg = Color(0xFFEEF2FF),
                         onClick = {
                             missingCallViewModel.addToWhitelist(callerIdInfo.phoneNumber, callerIdInfo.label)
-                            showDialog == ReviewCallDialogState.ADD_TO_WHITELIST_SUCCESS
+                            showDialog = ReviewCallDialogState.ADD_TO_WHITELIST_SUCCESS
                         }
                     )
 

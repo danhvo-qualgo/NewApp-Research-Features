@@ -8,7 +8,8 @@ import com.safeNest.demo.features.callProtection.impl.domain.model.BlacklistPatt
 data class BlacklistPatternEntity(
     @PrimaryKey
     val pattern: String,
-    val description: String
+    val description: String,
+    val createdAt: Long = System.currentTimeMillis()
 ) {
     fun toBlacklistPattern(): BlacklistPattern {
         return BlacklistPattern(pattern, description)

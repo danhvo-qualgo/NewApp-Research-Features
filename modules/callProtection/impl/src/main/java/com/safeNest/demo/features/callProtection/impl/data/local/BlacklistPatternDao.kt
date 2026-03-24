@@ -9,7 +9,7 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface BlacklistPatternDao {
 
-    @Query("SELECT * FROM blacklist_pattern")
+    @Query("SELECT * FROM blacklist_pattern ORDER BY createdAt DESC")
     fun getAll(): Flow<List<BlacklistPatternEntity>>
 
     @Query("SELECT * FROM blacklist_pattern WHERE pattern = :pattern")
