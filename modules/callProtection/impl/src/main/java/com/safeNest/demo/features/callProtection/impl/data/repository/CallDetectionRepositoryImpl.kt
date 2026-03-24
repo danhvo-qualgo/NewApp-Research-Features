@@ -14,7 +14,7 @@ class CallDetectionRepositoryImpl @Inject constructor() : CallDetectionRepositor
         CallerIdInfo("+84393491861", "John Vo Scam", CallerIdInfoType.SCAM),
         CallerIdInfo("+84902895081", "Spam - Open KinShield for Detail", CallerIdInfoType.SPAM),
         CallerIdInfo("+84393491868", "John Vo Spam", CallerIdInfoType.SPAM),
-        CallerIdInfo("+84393491867", "Spam - Open KinShield for Detail", CallerIdInfoType.SPAM),
+        CallerIdInfo("+84393491867", "Spam Danh - Open KinShield for Detail", CallerIdInfoType.SPAM),
         CallerIdInfo("+84393491881", "John Vo Spam", CallerIdInfoType.SPAM),
         CallerIdInfo("+84393491882", "John Vo Spam", CallerIdInfoType.SPAM),
         CallerIdInfo("+84393491883", "John Vo Spam", CallerIdInfoType.SPAM),
@@ -24,6 +24,7 @@ class CallDetectionRepositoryImpl @Inject constructor() : CallDetectionRepositor
         CallerIdInfo("+84393491865", "John Safe ", CallerIdInfoType.SAFE),
         CallerIdInfo("+84352971661", "Trang", CallerIdInfoType.SAFE),
         CallerIdInfo("+84352971620", "Trang", CallerIdInfoType.SAFE),
+        CallerIdInfo("+84777792097", "Scam Long", CallerIdInfoType.SCAM),
     )
 
     override fun evaluatePhoneNumber(phoneNumber: String): Flow<CallerIdInfo?> = flowOf(
