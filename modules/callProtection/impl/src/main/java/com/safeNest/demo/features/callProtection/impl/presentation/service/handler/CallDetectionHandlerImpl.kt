@@ -153,6 +153,8 @@ class CallDetectionHandlerImpl @Inject constructor(
                     callerIdInfo = it
                 )
             )
+            val notificationId = System.currentTimeMillis().toInt()
+            intent?.putExtra("EXTRA_NOTIFICATION_ID", notificationId)
 
             val pendingIntent = PendingIntent.getActivity(
                 context,
@@ -179,7 +181,7 @@ class CallDetectionHandlerImpl @Inject constructor(
                 .build()
 
             try {
-                NotificationManagerCompat.from(context).notify(System.currentTimeMillis().toInt(), notification)
+                NotificationManagerCompat.from(context).notify(notificationId, notification)
             } catch (e: SecurityException) {
                 e.printStackTrace()
             }
