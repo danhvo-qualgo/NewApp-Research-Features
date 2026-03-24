@@ -7,6 +7,7 @@ import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import com.safeNest.demo.features.designSystem.theme.DSTheme
+import com.safeNest.demo.features.scamAnalyzer.api.router.ScamAnalyzerRouterConst
 import com.safeNest.demo.features.scamAnalyzer.impl.presentation.ui.result.AnalysisResultScreen
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -14,6 +15,9 @@ import dagger.hilt.android.AndroidEntryPoint
 class ScamAnalyzerActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        
+        val resultKey = intent?.data?.getQueryParameter(ScamAnalyzerRouterConst.PARAM_RESULT_KEY)
+        
         setContent {
             enableEdgeToEdge(
                 statusBarStyle = SystemBarStyle.light(Color.WHITE, Color.WHITE),
@@ -21,6 +25,7 @@ class ScamAnalyzerActivity : ComponentActivity() {
             )
             DSTheme {
                 AnalysisResultScreen(
+                    resultKey = resultKey,
                     onBackClick = {
                         finish()
                     }

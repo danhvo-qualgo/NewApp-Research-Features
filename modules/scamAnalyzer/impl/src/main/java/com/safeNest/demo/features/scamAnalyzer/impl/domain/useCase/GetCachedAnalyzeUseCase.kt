@@ -8,7 +8,7 @@ import javax.inject.Inject
 class GetCachedAnalyzeUseCase @Inject constructor(
     private val repository: AnalyzerResultRepository
 ) : GetAnalysisResultUseCase {
-    override suspend operator fun invoke(): AnalysisResult? {
-        return repository.getCachedResult()
+    override suspend operator fun invoke(key: String): AnalysisResult? {
+        return repository.getCachedResult(key)
     }
 }

@@ -65,7 +65,7 @@ val MediaTextColor = Color(0xFF454955)
 
 @Composable
 fun ScamAnalyzerScreen(
-    onScamAnalyzerClick: () -> Unit,
+    onScamAnalyzerClick: (String) -> Unit,
     onRecordAudioClick: () -> Unit = {},
     onUploadAudioClick: (Uri) -> Unit = {},
     onUploadImageClick: (Uri) -> Unit = {},
@@ -139,7 +139,7 @@ fun ScamAnalyzerScreen(
         scamAnalyzerViewModel.events.collect { event ->
             when (event) {
                 is ScamAnalyzerEvent.AnalysisSuccess -> {
-                    onScamAnalyzerClick()
+                    onScamAnalyzerClick(event.resultKey)
                 }
             }
         }

@@ -9,8 +9,6 @@ import com.safeNest.demo.features.scamAnalyzer.api.models.AnalysisResultType
 import com.safeNest.demo.features.scamAnalyzer.api.models.AnalysisStatus
 import com.safeNest.demo.features.scamAnalyzer.impl.data.extractor.MlKitOcrExtractor
 import com.safeNest.demo.features.scamAnalyzer.impl.data.store.AnalyzeStore
-import com.safeNest.demo.features.scamAnalyzer.impl.data.utils.DeepResearchService
-import com.safeNest.demo.features.scamAnalyzer.impl.data.utils.DeepResearchSummarizer
 import com.safeNest.demo.features.scamAnalyzer.impl.data.utils.TextRedactor
 import com.safeNest.demo.features.scamAnalyzer.impl.domain.extractor.EntityExtractor
 import com.safeNest.demo.features.scamAnalyzer.impl.domain.repository.AnalyzerRepository
@@ -21,6 +19,7 @@ import com.safeNest.demo.features.scamAnalyzer.impl.utils.gate2.Gate2Classifier
 import com.safeNest.demo.features.scamAnalyzer.impl.utils.gate2.LMClient
 import com.safeNest.demo.features.scamAnalyzer.impl.utils.gate2.PromptBuilder
 import com.safeNest.demo.features.scamAnalyzer.impl.utils.gate2.SignalExtractor
+import com.safeNest.demo.features.scamAnalyzer.impl.utils.gate2.TextAnalyzerClassifier
 import com.safeNest.demo.features.scamAnalyzer.impl.utils.gate2.URLAnalyzerOrchestrator
 import com.safenest.urlanalyzer.gate1.Gate1Classifier
 import com.safenest.urlanalyzer.local_analyzer.LocalURLAnalyzer
@@ -28,9 +27,7 @@ import com.uney.core.network.api.models.ApiResult
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async
-import kotlinx.coroutines.flow.toList
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.Json
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -46,17 +43,6 @@ class OnDeviceAnalyzerRepositoryImpl @Inject constructor(
 ) : AnalyzerRepository {
     companion object {
         private const val TAG = "OnDeviceAnalyzer"
-
-        private suspend fun getPrompt(
-            msg: String,
-            summary: String,
-            analyzeStore: AnalyzeStore
-        ): String {
-            val template = analyzeStore.getCustomPrompt()
-            return template
-                .replace("{message}", msg)
-                .replace("{context}", summary)
-        }
     }
 
 
@@ -83,30 +69,31 @@ class OnDeviceAnalyzerRepositoryImpl @Inject constructor(
         Log.d(TAG, "Redacted text: $redactedText")
 
         // Deep research
-        val deepResearchResult = DeepResearchService.research(extractedEntities)
-        Log.d(TAG, "Deep research result: $deepResearchResult")
-
-        // Summarize
-        val summary = DeepResearchSummarizer.summarize(text, deepResearchResult)
-        Log.d(TAG, "Summary: $summary")
+//        val deepResearchResult = DeepResearchService.research(extractedEntities)
+//        Log.d(TAG, "Deep research result: $deepResearchResult")
+//
+//        // Summarize
+//        val summary = DeepResearchSummarizer.summarize(text, deepResearchResult)
+//        Log.d(TAG, "Summary: $summary")
 
         modelManager.ensureReady()
-        val result = modelManager.analyzer
-            .llmProcessing(getPrompt(text, summary, analyzeStore))
-            .toList()
-            .joinToString("")
+        val data = textClassifier.await().analyze(text)
 
-        val thinkRegex = Regex("<think>.*?</think>", RegexOption.DOT_MATCHES_ALL)
-        val cleaned = result.replace(thinkRegex, "")
-
-        val jsonRegex = Regex("\\{.*\\}", RegexOption.DOT_MATCHES_ALL)
-        val json = jsonRegex.find(cleaned)?.value.orEmpty()
-
-        Log.d(TAG, "Model result: $result")
-        Log.d(TAG, "Json result: $json")
-        val modelResult = Json.decodeFromString<ModelResult>(json)
-
-        return Pair(redactedText, modelResult)
+        return Pair(
+            redactedText, ModelResult(
+                category = when (data.verdict.lowercase()) {
+                    "scam" -> AnalysisStatus.Scam
+                    "safe" -> AnalysisStatus.Safe
+                    else -> AnalysisStatus.Unverified
+                },
+                reasons = data.keyFindings.map {
+                    Reason(
+                        title = it.category,
+                        description = it.description
+                    )
+                }
+            )
+        )
     }
 
     override suspend fun analyzeAudio(uri: Uri): ApiResult<AnalysisResult> {
@@ -135,6 +122,13 @@ class OnDeviceAnalyzerRepositoryImpl @Inject constructor(
     }
 
     private val urlClassifier = GlobalScope.async { createUrlClassifier() }
+
+    private val textClassifier = GlobalScope.async {
+        val lmClient =
+            LMClient(modelManager.analyzer.getModelFolder()?.absolutePath.orEmpty(), modelManager)
+
+        TextAnalyzerClassifier(lmClient, context)
+    }
 
     private suspend fun createUrlClassifier(): URLAnalyzerOrchestrator {
         modelManager.ensureReady()

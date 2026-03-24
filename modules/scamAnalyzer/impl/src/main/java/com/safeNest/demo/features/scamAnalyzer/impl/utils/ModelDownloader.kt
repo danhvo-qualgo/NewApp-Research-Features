@@ -23,7 +23,7 @@ object ModelDownloader {
     private const val TAG = "ModelDownloader"
 
     private const val BASE_URL =
-        "https://huggingface.co/taobao-mnn/Qwen3-0.6B-MNN/resolve/main"
+        "https://huggingface.co/taobao-mnn/Qwen3.5-0.8B-MNN/resolve/main"
 // try qwen3:06b-q4_k_m
     private val MODEL_FILES = listOf(
         "config.json",

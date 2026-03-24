@@ -27,7 +27,7 @@ data class MediaPreviewUiState(
 )
 
 sealed interface MediaPreviewEvent {
-    data object AnalysisSuccess : MediaPreviewEvent
+    data class AnalysisSuccess(val resultKey: String) : MediaPreviewEvent
 }
 
 @HiltViewModel
@@ -70,13 +70,13 @@ class MediaPreviewViewModel @Inject constructor(
                 val result = analyzeUseCase(AnalysisInput.Audio(audioUri))
                 Log.d("MediaPreviewViewModel", "Analysis result: $result")
 
-                if (result != null) {
+                result.onSuccess { resultKey ->
                     _uiState.value = _uiState.value.copy(isAnalyzing = false)
-                    _events.send(MediaPreviewEvent.AnalysisSuccess)
-                } else {
+                    _events.send(MediaPreviewEvent.AnalysisSuccess(resultKey))
+                }.onFailure { error ->
                     _uiState.value = _uiState.value.copy(
                         isAnalyzing = false,
-                        errorMessage = "Something went wrong. Please try again."
+                        errorMessage = error.message ?: "Something went wrong. Please try again."
                     )
                 }
             } catch (e: Exception) {
@@ -97,13 +97,13 @@ class MediaPreviewViewModel @Inject constructor(
                 val result = analyzeUseCase(AnalysisInput.Image(imageUri))
                 Log.d("MediaPreviewViewModel", "Analysis result: $result")
 
-                if (result != null) {
+                result.onSuccess { resultKey ->
                     _uiState.value = _uiState.value.copy(isAnalyzing = false)
-                    _events.send(MediaPreviewEvent.AnalysisSuccess)
-                } else {
+                    _events.send(MediaPreviewEvent.AnalysisSuccess(resultKey))
+                }.onFailure { error ->
                     _uiState.value = _uiState.value.copy(
                         isAnalyzing = false,
-                        errorMessage = "Something went wrong. Please try again."
+                        errorMessage = error.message ?: "Something went wrong. Please try again."
                     )
                 }
             } catch (e: Exception) {

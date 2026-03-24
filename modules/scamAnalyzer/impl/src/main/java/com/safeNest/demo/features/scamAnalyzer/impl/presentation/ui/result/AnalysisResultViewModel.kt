@@ -25,18 +25,21 @@ class AnalysisResultViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(AnalysisResultUiState())
     val uiState: StateFlow<AnalysisResultUiState> = _uiState.asStateFlow()
 
-    init {
-        loadAnalysisResult()
-    }
-
-    private fun loadAnalysisResult() {
+    fun loadAnalysisResult(resultKey: String?) {
         viewModelScope.launch {
             try {
                 _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
-                val result = getAnalysisResultUseCase()
+                
+                val result = resultKey?.let { key ->
+                    getAnalysisResultUseCase(key)
+                }
+                
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
-                    analysisResult = result
+                    analysisResult = result,
+                    errorMessage = if (result == null && resultKey != null) {
+                        "Analysis result not found or expired"
+                    } else null
                 )
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
@@ -45,9 +48,5 @@ class AnalysisResultViewModel @Inject constructor(
                 )
             }
         }
-    }
-
-    fun retry() {
-        loadAnalysisResult()
     }
 }

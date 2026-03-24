@@ -51,6 +51,16 @@ class PhishingLlmAnalyzer {
         Log.i(TAG, "Model loaded: $configPath")
     }
 
+    fun nativeGenerate(prompt: String, listener: ProgressListener) {
+        check(nativePtr != 0L) { "PhishingLlmAnalyzer.load() must be called before llmProcessing()" }
+
+        nativeGenerate(
+            ptr = nativePtr,
+            prompt = prompt,
+            listener = listener,
+        )
+    }
+
     fun llmProcessing(prompt: String): Flow<String> = callbackFlow {
         val thiz = this
         withContext(dispatcher) {

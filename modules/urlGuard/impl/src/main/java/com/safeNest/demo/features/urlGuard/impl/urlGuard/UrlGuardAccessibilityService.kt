@@ -20,8 +20,8 @@ import com.safeNest.demo.features.commonKotlin.IncomingCallType
 import com.safeNest.demo.features.commonKotlin.incomingCallSharedFlow
 import com.safeNest.demo.features.notificationInterceptor.api.NotificationObserver
 import com.safeNest.demo.features.notificationInterceptor.api.model.NotificationCategory
-import com.safeNest.demo.features.scamAnalyzer.api.ScamAnalyzerProvider
 import com.safeNest.demo.features.scamAnalyzer.api.models.AnalysisInput
+import com.safeNest.demo.features.scamAnalyzer.api.router.ScamAnalyzerDeepLink
 import com.safeNest.demo.features.scamAnalyzer.api.useCase.AnalyzeUseCase
 import com.safeNest.demo.features.urlGuard.impl.R
 import com.safeNest.demo.features.urlGuard.impl.detection.NotificationDetection
@@ -74,8 +74,6 @@ class UrlGuardAccessibilityService : AccessibilityService() {
     lateinit var phoneDetection: PhoneDetection
     @Inject
     lateinit var notificationDetection: NotificationDetection
-    @Inject
-    lateinit var scamAnalyzerProvider: ScamAnalyzerProvider
     @Inject
     lateinit var appTrustChecker: AppTrustChecker
     @Inject
@@ -411,13 +409,21 @@ class UrlGuardAccessibilityService : AccessibilityService() {
         secureView.showButtonLoading()
         serviceScope.launch {
             try {
-                withContext(Dispatchers.IO) { analyzeUseCase(input) }
+                val result = withContext(Dispatchers.IO) { analyzeUseCase(input) }
+                result.onSuccess { resultKey ->
+                    secureView.hideActionCard()
+                    secureView.hideBlockingPage()
+                    val uri = ScamAnalyzerDeepLink.entryPointWithResult(resultKey)
+                    routerManager.getLaunchIntent(uri)?.also { intent ->
+                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        this@UrlGuardAccessibilityService.startActivity(intent)
+                    }
+                }.onFailure { error ->
+                    Log.e(TAG, "Analysis failed", error)
+                }
             } finally {
                 secureView.actionCard.hideLoading()
                 secureView.hideButtonLoading()
-                secureView.hideActionCard()
-                secureView.hideBlockingPage()
-                scamAnalyzerProvider.openActivity(this@UrlGuardAccessibilityService)
             }
         }
     }

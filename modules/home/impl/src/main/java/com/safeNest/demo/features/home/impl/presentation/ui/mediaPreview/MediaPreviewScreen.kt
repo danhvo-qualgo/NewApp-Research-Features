@@ -55,7 +55,7 @@ enum class MediaType {
 fun MediaPreviewScreen(
     mediaUri: Uri,
     mediaType: MediaType,
-    onAnalyzeClick: () -> Unit,
+    onAnalyzeClick: (String) -> Unit,
     onDeleteClick: () -> Unit,
     mediaPreviewViewModel: MediaPreviewViewModel = hiltViewModel(),
     autoAnalyze: Boolean = false,
@@ -80,7 +80,7 @@ fun MediaPreviewScreen(
         mediaPreviewViewModel.events.collect { event ->
             when (event) {
                 is MediaPreviewEvent.AnalysisSuccess -> {
-                    onAnalyzeClick()
+                    onAnalyzeClick(event.resultKey)
                 }
             }
         }

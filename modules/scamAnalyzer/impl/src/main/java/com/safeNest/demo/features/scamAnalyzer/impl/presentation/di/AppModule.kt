@@ -1,7 +1,5 @@
 package com.safeNest.demo.features.scamAnalyzer.impl.presentation.di
 
-import com.safeNest.demo.features.scamAnalyzer.api.ScamAnalyzerProvider
-import com.safeNest.demo.features.scamAnalyzer.impl.presentation.ScamAnalyzerProviderImpl
 import com.safeNest.demo.features.scamAnalyzer.impl.presentation.router.ScamAnalyzerRouter
 import com.safeNest.demo.features.scamAnalyzer.impl.utils.AppModelStorage
 import com.safeNest.demo.features.scamAnalyzer.impl.utils.ModelStorage
@@ -17,9 +15,6 @@ import dagger.multibindings.IntoSet
 @Module
 @InstallIn(SingletonComponent::class)
 internal class AppModule {
-    @Provides
-    fun provideScamAnalyzerProvider(impl: ScamAnalyzerProviderImpl): ScamAnalyzerProvider = impl
-
     @IntoSet
     @Provides
     fun providerScamAnalyzerRouter(impl: ScamAnalyzerRouter): Router = impl

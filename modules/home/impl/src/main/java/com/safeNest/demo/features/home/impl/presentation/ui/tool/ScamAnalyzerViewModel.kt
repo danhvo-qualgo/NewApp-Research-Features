@@ -22,7 +22,7 @@ data class ScamAnalyzerUiState(
 )
 
 sealed interface ScamAnalyzerEvent {
-    data object AnalysisSuccess : ScamAnalyzerEvent
+    data class AnalysisSuccess(val resultKey: String) : ScamAnalyzerEvent
 }
 
 @HiltViewModel
@@ -83,16 +83,16 @@ class ScamAnalyzerViewModel @Inject constructor(
                 val result = analyzeUseCase(input)
                 Log.d("AnalyzeResult", result.toString())
                 
-                if (result != null) {
+                result.onSuccess { resultKey ->
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
-                        analysisResult = result.toString()
+                        analysisResult = resultKey
                     )
-                    _events.send(ScamAnalyzerEvent.AnalysisSuccess)
-                } else {
+                    _events.send(ScamAnalyzerEvent.AnalysisSuccess(resultKey))
+                }.onFailure { error ->
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
-                        errorMessage = "Something went wrong. Please try again."
+                        errorMessage = error.message ?: "Something went wrong. Please try again."
                     )
                 }
             } catch (e: Exception) {

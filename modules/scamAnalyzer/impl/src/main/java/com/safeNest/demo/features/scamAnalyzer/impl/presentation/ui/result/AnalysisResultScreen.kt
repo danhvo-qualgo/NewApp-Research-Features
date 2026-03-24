@@ -32,6 +32,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -106,10 +107,15 @@ fun AnalysisStatus.toUiModel(): AnalysisResultModel {
 
 @Composable
 fun AnalysisResultScreen(
+    resultKey: String?,
     onBackClick: () -> Unit = {},
     viewModel: AnalysisResultViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    
+    LaunchedEffect(resultKey) {
+        viewModel.loadAnalysisResult(resultKey)
+    }
 
     Box(
         modifier = Modifier

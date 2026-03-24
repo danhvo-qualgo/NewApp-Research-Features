@@ -12,10 +12,10 @@ class ManageCustomPromptUseCaseImpl @Inject constructor(
     }
 
     override suspend fun setCustomPrompt(prompt: String) {
-        analyzeStore.setCustomPrompt(prompt)
+
     }
 
     override suspend fun getDefaultPrompt(): String {
-        return AnalyzeStore.DEFAULT_PROMPT.trimIndent()
+        return ""
     }
 }

@@ -23,6 +23,7 @@ package com.safeNest.demo.features.scamAnalyzer.impl.utils.gate2
 
 import android.util.Log
 import com.safeNest.demo.features.scamAnalyzer.impl.utils.ModelManager
+import com.safeNest.demo.features.scamAnalyzer.impl.utils.PhishingLlmAnalyzer
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
@@ -80,73 +81,79 @@ class LMClient(
         }
     }
 
-    private suspend fun completeBlocking(fullPrompt: String): String {
+    private fun completeBlocking(fullPrompt: String): String {
         val fullOutput = StringBuilder()
         var parsedJSON: String? = null
         var insideThink = false
-
-        // Pre-seed tracker: prefill already contributed "{"
+        // Pre-seed tracker: prefill already contributed "{" (depth 1)
         var jsonStarted = true
         var braceDepth = 1
         val jsonBuffer = StringBuilder(PREFILL)
 
-        modelManager.analyzer.llmProcessing(fullPrompt).collect { chunk ->
+        Log.d("LMClient", "Run complete blocking")
 
-            if (parsedJSON != null) return@collect
+        val listener = object : PhishingLlmAnalyzer.ProgressListener {
+            override fun onProgress(chunk: String): Boolean {
+                fullOutput.append(chunk)
+                val output = fullOutput.toString()
 
-            fullOutput.append(chunk)
-            val output = fullOutput.toString()
-
-            // Track <think> blocks — skip content inside them
-            if (output.endsWith("<think>") ||
-                (output.contains("<think>") && !output.contains("</think>"))
-            ) {
-                insideThink = true
-            }
-
-            if (output.contains("</think>")) {
-                insideThink = false
-                jsonStarted = false
-                braceDepth = 0
-                jsonBuffer.clear()
-                return@collect
-            }
-
-            if (insideThink) return@collect
-
-            // Track JSON braces
-            for (ch in chunk) {
-                when {
-                    ch == '{' -> {
-                        jsonStarted = true
-                        braceDepth++
-                        jsonBuffer.append(ch)
-                    }
-
-                    ch == '}' && jsonStarted -> {
-                        braceDepth--
-                        jsonBuffer.append(ch)
-
-                        if (braceDepth == 0) {
-                            val candidate = jsonBuffer.toString()
-
-                            if (isValidResponse(candidate)) {
-                                parsedJSON = candidate
-                                return@collect
-                            }
-
-                            jsonStarted = false
-                            jsonBuffer.clear()
-                        }
-                    }
-
-                    jsonStarted -> jsonBuffer.append(ch)
+                // Track <think> blocks — skip content inside them
+                if (output.endsWith("<think>") ||
+                    (output.contains("<think>") && !output.contains("</think>"))
+                ) {
+                    insideThink = true
                 }
+                if (output.contains("</think>")) {
+                    insideThink = false
+                    jsonStarted = false
+                    braceDepth = 0
+                    jsonBuffer.clear()
+                    return true // continue
+                }
+                if (insideThink) return true // continue
+
+                // Accumulate characters and track brace depth
+                for (ch in chunk) {
+                    when {
+                        ch == '{' -> {
+                            jsonStarted = true
+                            braceDepth++
+                            jsonBuffer.append(ch)
+                        }
+
+                        ch == '}' && jsonStarted -> {
+                            braceDepth--
+                            jsonBuffer.append(ch)
+                            if (braceDepth == 0) {
+                                val candidate = jsonBuffer.toString()
+                                if (isValidResponse(candidate)) {
+                                    parsedJSON = candidate
+                                    Log.d("LMClient", "Stop response early")
+                                    return false // stop generation
+                                }
+                                jsonStarted = false
+                                jsonBuffer.clear()
+                            }
+                        }
+
+                        jsonStarted -> jsonBuffer.append(ch)
+                    }
+                }
+                return true // continue
+            }
+
+            override fun onFinish() {
+                // No-op — we handle completion in the caller
+                Log.d("LMClient", "Stop response normal")
             }
         }
 
-        parsedJSON?.let { return it }
+        modelManager.analyzer.nativeGenerate(fullPrompt, listener)
 
+        // Return early-terminated JSON if found
+        if (parsedJSON != null) return parsedJSON!!
+
+        // Fallback: prepend prefill (since template consumed it) and return
         return PREFILL + fullOutput.toString()
     }
 
@@ -161,4 +168,28 @@ class LMClient(
             false
         }
     }
+
+    // ── NEW: expose systemPrompt for callers that need to save/restore it ──
+
+    /** Read the current system prompt. */
+    fun getSystemPrompt(): String = systemPrompt
+
+// ── NEW: completeRaw — accepts a pre-built ChatML prompt ──────────────
+
+    /**
+     * Send a pre-built raw ChatML prompt (with system/user/assistant + PREFILL
+     * already baked in) and get the full response string.
+     *
+     * Same streaming/early-stop logic as [complete], but skips [buildPrompt]
+     * so callers can inject their own system prompt and /no_think.
+     *
+     * Used by TextAnalyzerClassifier which builds its own ChatML with a
+     * different system prompt than URLAnalyzer.
+     */
+    suspend fun completeRaw(rawPrompt: String): String {
+        return withContext(Dispatchers.IO) {
+            completeBlocking(rawPrompt)
+        }
+    }
+
 }

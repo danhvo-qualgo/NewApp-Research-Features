@@ -58,7 +58,7 @@ fun HomeScreen(
     onUploadImageClick: (Uri) -> Unit = {},
     onBlocklistClick: () -> Unit,
     onWhitelistClick: () -> Unit,
-    onScamAnalyzerClick: () -> Unit,
+    onScamAnalyzerClick: (String) -> Unit,
     onConfigurePromptClick: () -> Unit = {},
     initialSharedText: String? = null,
     shouldStartOnToolsTab: Boolean = false

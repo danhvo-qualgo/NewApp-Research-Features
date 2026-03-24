@@ -21,7 +21,7 @@ class AnalyzeUseCaseImpl @Inject constructor(
     private val remoteAnalyzerRepository: AnalyzerRepository,
     private val analyzerResultRepository: AnalyzerResultRepository,
 ) : AnalyzeUseCase {
-    override suspend fun invoke(input: AnalysisInput): AnalysisResult? {
+    override suspend fun invoke(input: AnalysisInput): Result<String> {
         return runCatching {
             val mode = analyzeStore.getMode()
 
@@ -44,14 +44,12 @@ class AnalyzeUseCaseImpl @Inject constructor(
                 is AnalysisInput.Url -> repository.analyzeUrl(input.url)
             }
 
-            val castResult = result as? ApiResult.Success<AnalysisResult> ?: return null
+            val castResult = result as? ApiResult.Success<AnalysisResult> ?: return Result.failure(
+                Exception("Failed to analyze response")
+            )
 
-            analyzerResultRepository.cacheResult(castResult.data)
-
-            castResult.data
-        }.onFailure {
-            Log.d("AnalyzeUseCase", "", it)
+            val cacheKey = analyzerResultRepository.cacheResult(castResult.data)
+            cacheKey
         }
-            .getOrNull()
     }
 }

@@ -1,9 +1,11 @@
 package com.safeNest.demo.features.scamAnalyzer.impl.presentation.di
 
+import com.safeNest.demo.features.scamAnalyzer.api.useCase.AnalyzeAndGetResultUseCase
 import com.safeNest.demo.features.scamAnalyzer.api.useCase.AnalyzeUseCase
 import com.safeNest.demo.features.scamAnalyzer.api.useCase.GetAnalysisResultUseCase
 import com.safeNest.demo.features.scamAnalyzer.api.useCase.ManageAnalyzeModeUseCase
 import com.safeNest.demo.features.scamAnalyzer.api.useCase.ManageCustomPromptUseCase
+import com.safeNest.demo.features.scamAnalyzer.impl.domain.useCase.AnalyzeAndGetResultUseCaseImpl
 import com.safeNest.demo.features.scamAnalyzer.impl.domain.useCase.AnalyzeUseCaseImpl
 import com.safeNest.demo.features.scamAnalyzer.impl.domain.useCase.GetCachedAnalyzeUseCase
 import com.safeNest.demo.features.scamAnalyzer.impl.domain.useCase.ManageAnalyzeModeUseCaseImpl
@@ -31,6 +33,11 @@ abstract class UseCaseModule {
     abstract fun bindGetAnalysisResultUseCase(
         impl: GetCachedAnalyzeUseCase
     ): GetAnalysisResultUseCase
+
+    @Binds
+    abstract fun bindAnalyzeAndGetResultUseCase(
+        impl: AnalyzeAndGetResultUseCaseImpl
+    ): AnalyzeAndGetResultUseCase
 
     @Binds
     abstract fun bindManageAnalyzeModeUseCase(

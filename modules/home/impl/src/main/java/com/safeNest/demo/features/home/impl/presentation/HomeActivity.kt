@@ -100,10 +100,10 @@ class HomeActivity : ComponentActivity() {
                                         CallDetectionDeeplink.entryPoint()
                                     )
                                 },
-                                onScamAnalyzerClick = {
+                                onScamAnalyzerClick = { resultKey ->
                                     routerManager.navigate(
                                         this@HomeActivity,
-                                        ScamAnalyzerDeepLink.entryPoint()
+                                        ScamAnalyzerDeepLink.entryPointWithResult(resultKey)
                                     )
                                 },
                                 onRecordAudioClick = {
@@ -156,10 +156,10 @@ class HomeActivity : ComponentActivity() {
                                         CallDetectionDeeplink.entryPoint()
                                     )
                                 },
-                                onScamAnalyzerClick = {
+                                onScamAnalyzerClick = { resultKey ->
                                     routerManager.navigate(
                                         this@HomeActivity,
-                                        ScamAnalyzerDeepLink.entryPoint()
+                                        ScamAnalyzerDeepLink.entryPointWithResult(resultKey)
                                     )
                                 },
                                 onRecordAudioClick = {
@@ -223,10 +223,10 @@ class HomeActivity : ComponentActivity() {
                                     mediaUri = mediaUri,
                                     mediaType = mediaType,
                                     autoAnalyze = autoAnalyze,
-                                    onAnalyzeClick = {
+                                    onAnalyzeClick = { resultKey ->
                                         routerManager.navigate(
                                             this@HomeActivity,
-                                            ScamAnalyzerDeepLink.entryPoint()
+                                            ScamAnalyzerDeepLink.entryPointWithResult(resultKey)
                                         )
                                     },
                                     onDeleteClick = {
