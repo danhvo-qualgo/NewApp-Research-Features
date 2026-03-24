@@ -14,9 +14,6 @@ class URLAnalyzerOrchestrator(
     private val combiner: ResultCombiner = ResultCombiner(),
     private val gate2Threshold: Float = 0.2f
 ) {
-
-    val isModelReady: Boolean get() = lmClient.isReady
-
     // MARK: - Public API
 
     /**

@@ -23,7 +23,6 @@ package com.safeNest.demo.features.scamAnalyzer.impl.utils.gate2
 
 import android.util.Log
 import com.safeNest.demo.features.scamAnalyzer.impl.utils.ModelManager
-import com.safeNest.demo.features.scamAnalyzer.impl.utils.PhishingLlmAnalyzer
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
@@ -39,23 +38,7 @@ class LMClient(
         const val PREFILL = "{\"verdict\":\""
     }
 
-    var isReady: Boolean = false
-        private set
-
     private var systemPrompt: String = ""
-    private var nativePtr: Long = 0L
-
-    // JNI bridge — delegates to PhishingLlmAnalyzer which matches the
-    // existing cpp/llm_jni.cpp JNI function names. Do NOT rename these;
-    // the JNI symbol names are baked into the pre-built native library.
-    private fun nativeCreate(configPath: String): Long =
-        modelManager.analyzer.nativeCreate(configPath)
-
-    private fun nativeGenerate(ptr: Long, prompt: String, listener: PhishingLlmAnalyzer.ProgressListener) =
-        modelManager.analyzer.nativeGenerate(ptr, prompt, listener)
-
-    private fun nativeRelease(ptr: Long) =
-        modelManager.analyzer.nativeRelease(ptr)
 
     /**
      * Load the MNN LLM model. Call once at startup.
@@ -64,13 +47,7 @@ class LMClient(
      */
     fun load(systemPrompt: String) {
         this.systemPrompt = systemPrompt
-        nativePtr = nativeCreate(modelConfigPath)
-        isReady = nativePtr != 0L
-        if (isReady) {
-            Log.i("LMClient", "MNN LLM model loaded successfully")
-        } else {
-            Log.e("LMClient", "Failed to load MNN LLM model from: $modelConfigPath")
-        }
+        Log.i("LMClient", "MNN LLM model loaded successfully")
     }
 
     /**
@@ -94,8 +71,6 @@ class LMClient(
      * Streams output via MNN's TokenStreamBuf and stops as soon as valid JSON is detected.
      */
     suspend fun complete(userPrompt: String): String {
-        if (!isReady) return ""
-
         val fullPrompt = buildPrompt(userPrompt)
 
         // nativeGenerate is a blocking JNI call — run on IO dispatcher
@@ -105,75 +80,73 @@ class LMClient(
         }
     }
 
-    private fun completeBlocking(fullPrompt: String): String {
+    private suspend fun completeBlocking(fullPrompt: String): String {
         val fullOutput = StringBuilder()
         var parsedJSON: String? = null
         var insideThink = false
-        // Pre-seed tracker: prefill already contributed "{" (depth 1)
+
+        // Pre-seed tracker: prefill already contributed "{"
         var jsonStarted = true
         var braceDepth = 1
         val jsonBuffer = StringBuilder(PREFILL)
 
-        val listener = object : PhishingLlmAnalyzer.ProgressListener {
-            override fun onProgress(chunk: String): Boolean {
-                fullOutput.append(chunk)
-                val output = fullOutput.toString()
+        modelManager.analyzer.llmProcessing(fullPrompt).collect { chunk ->
 
-                // Track <think> blocks — skip content inside them
-                if (output.endsWith("<think>") ||
-                    (output.contains("<think>") && !output.contains("</think>"))
-                ) {
-                    insideThink = true
-                }
-                if (output.contains("</think>")) {
-                    insideThink = false
-                    jsonStarted = false
-                    braceDepth = 0
-                    jsonBuffer.clear()
-                    return true // continue
-                }
-                if (insideThink) return true // continue
+            if (parsedJSON != null) return@collect
 
-                // Accumulate characters and track brace depth
-                for (ch in chunk) {
-                    when {
-                        ch == '{' -> {
-                            jsonStarted = true
-                            braceDepth++
-                            jsonBuffer.append(ch)
-                        }
+            fullOutput.append(chunk)
+            val output = fullOutput.toString()
 
-                        ch == '}' && jsonStarted -> {
-                            braceDepth--
-                            jsonBuffer.append(ch)
-                            if (braceDepth == 0) {
-                                val candidate = jsonBuffer.toString()
-                                if (isValidResponse(candidate)) {
-                                    parsedJSON = candidate
-                                    return false // stop generation
-                                }
-                                jsonStarted = false
-                                jsonBuffer.clear()
-                            }
-                        }
-
-                        jsonStarted -> jsonBuffer.append(ch)
-                    }
-                }
-                return true // continue
+            // Track <think> blocks — skip content inside them
+            if (output.endsWith("<think>") ||
+                (output.contains("<think>") && !output.contains("</think>"))
+            ) {
+                insideThink = true
             }
 
-            override fun onFinish() {
-                // No-op — we handle completion in the caller
+            if (output.contains("</think>")) {
+                insideThink = false
+                jsonStarted = false
+                braceDepth = 0
+                jsonBuffer.clear()
+                return@collect
+            }
+
+            if (insideThink) return@collect
+
+            // Track JSON braces
+            for (ch in chunk) {
+                when {
+                    ch == '{' -> {
+                        jsonStarted = true
+                        braceDepth++
+                        jsonBuffer.append(ch)
+                    }
+
+                    ch == '}' && jsonStarted -> {
+                        braceDepth--
+                        jsonBuffer.append(ch)
+
+                        if (braceDepth == 0) {
+                            val candidate = jsonBuffer.toString()
+
+                            if (isValidResponse(candidate)) {
+                                parsedJSON = candidate
+                                return@collect
+                            }
+
+                            jsonStarted = false
+                            jsonBuffer.clear()
+                        }
+                    }
+
+                    jsonStarted -> jsonBuffer.append(ch)
+                }
             }
         }
 
-        nativeGenerate(nativePtr, fullPrompt, listener)
+        parsedJSON?.let { return it }
 
-        // Return early-terminated JSON if found
-        if (parsedJSON != null) return parsedJSON!!
-
-        // Fallback: prepend prefill (since template consumed it) and return
         return PREFILL + fullOutput.toString()
     }
 
@@ -186,17 +159,6 @@ class LMClient(
             obj.has("verdict") && obj.get("verdict") is String && obj.has("risk_score")
         } catch (e: Exception) {
             false
-        }
-    }
-
-    /**
-     * Release native resources.
-     */
-    fun release() {
-        if (nativePtr != 0L) {
-            nativeRelease(nativePtr)
-            nativePtr = 0L
-            isReady = false
         }
     }
 }

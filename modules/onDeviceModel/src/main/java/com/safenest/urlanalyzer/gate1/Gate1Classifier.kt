@@ -16,11 +16,13 @@
 
 package com.safenest.urlanalyzer.gate1
 
+import ai.onnxruntime.OnnxMap
 import ai.onnxruntime.OnnxTensor
 import ai.onnxruntime.OrtEnvironment
 import ai.onnxruntime.OrtSession
 import android.content.Context
-import com.safenest.urlanalyzer.*
+import com.safenest.urlanalyzer.Gate1Result
+import com.safenest.urlanalyzer.KeyFinding
 import org.json.JSONObject
 import java.io.BufferedReader
 import java.io.InputStreamReader
@@ -111,10 +113,14 @@ class Gate1Classifier(
         val results = session.run(mapOf("features" to featTensor))
 
         // LightGBM ONNX outputs: [labels, probabilities]
-        // probabilities is a list of maps: [{0: p0, 1: p1}]
+        // probabilities is a list of OnnxMap objects: [{0: p0, 1: p1}]
         @Suppress("UNCHECKED_CAST")
-        val probMaps = results[1].value as List<Map<Long, Float>>
-        val probability = probMaps[0][1L] ?: 0.0f
+        val probMaps = results[1].value as List<OnnxMap>
+        val onnxMap = probMaps[0]
+        
+        // Extract probability for class 1 (scam) from OnnxMap using getValue()
+        val mapData = onnxMap.value as Map<*, *>
+        val probability = mapData[1L] as? Float ?: 0.0f
 
         featTensor.close()
         results.close()

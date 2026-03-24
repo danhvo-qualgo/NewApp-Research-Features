@@ -26,6 +26,8 @@ import com.safenest.urlanalyzer.gate1.Gate1Classifier
 import com.safenest.urlanalyzer.local_analyzer.LocalURLAnalyzer
 import com.uney.core.network.api.models.ApiResult
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.toList
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -132,9 +134,9 @@ class OnDeviceAnalyzerRepositoryImpl @Inject constructor(
         )
     }
 
-    private val urlClassifier by lazy { createUrlClassifier() }
+    private val urlClassifier = GlobalScope.async { createUrlClassifier() }
 
-    private fun createUrlClassifier(): URLAnalyzerOrchestrator {
+    private suspend fun createUrlClassifier(): URLAnalyzerOrchestrator {
         val signalExtractor = SignalExtractor(context)
         val promptBuilder = PromptBuilder(context)
         val lmClient =
@@ -155,12 +157,12 @@ class OnDeviceAnalyzerRepositoryImpl @Inject constructor(
     }
 
     override suspend fun analyzeUrl(url: String): ApiResult<AnalysisResult> {
-        val result = urlClassifier.analyze(url)
+        val result = urlClassifier.await().analyze(url)
 
         return ApiResult.Success(
             AnalysisResult(
                 data = AnalysisResultType.Url(url),
-                status = when (result.verdict) {
+                status = when (result.verdict.lowercase()) {
                     "scam" -> AnalysisStatus.Scam
                     "safe" -> AnalysisStatus.Safe
                     else -> AnalysisStatus.Unverified
