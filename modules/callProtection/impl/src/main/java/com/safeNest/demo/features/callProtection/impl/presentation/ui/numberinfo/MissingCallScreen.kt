@@ -18,9 +18,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Block
-import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -184,9 +181,9 @@ fun ScamAlertCard(
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
-                        imageVector = Icons.Default.Block,
+                        imageVector = ImageVector.vectorResource(R.drawable.ic_block_spam),
                         contentDescription = "Blocked",
-                        tint = DSColors.iconError,
+                        tint = Color.Unspecified,
                         modifier = Modifier.size(DSSpacing.s6)
                     )
                 }
@@ -257,20 +254,13 @@ fun ScamAlertCard(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(56.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = DSColors.surfaceAction),
+                    colors = ButtonDefaults.buttonColors(containerColor = DSColors.surface2),
                     shape = CircleShape
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Phone,
-                        contentDescription = "Phone",
-                        tint = DSColors.iconInverted,
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Spacer(modifier = Modifier.width(DSSpacing.s2))
                     Text(
                         text = "Callback",
-                        style = DSTypography.body2.bold,
-                        color = DSColors.textInverted
+                        style = DSTypography.body2.semiBold,
+                        color = DSColors.textHeading
                     )
                 }
             }

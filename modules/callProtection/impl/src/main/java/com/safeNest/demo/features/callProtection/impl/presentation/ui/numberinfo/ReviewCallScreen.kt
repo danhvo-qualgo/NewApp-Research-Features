@@ -36,12 +36,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.safeNest.demo.features.callProtection.api.domain.model.CallerIdInfo
 import com.safeNest.demo.features.callProtection.api.domain.model.CallerIdInfoType
+import com.safeNest.demo.features.callProtection.impl.R
 import com.safeNest.demo.features.callProtection.impl.domain.common.formatBeautifulNumber
 import com.safeNest.demo.features.callProtection.impl.presentation.ui.component.Toolbar
 import com.safeNest.demo.features.callProtection.impl.presentation.ui.numberinfo.dialog.AddToSafeListDialog
@@ -67,8 +69,7 @@ fun ReviewCallScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(brush = bgGradient)
-            .systemBarsPadding()
+            .background(DSColors.surface1)
     ) {
         Column(
             modifier = Modifier.fillMaxSize()
@@ -85,6 +86,7 @@ fun ReviewCallScreen(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .background(bgGradient)
                     .padding(top = 48.dp, bottom = 24.dp, start = 24.dp, end = 24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
@@ -95,7 +97,7 @@ fun ReviewCallScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
-                        imageVector = Icons.Default.Phone,
+                        imageVector = ImageVector.vectorResource(R.drawable.ic_phone_outline),
                         contentDescription = null,
                         tint = DSColors.iconAction,
                         modifier = Modifier.size(32.dp)
@@ -128,8 +130,8 @@ fun ReviewCallScreen(
                 ) {
                     FeedbackOptionCard(
                         title = "This is spam/scam",
-                        iconVector = Icons.Default.Block,
-                        iconTint = DSColors.iconError,
+                        iconVector = ImageVector.vectorResource(R.drawable.ic_block_spam),
+                        iconTint = Color.Unspecified,
                         iconBg = DSColors.surfaceErrorLightest,
                         onClick = {
                             missingCallViewModel.addToBlocklist(callerIdInfo.phoneNumber)
@@ -139,8 +141,8 @@ fun ReviewCallScreen(
 
                     FeedbackOptionCard(
                         title = "I know this person",
-                        iconVector = Icons.Default.Person,
-                        iconTint = DSColors.iconAction,
+                        iconVector = ImageVector.vectorResource(R.drawable.ic_person_known),
+                        iconTint = Color.Unspecified,
                         iconBg = Color(0xFFEEF2FF),
                         onClick = {
                             missingCallViewModel.addToWhitelist(callerIdInfo.phoneNumber, callerIdInfo.label)
@@ -150,8 +152,8 @@ fun ReviewCallScreen(
 
                     FeedbackOptionCard(
                         title = "I don't know",
-                        iconVector = Icons.Default.HelpOutline,
-                        iconTint = DSColors.iconAction,
+                        iconVector = ImageVector.vectorResource(R.drawable.ic_question_bubble),
+                        iconTint = Color.Unspecified,
                         iconBg = Color(0xFFEEF2FF),
                         onClick = {
                             onBack()

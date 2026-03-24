@@ -6,22 +6,18 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Phone
-import androidx.compose.material.icons.filled.Security
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -33,17 +29,21 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
 import com.safeNest.demo.features.callProtection.api.domain.model.CallerIdInfo
+import com.safeNest.demo.features.callProtection.api.domain.model.CallerIdInfoType
+import com.safeNest.demo.features.callProtection.impl.R
 import com.safeNest.demo.features.callProtection.impl.presentation.ui.component.Toolbar
 import com.safeNest.demo.features.designSystem.component.gradientBackground
 import com.safeNest.demo.features.designSystem.theme.DSSpacing
 import com.safeNest.demo.features.designSystem.theme.DSTypography
 import com.safeNest.demo.features.designSystem.theme.color.DSColors
-import androidx.core.net.toUri
 
 @Composable
 fun MakeCallConfirmScreen(
@@ -56,19 +56,10 @@ fun MakeCallConfirmScreen(
 
     Scaffold(
         containerColor = Color.Transparent,
+        contentWindowInsets = WindowInsets(0),
         modifier = Modifier
             .fillMaxSize()
-            .background(brush = bgGradient)
-            .systemBarsPadding(),
-        topBar = {
-            Column(modifier = Modifier.background(DSColors.surface1)) {
-                Spacer(modifier = Modifier.statusBarsPadding())
-                Toolbar(
-                    text = "",
-                    onActionClick = onBack
-                )
-            }
-        },
+            .background(brush = bgGradient),
         bottomBar = {
             DockBarActions() {
                 val intent = Intent(Intent.ACTION_DIAL).apply {
@@ -86,21 +77,22 @@ fun MakeCallConfirmScreen(
                 .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Spacer(modifier = Modifier.height(DSSpacing.s10))
-
-            Box(
-                modifier = Modifier
-                    .size(64.dp)
-                    .background(DSColors.surfaceAction, RoundedCornerShape(16.dp)),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Security,
-                    contentDescription = "Shield",
-                    tint = DSColors.iconInverted,
-                    modifier = Modifier.size(32.dp)
+            Column(modifier = Modifier.background(DSColors.surface1)) {
+                Spacer(modifier = Modifier.statusBarsPadding())
+                Toolbar(
+                    text = "",
+                    onActionClick = onBack
                 )
             }
+
+            Spacer(modifier = Modifier.height(DSSpacing.s10))
+
+            Icon(
+                imageVector = ImageVector.vectorResource(R.drawable.ic_safenest_shield_large),
+                contentDescription = "Shield",
+                tint = Color.Unspecified,
+                modifier = Modifier.size(64.dp)
+            )
 
             Spacer(modifier = Modifier.height(DSSpacing.s6))
 
@@ -131,19 +123,12 @@ fun MakeCallConfirmScreen(
                 Row(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .size(DSSpacing.s6)
-                            .background(DSColors.surfaceSuccess, CircleShape),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Check,
-                            contentDescription = "Check",
-                            tint = DSColors.iconInverted,
-                            modifier = Modifier.size(12.dp)
-                        )
-                    }
+                    Icon(
+                        imageVector = ImageVector.vectorResource(R.drawable.ic_check_circle_green),
+                        contentDescription = "Check",
+                        tint = Color.Unspecified,
+                        modifier = Modifier.size(24.dp)
+                    )
 
                     Spacer(modifier = Modifier.width(DSSpacing.s3))
 
@@ -181,7 +166,7 @@ private fun DockBarActions(
                 shape = CircleShape
             ) {
                 Icon(
-                    imageVector = Icons.Default.Phone,
+                    imageVector = ImageVector.vectorResource(R.drawable.ic_phone_outline),
                     contentDescription = "Phone",
                     tint = DSColors.iconInverted,
                     modifier = Modifier.size(20.dp)
@@ -218,7 +203,9 @@ private fun DockBarActions(
 @Composable
 @Preview
 fun MakeCallConfirmScreenPreview() {
-//    MakeCallConfirmScreen {
-//
-//    }
+    MakeCallConfirmScreen(
+        callerIdInfo = CallerIdInfo("", "", CallerIdInfoType.SPAM), {}
+    ) {
+
+    }
 }
