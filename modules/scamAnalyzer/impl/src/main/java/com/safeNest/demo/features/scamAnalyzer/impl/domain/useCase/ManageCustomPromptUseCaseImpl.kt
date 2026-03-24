@@ -8,7 +8,7 @@ class ManageCustomPromptUseCaseImpl @Inject constructor(
     private val analyzeStore: AnalyzeStore
 ) : ManageCustomPromptUseCase {
     override suspend fun getCustomPrompt(): String {
-        return analyzeStore.getCustomPrompt()
+        return getDefaultPrompt()
     }
 
     override suspend fun setCustomPrompt(prompt: String) {
