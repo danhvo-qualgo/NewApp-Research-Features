@@ -19,8 +19,11 @@ dependencies {
     implementation(project(":modules:onDeviceModel"))
     implementation(project(":modules:permissionManager:api"))
     implementation(project(":modules:callProtection:api"))
+    //TODO: change after demo
+    implementation(project(":modules:callProtection:impl"))
     implementation(project(":modules:scamAnalyzer:api"))
     implementation(project(":modules:commonAndroid"))
+    implementation(project(":modules:commonKotlin"))
     implementation(libs.core.router)
 
     // Ktor HTTP client

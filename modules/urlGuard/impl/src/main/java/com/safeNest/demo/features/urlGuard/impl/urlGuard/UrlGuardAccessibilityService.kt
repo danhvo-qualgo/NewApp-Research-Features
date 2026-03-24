@@ -14,8 +14,12 @@ import android.util.Log
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import androidx.core.app.NotificationCompat
+import com.safeNest.demo.features.callProtection.impl.presentation.router.CallDetectionDeeplink
 import com.safeNest.demo.features.commonAndroid.openAppSettings
+import com.safeNest.demo.features.commonKotlin.IncomingCallType
+import com.safeNest.demo.features.commonKotlin.incomingCallSharedFlow
 import com.safeNest.demo.features.notificationInterceptor.api.NotificationObserver
+import com.safeNest.demo.features.notificationInterceptor.api.model.NotificationCategory
 import com.safeNest.demo.features.scamAnalyzer.api.ScamAnalyzerProvider
 import com.safeNest.demo.features.scamAnalyzer.api.models.AnalysisInput
 import com.safeNest.demo.features.scamAnalyzer.api.useCase.AnalyzeUseCase
@@ -28,6 +32,7 @@ import com.safeNest.demo.features.urlGuard.impl.urlGuard.util.UserAllowedDomainG
 import com.safeNest.demo.features.urlGuard.impl.urlGuard.view.QuickActionCardView
 import com.safeNest.demo.features.urlGuard.impl.urlGuard.view.SecureView
 import com.safeNest.demo.features.urlGuard.impl.urlGuard.view.model.toActionCardViewListAction
+import com.uney.core.router.RouterManager
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -75,6 +80,8 @@ class UrlGuardAccessibilityService : AccessibilityService() {
     lateinit var appTrustChecker: AppTrustChecker
     @Inject
     lateinit var analyzeUseCase: AnalyzeUseCase
+    @Inject
+    lateinit var routerManager: RouterManager
     // ── UI layer ──────────────────────────────────────────────────────────────
     private lateinit var secureView: SecureView
 
@@ -181,12 +188,20 @@ class UrlGuardAccessibilityService : AccessibilityService() {
 
         serviceScope.launch {
             notificationObserver.notificationFlow.collect { record ->
-
+                if(record.category == NotificationCategory.SYSTEM) return@collect
                 onNotificationPosted(
                     record.appSenderPkgName,
                     record.title ?: "",
-                    record.content ?: ""
+                    record.content ?: "",
+                    record.category
                 )
+            }
+        }
+
+        serviceScope.launch {
+            incomingCallSharedFlow.collect { eventCall ->
+                handleCallEvent(eventCall.phoneNumber, eventCall.message, eventCall.incomingCallType)
+
             }
         }
 
@@ -254,6 +269,7 @@ class UrlGuardAccessibilityService : AccessibilityService() {
         when (intent?.action) {
             ACTION_SHOW_FLOATING -> {
                 Log.d(TAG, "onStartCommand: SHOW_FLOATING")
+                onHostAppForeground()
                 secureView.showFloatingButton()
             }
 
@@ -454,6 +470,34 @@ class UrlGuardAccessibilityService : AccessibilityService() {
                 Log.d(TAG, "Floating button tapped — Browser foreground, triggering detail action")
                 onDetailAction()
             }
+
+            is ScreenSurface.ActiveCall -> {
+                serviceScope.launch {
+                    val phone = surface.phoneNumber ?: return@launch
+                    //val getCallerInfo = phoneDetection.getCallerInfo(phone) ?: return@launch
+                    val uri = when(surface.fromEvent) {
+                        IncomingCallType.BLOCKLIST -> CallDetectionDeeplink.entryPointBlocklist()
+                        IncomingCallType.CALLER_ID -> {
+                            val getCallerInfo =  phoneDetection.getCallerInfo(phone) ?: return@launch
+                            CallDetectionDeeplink.entryPointMissingCall(getCallerInfo)
+                        }
+
+                        IncomingCallType.WHITELIST -> {
+                            CallDetectionDeeplink.entryPointWhitelist()
+                        }
+                        else -> null
+                    }
+
+                    uri?.let {
+                        Log.d(TAG, "tapp open detaill screen with uri: $it")
+                        routerManager.getLaunchIntent(it)?.also { intent ->
+                            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            Log.d(TAG, "tapp open detail screen with intent: $intent")
+                            this@UrlGuardAccessibilityService.startActivity(intent)
+                        }
+                    }
+                }
+            }
             else -> Unit
         }
     }
@@ -597,6 +641,23 @@ class UrlGuardAccessibilityService : AccessibilityService() {
         SurfaceDetector.update(ScreenSurface.ActiveCall(phoneNumber, detectionStatus))
     }
 
+    private fun handleCallEvent(phoneNumber: String, message: String, callEventType: IncomingCallType) {
+        pendingCallCheck?.let { mainHandler.removeCallbacks(it) }
+        pendingCallCheck = Runnable {
+            pendingCallCheck = null
+            Log.d(TAG, "Incomming phone number: $phoneNumber")
+            Log.d(TAG, "Incomming call event: $callEventType")
+            serviceScope.launch {
+                val detectionStatus = phoneDetection.detectPhone(phoneNumber)
+                SurfaceDetector.update(ScreenSurface.ActiveCall(phoneNumber, detectionStatus, callEventType))
+                secureView.updateButton(FloatingButtonFeature.CALL_PROTECTION, detectionStatus)
+                showFloatingButtonFromEvent()
+                Log.d(TAG, "show tool tip with message: $message")
+                secureView.showToastTooltip(message)
+            }
+        }.also { mainHandler.postDelayed(it, CALL_DEBOUNCE_MS) }
+    }
+
     private fun extractPhoneNumberFromTree(root: AccessibilityNodeInfo?): String? {
         root ?: return null
         val text = root.text?.toString()
@@ -630,39 +691,15 @@ class UrlGuardAccessibilityService : AccessibilityService() {
     // 2.3 Notification detection
     // =========================================================================
 
-    private fun onNotificationPosted(pkg: String, event: AccessibilityEvent) {
-        val texts = event.text
-        val title = texts.getOrNull(0)?.toString()?.takeIf { it.isNotBlank() }
-        val content = texts.drop(1)
-            .mapNotNull { it?.toString() }
-            .filter { it.isNotBlank() }
-            .joinToString(" ")
-            .takeIf { it.isNotBlank() }
-
-        Log.d(TAG, "Notification from [$pkg] content=${texts}")
-        SurfaceDetector.update(
-            ScreenSurface.Notification(
-                pkg,
-                title,
-                content,
-                DetectionStatus.UNKNOWN
-            )
-        )
-        scheduleNotificationCheck(texts.joinToString("\n"))
-
-//        secureView.updateButton(FloatingButtonFeature.SMS_CHECK, DetectionStatus.UNKNOWN)
-//        secureView.updateActionCard(FloatingButtonFeature.SMS_CHECK, DetectionStatus.UNKNOWN)
-    }
-
     /** Handle notification from notification listener service
      */
-    private fun onNotificationPosted(pkg: String, title: String, content: String) {
+    private fun onNotificationPosted(pkg: String, title: String, content: String, notificationCategory: NotificationCategory) {
         if (pkg !in AppTrustChecker.NOTIFICATION_SCAN_PACKAGES) {
             Log.d(TAG, "Notification from [$pkg] skipped — not in monitored app list")
             return
         }
 
-        Log.d(TAG, "Notification from [$pkg] content=$content title=$title")
+        Log.d(TAG, "Notification from [$pkg] content=$content title=$title category=$notificationCategory")
         SurfaceDetector.update(
             ScreenSurface.Notification(
                 pkg,
@@ -672,15 +709,20 @@ class UrlGuardAccessibilityService : AccessibilityService() {
             )
         )
 
-        scheduleNotificationCheck(content)
+        scheduleNotificationCheck(content, notificationCategory)
     }
 
-    private fun scheduleNotificationCheck(notificationContent: String) {
+    private fun scheduleNotificationCheck(notificationContent: String, notificationCategory: NotificationCategory) {
         pendingCallCheck?.let { mainHandler.removeCallbacks(it) }
         pendingCallCheck = Runnable {
             pendingCallCheck = null
             serviceScope.launch {
-                val result = notificationDetection.detectNotificationContent(notificationContent)
+                val result = if(notificationCategory == NotificationCategory.CALL) {
+                    DetectionStatus.WARNING
+                } else {
+                    notificationDetection.detectNotificationContent(notificationContent)
+                }
+
                 secureView.updateButton(FloatingButtonFeature.SMS_CHECK, result)
                 secureView.updateActionCard(FloatingButtonFeature.SMS_CHECK, result, buildActions(FloatingButtonFeature.SMS_CHECK, result))
                 showFloatingButtonFromEvent()

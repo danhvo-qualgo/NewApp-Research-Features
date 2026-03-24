@@ -406,6 +406,6 @@ class SecureView(
         private const val TAG = "SecureView"
 
         /** How long the toast tooltip stays on screen before auto-dismissing. */
-        private const val TOAST_TOOLTIP_DURATION_MS = 1_000L
+        private const val TOAST_TOOLTIP_DURATION_MS = 3_000L
     }
 }

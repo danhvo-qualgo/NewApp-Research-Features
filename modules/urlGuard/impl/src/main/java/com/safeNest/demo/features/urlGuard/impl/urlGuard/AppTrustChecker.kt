@@ -177,7 +177,7 @@ class AppTrustChecker @Inject constructor(
          * by [onNotificationPosted]; all others are silently ignored.
          */
         val NOTIFICATION_SCAN_PACKAGES: Set<String> =
-            OTT_PACKAGES + SOCIAL_NETWORK_PACKAGES + SMS_PACKAGES + CALL_PACKAGES
+            OTT_PACKAGES + SOCIAL_NETWORK_PACKAGES + SMS_PACKAGES
 
         /** Well-known apps always treated as trusted regardless of install source. */
         val TRUSTED_PACKAGES: Set<String> = setOf(

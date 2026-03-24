@@ -1,5 +1,7 @@
 package com.safeNest.demo.features.notificationInterceptor.impl.data
 
+import com.safeNest.demo.features.notificationInterceptor.api.model.NotificationCategory
+
 data class NotificationRecord(
     // Identity
     val id: String,

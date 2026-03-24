@@ -23,8 +23,13 @@ class PhoneDetectionImpl @Inject constructor(
             CallerIdInfoType.PHISHING -> DetectionStatus.DANGEROUS
             CallerIdInfoType.SCAM, CallerIdInfoType.SPAM -> DetectionStatus.WARNING
             CallerIdInfoType.SAFE -> DetectionStatus.SAFE
-            else -> DetectionStatus.UNKNOWN
+            else -> DetectionStatus.WARNING
         }
+    }
+
+    override suspend fun getCallerInfo(phone: String): CallerIdInfo? {
+        return getCallerIdInfoUseCase(phone)
+
     }
     companion object {
         const val TAG = "PhoneDetection"

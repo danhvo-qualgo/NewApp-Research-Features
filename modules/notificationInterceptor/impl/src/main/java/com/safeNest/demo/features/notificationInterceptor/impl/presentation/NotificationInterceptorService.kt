@@ -9,7 +9,7 @@ import android.provider.Telephony
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import android.util.Log
-import com.safeNest.demo.features.notificationInterceptor.impl.data.NotificationCategory
+import com.safeNest.demo.features.notificationInterceptor.api.model.NotificationCategory
 import com.safeNest.demo.features.notificationInterceptor.impl.data.NotificationRecord
 import com.safeNest.demo.features.notificationInterceptor.impl.data.NotificationStore
 import dagger.hilt.android.AndroidEntryPoint
@@ -66,6 +66,7 @@ class NotificationInterceptorService : NotificationListenerService() {
 
         val category = when {
             notification.category == Notification.CATEGORY_CALL -> NotificationCategory.CALL
+            notification.category == Notification.CATEGORY_SYSTEM -> NotificationCategory.SYSTEM
             notification.category == Notification.CATEGORY_MESSAGE -> {
                 val smsPackage = Telephony.Sms.getDefaultSmsPackage(applicationContext)
                 if (sbn.packageName == smsPackage) NotificationCategory.SMS
@@ -142,6 +143,7 @@ class NotificationInterceptorService : NotificationListenerService() {
                     appSenderPkgName = record.packageName,
                     title = record.title,
                     content = record.text ?: record.bigText,
+                    category = record.category
                 )
             )
         //}
