@@ -108,9 +108,9 @@ class PhishingLlmAnalyzer {
 
     // ── JNI declarations ────────────────────────────────────────────────────
 
-    private external fun nativeCreate(configPath: String): Long
-    private external fun nativeGenerate(ptr: Long, prompt: String, listener: ProgressListener)
-    private external fun nativeRelease(ptr: Long)
+    external fun nativeCreate(configPath: String): Long
+    external fun nativeGenerate(ptr: Long, prompt: String, listener: ProgressListener)
+    external fun nativeRelease(ptr: Long)
 
     companion object {
         private const val TAG = "PhishingLlmAnalyzer"

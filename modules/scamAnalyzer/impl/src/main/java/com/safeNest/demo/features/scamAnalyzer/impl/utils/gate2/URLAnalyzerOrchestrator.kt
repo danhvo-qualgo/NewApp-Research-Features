@@ -1,23 +1,9 @@
-/*
- * URLAnalyzerOrchestrator.kt — Decision router (Gate 1 → Gate 2).
- *
- * Mirrors iOS URLAnalyzerOrchestrator.swift and Python orchestrator.py.
- *
- * Flow:
- *   1. Gate 1 (ONNX/TFLite, ~8ms) → verdict + confidence
- *   2. Decision:
- *      SAFE                          → return immediately
- *      SUSPICIOUS + has keyFindings  → return with keyFindings (fast)
- *      SUSPICIOUS + no keyFindings   → Local Analyzer → Gate 2 SLM → combine → return
- *      SCAM low conf                 → return with keyFindings
- *      SCAM high conf                → Local Analyzer → Gate 2 SLM → combine → return
- */
+package com.safeNest.demo.features.scamAnalyzer.impl.utils.gate2
 
-package com.safenest.urlanalyzer
-
+import com.safenest.urlanalyzer.Gate1Result
+import com.safenest.urlanalyzer.ResultCombiner
+import com.safenest.urlanalyzer.URLAnalysisResult
 import com.safenest.urlanalyzer.gate1.Gate1Classifier
-import com.safenest.urlanalyzer.gate2.Gate2Classifier
-import com.safenest.urlanalyzer.gate2.LMClient
 import com.safenest.urlanalyzer.local_analyzer.LocalURLAnalyzer
 
 class URLAnalyzerOrchestrator(

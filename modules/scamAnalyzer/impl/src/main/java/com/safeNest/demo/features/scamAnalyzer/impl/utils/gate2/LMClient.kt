@@ -19,27 +19,18 @@
  *   - onFinish()
  */
 
-package com.safenest.urlanalyzer.gate2
+package com.safeNest.demo.features.scamAnalyzer.impl.utils.gate2
 
 import android.util.Log
+import com.safeNest.demo.features.scamAnalyzer.impl.utils.ModelManager
 import com.safeNest.demo.features.scamAnalyzer.impl.utils.PhishingLlmAnalyzer
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
 
-/**
- * Callback interface for streaming token output from the MNN LLM engine.
- * Matches the JNI contract in cpp/llm_jni.cpp (TokenStreamBuf).
- */
-interface ProgressListener {
-    /** Called with each UTF-8 chunk. Return false to stop generation. */
-    fun onProgress(chunk: String): Boolean
-    /** Called when generation is complete. */
-    fun onFinish()
-}
-
 class LMClient(
     private val modelConfigPath: String,
+    private val modelManager: ModelManager,
     private val maxTokens: Int = 512
 ) {
 
@@ -58,11 +49,13 @@ class LMClient(
     // existing cpp/llm_jni.cpp JNI function names. Do NOT rename these;
     // the JNI symbol names are baked into the pre-built native library.
     private fun nativeCreate(configPath: String): Long =
-        PhishingLlmAnalyzer.nativeCreate(configPath)
-    private fun nativeGenerate(ptr: Long, prompt: String, listener: ProgressListener) =
-        PhishingLlmAnalyzer.nativeGenerate(ptr, prompt, listener)
+        modelManager.analyzer.nativeCreate(configPath)
+
+    private fun nativeGenerate(ptr: Long, prompt: String, listener: PhishingLlmAnalyzer.ProgressListener) =
+        modelManager.analyzer.nativeGenerate(ptr, prompt, listener)
+
     private fun nativeRelease(ptr: Long) =
-        PhishingLlmAnalyzer.nativeRelease(ptr)
+        modelManager.analyzer.nativeRelease(ptr)
 
     /**
      * Load the MNN LLM model. Call once at startup.
@@ -121,7 +114,7 @@ class LMClient(
         var braceDepth = 1
         val jsonBuffer = StringBuilder(PREFILL)
 
-        val listener = object : ProgressListener {
+        val listener = object : PhishingLlmAnalyzer.ProgressListener {
             override fun onProgress(chunk: String): Boolean {
                 fullOutput.append(chunk)
                 val output = fullOutput.toString()
@@ -149,6 +142,7 @@ class LMClient(
                             braceDepth++
                             jsonBuffer.append(ch)
                         }
+
                         ch == '}' && jsonStarted -> {
                             braceDepth--
                             jsonBuffer.append(ch)
@@ -162,6 +156,7 @@ class LMClient(
                                 jsonBuffer.clear()
                             }
                         }
+
                         jsonStarted -> jsonBuffer.append(ch)
                     }
                 }

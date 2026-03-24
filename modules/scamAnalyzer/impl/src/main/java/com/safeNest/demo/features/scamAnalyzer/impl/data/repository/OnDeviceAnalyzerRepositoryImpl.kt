@@ -17,12 +17,12 @@ import com.safeNest.demo.features.scamAnalyzer.impl.domain.repository.AnalyzerRe
 import com.safeNest.demo.features.scamAnalyzer.impl.utils.ModelManager
 import com.safeNest.demo.features.scamAnalyzer.impl.utils.asr.WhisperModelManager
 import com.safeNest.demo.features.scamAnalyzer.impl.utils.asr.WhisperTranscriber
-import com.safenest.urlanalyzer.URLAnalyzerOrchestrator
+import com.safeNest.demo.features.scamAnalyzer.impl.utils.gate2.Gate2Classifier
+import com.safeNest.demo.features.scamAnalyzer.impl.utils.gate2.LMClient
+import com.safeNest.demo.features.scamAnalyzer.impl.utils.gate2.PromptBuilder
+import com.safeNest.demo.features.scamAnalyzer.impl.utils.gate2.SignalExtractor
+import com.safeNest.demo.features.scamAnalyzer.impl.utils.gate2.URLAnalyzerOrchestrator
 import com.safenest.urlanalyzer.gate1.Gate1Classifier
-import com.safenest.urlanalyzer.gate2.Gate2Classifier
-import com.safenest.urlanalyzer.gate2.LMClient
-import com.safenest.urlanalyzer.gate2.PromptBuilder
-import com.safenest.urlanalyzer.gate2.SignalExtractor
 import com.safenest.urlanalyzer.local_analyzer.LocalURLAnalyzer
 import com.uney.core.network.api.models.ApiResult
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -137,7 +137,8 @@ class OnDeviceAnalyzerRepositoryImpl @Inject constructor(
     private fun createUrlClassifier(): URLAnalyzerOrchestrator {
         val signalExtractor = SignalExtractor(context)
         val promptBuilder = PromptBuilder(context)
-        val lmClient = LMClient(modelManager.analyzer.getModelFolder()?.absolutePath.orEmpty())
+        val lmClient =
+            LMClient(modelManager.analyzer.getModelFolder()?.absolutePath.orEmpty(), modelManager)
         lmClient.load(promptBuilder.buildSystemPrompt())
 
         val gate2Classifier = Gate2Classifier(signalExtractor, promptBuilder, lmClient)

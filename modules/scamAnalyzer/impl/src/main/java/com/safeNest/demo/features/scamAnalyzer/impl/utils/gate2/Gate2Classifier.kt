@@ -5,7 +5,7 @@
  * Orchestrates: extract signals → build prompt → call SLM → parse JSON.
  */
 
-package com.safenest.urlanalyzer.gate2
+package com.safeNest.demo.features.scamAnalyzer.impl.utils.gate2
 
 import android.util.Log
 import com.safenest.urlanalyzer.*

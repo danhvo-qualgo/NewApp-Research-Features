@@ -5,7 +5,7 @@
  * Loads gate2_signal_mappings.json, evaluates conditions against AnalyzerData.
  */
 
-package com.safenest.urlanalyzer.gate2
+package com.safeNest.demo.features.scamAnalyzer.impl.utils.gate2
 
 import android.content.Context
 import com.safenest.urlanalyzer.*
