@@ -121,7 +121,7 @@ fun MissingCallScreen(
         if (showDialog == MissingCallDialogState.ADD_TO_WHITELIST) {
             AddToSafeListDialog(
                 onDismiss = {
-
+                    showDialog = MissingCallDialogState.HIDE
                 },
                 onSubmit = { name, _ ->
                     missingCallViewModel.addToWhitelist(callerIdInfo.phoneNumber, name)

@@ -36,7 +36,7 @@ fun AddToSafeListDialog(
     var isContributeChecked by remember { mutableStateOf(true) }
 
     Dialog(
-        onDismissRequest = onDismiss,
+        onDismissRequest = {},
         properties = DialogProperties(
             dismissOnBackPress = false,
             dismissOnClickOutside = false
