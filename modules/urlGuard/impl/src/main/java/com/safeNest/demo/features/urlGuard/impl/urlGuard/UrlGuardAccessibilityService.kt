@@ -576,10 +576,6 @@ class UrlGuardAccessibilityService : AccessibilityService() {
         SurfaceDetector.update(ScreenSurface.App(packageName, DetectionStatus.SAFE))
         secureView.showFloatingButton()
         secureView.updateButton(FloatingButtonFeature.APP_CHECK, DetectionStatus.SAFE)
-        if(!firstTimeOpenApp) {
-            firstTimeOpenApp = true
-            secureView.showToastTooltip(getString(R.string.floating_button_idle_tooltip))
-        }
     }
 
     /**
@@ -605,7 +601,7 @@ class UrlGuardAccessibilityService : AccessibilityService() {
             return
         }
         Log.d(TAG, "Launcher foreground — hiding floating button")
-        SurfaceDetector.update(ScreenSurface.Idle)
+        //SurfaceDetector.update(ScreenSurface.Idle)
         //secureView.hideFloatingButton()
     }
 
