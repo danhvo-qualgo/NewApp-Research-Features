@@ -146,6 +146,10 @@ class UrlGuardAccessibilityService : AccessibilityService() {
             .also { Log.d(TAG, "Launcher packages: $it") }
     }
 
+    // ── Custome ────────────────────────────────────────────────────────────
+    // TODO: replace with logic firstTimeOpenApp with Persistence store
+    private var firstTimeOpenApp: Boolean = false
+
     // =========================================================================
     // Lifecycle
     // =========================================================================
@@ -268,7 +272,6 @@ class UrlGuardAccessibilityService : AccessibilityService() {
             ACTION_SHOW_FLOATING -> {
                 Log.d(TAG, "onStartCommand: SHOW_FLOATING")
                 onHostAppForeground()
-                secureView.showFloatingButton()
             }
 
             ACTION_HIDE_FLOATING -> {
@@ -573,6 +576,10 @@ class UrlGuardAccessibilityService : AccessibilityService() {
         SurfaceDetector.update(ScreenSurface.App(packageName, DetectionStatus.SAFE))
         secureView.showFloatingButton()
         secureView.updateButton(FloatingButtonFeature.APP_CHECK, DetectionStatus.SAFE)
+        if(!firstTimeOpenApp) {
+            firstTimeOpenApp = true
+            secureView.showToastTooltip(getString(R.string.floating_button_idle_tooltip))
+        }
     }
 
     /**

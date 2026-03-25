@@ -49,6 +49,10 @@ object CardPositionCalculator {
      * @param screenWidth  Full screen width  (px)
      * @param screenHeight Full screen height (px)
      * @param density      Display density scalar (dp → px)
+     * @param abovePriority When true the card is placed ABOVE the button first (before
+     *                      trying horizontal sides). Falls back to BELOW, then LEFT/RIGHT
+     *                      if there is no room above. Use this for toast-style tooltips
+     *                      that should always float above the button when possible.
      * @return             [CardPlacement] with the resolved top-left (x, y) for the card
      */
     fun resolve(
@@ -56,13 +60,38 @@ object CardPositionCalculator {
         btnWidth: Int, btnHeight: Int,
         cardWidth: Int, cardHeight: Int,
         screenWidth: Int, screenHeight: Int,
-        density: Float
+        density: Float,
+        abovePriority: Boolean = false
     ): CardPlacement {
         val margin  = (MARGIN_DP  * density + 0.5f).toInt()
         val padding = (PADDING_DP * density + 0.5f).toInt()
 
         val btn  = BtnBounds(btnX, btnY, btnWidth, btnHeight)
         val card = CardSize(cardWidth, cardHeight)
+
+        if (abovePriority) {
+            // ── Above-priority path: vertical first (TOP → BOTTOM), then horizontal ──
+            tryVertical(VSide.TOP,    btn, card, screenWidth, screenHeight, margin, padding)
+                ?.let { return it }
+            tryVertical(VSide.BOTTOM, btn, card, screenWidth, screenHeight, margin, padding)
+                ?.let { return it }
+
+            val preferH = if (btn.centerX <= screenWidth / 2) HSide.RIGHT else HSide.LEFT
+            tryHorizontal(preferH,           btn, card, screenWidth, screenHeight, margin, padding)
+                ?.let { return it }
+            tryHorizontal(preferH.flipped(), btn, card, screenWidth, screenHeight, margin, padding)
+                ?.let { return it }
+
+            // Clamp fallback: centre above button
+            val rawX = btn.centerX - card.w / 2
+            val rawY = btn.top - card.h - margin
+            return CardPlacement(
+                x     = rawX.coerceIn(padding, screenWidth  - card.w - padding),
+                y     = rawY.coerceIn(padding, screenHeight - card.h - padding),
+                hSide = preferH,
+                vSide = VSide.TOP
+            )
+        }
 
         // ── Phase 1: horizontal ───────────────────────────────────────────────
         val preferH = if (btn.centerX <= screenWidth / 2) HSide.RIGHT else HSide.LEFT

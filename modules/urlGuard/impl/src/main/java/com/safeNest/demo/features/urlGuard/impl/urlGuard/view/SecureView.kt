@@ -250,7 +250,7 @@ class SecureView(
     fun showToastTooltip(text: CharSequence) {
         hideToastTooltip()
         toastTooltip.setText(text)
-        val p = buildOverlayParams(toastTooltip)
+        val p = buildOverlayParams(toastTooltip, abovePriority = true)
         windowManager.addView(toastTooltip, p)
         isToastTooltipShown = true
         toastHandler.postDelayed(dismissToastRunnable, TOAST_TOOLTIP_DURATION_MS)
@@ -358,9 +358,12 @@ class SecureView(
      *
      *  Phase 3 – clamp to screen bounds as a last resort.
      *
+     * When [abovePriority] is true the algorithm skips Phase 1 and tries to place
+     * the card ABOVE the button first (then BELOW, then LEFT/RIGHT).
+     *
      * [view] is measured here so the algorithm has its exact pixel dimensions.
      */
-    private fun buildOverlayParams(view: View): WindowManager.LayoutParams {
+    private fun buildOverlayParams(view: View, abovePriority: Boolean = false): WindowManager.LayoutParams {
         val maxW = (displayMetrics.widthPixels  * 0.80f).toInt()
         val maxH = (displayMetrics.heightPixels * 0.60f).toInt()
         view.measure(
@@ -370,15 +373,16 @@ class SecureView(
 
         val btnParams = floatingView.windowLayoutParams
         val placement = CardPositionCalculator.resolve(
-            btnX         = btnParams.x,
-            btnY         = btnParams.y,
-            btnWidth     = btnParams.width,
-            btnHeight    = btnParams.height,
-            cardWidth    = view.measuredWidth,
-            cardHeight   = view.measuredHeight,
-            screenWidth  = displayMetrics.widthPixels,
-            screenHeight = displayMetrics.heightPixels,
-            density      = displayMetrics.density
+            btnX          = btnParams.x,
+            btnY          = btnParams.y,
+            btnWidth      = btnParams.width,
+            btnHeight     = btnParams.height,
+            cardWidth     = view.measuredWidth,
+            cardHeight    = view.measuredHeight,
+            screenWidth   = displayMetrics.widthPixels,
+            screenHeight  = displayMetrics.heightPixels,
+            density       = displayMetrics.density,
+            abovePriority = abovePriority
         )
 
         return WindowManager.LayoutParams(
