@@ -16,9 +16,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ContentPaste
 import androidx.compose.material3.Card
@@ -59,6 +61,7 @@ import com.safeNest.demo.features.home.impl.R
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.File
 
 val PrimaryIndigo = Color(0xFF4F46E5)
 val MediaTextColor = Color(0xFF454955)
@@ -155,6 +158,7 @@ fun ScamAnalyzerScreen(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
                     .padding(paddingValues)
                     .padding(top = DSSpacing.s9)
             ) {
@@ -483,7 +487,7 @@ private suspend fun copyUriToCache(
     context: android.content.Context,
     contentUri: Uri,
     type: String
-): Uri? = withContext(kotlinx.coroutines.Dispatchers.IO) {
+): Uri? = withContext(Dispatchers.IO) {
     try {
         val cacheDir = java.io.File(context.cacheDir, "temp_media")
         if (!cacheDir.exists()) {
@@ -530,7 +534,7 @@ private suspend fun copyUriToCache(
             fileName = "${type}_${System.currentTimeMillis()}$extension"
         }
 
-        val destinationFile = java.io.File(cacheDir, fileName)
+        val destinationFile = File(cacheDir, fileName)
 
         // Copy file content
         context.contentResolver.openInputStream(contentUri)?.use { input ->

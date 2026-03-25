@@ -2,12 +2,10 @@ package com.safeNest.demo.features.scamAnalyzer.impl.utils
 
 import android.util.Log
 import com.safeNest.demo.features.phishingDetection.impl.presentation.ModelDownloader
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import javax.inject.Singleton
 

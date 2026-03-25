@@ -34,7 +34,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -112,7 +111,7 @@ fun AnalysisResultScreen(
     viewModel: AnalysisResultViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    
+
     LaunchedEffect(resultKey) {
         viewModel.loadAnalysisResult(resultKey)
     }
@@ -181,7 +180,7 @@ private fun AnalysisResultContent(
 
             AnalysisResultsSection(result)
 
-            result.keyFindings?.takeIf { it.isNotEmpty() }?.let { items ->
+            result.keyFindings.takeIf { it.isNotEmpty() }?.let { items ->
                 AnalysisItemsSection(items)
             }
         }

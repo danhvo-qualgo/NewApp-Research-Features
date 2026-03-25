@@ -51,8 +51,7 @@ class ScamAnalyzerViewModel @Inject constructor(
     
     private fun isUrl(text: String): Boolean {
         val trimmedText = text.trim()
-        return URL_PATTERN_COMPREHENSIVE.containsMatchIn(trimmedText) || 
-               trimmedText.startsWith("http://") || 
+        return trimmedText.startsWith("http://") ||
                trimmedText.startsWith("https://") ||
                trimmedText.startsWith("www.")
     }
