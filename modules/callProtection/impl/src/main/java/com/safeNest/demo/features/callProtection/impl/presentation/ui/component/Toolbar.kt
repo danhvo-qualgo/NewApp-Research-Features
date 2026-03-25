@@ -18,7 +18,6 @@ import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.safeNest.demo.features.callProtection.impl.R
-import com.safeNest.demo.features.callProtection.impl.presentation.ui.whitelist.add.PrimaryPurple
 import com.safeNest.demo.features.designSystem.theme.DSSpacing
 import com.safeNest.demo.features.designSystem.theme.DSTypography
 import com.safeNest.demo.features.designSystem.theme.color.DSColors
@@ -42,7 +41,7 @@ fun Toolbar(
             Icon(
                 imageVector = icon,
                 contentDescription = "Back",
-                tint = PrimaryPurple,
+                tint = DSColors.textAction,
                 modifier = Modifier
                     .size(20.dp)
             )

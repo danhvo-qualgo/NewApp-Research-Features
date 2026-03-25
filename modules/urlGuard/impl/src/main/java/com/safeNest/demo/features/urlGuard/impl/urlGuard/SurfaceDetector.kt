@@ -3,6 +3,7 @@ package com.safeNest.demo.features.urlGuard.impl.urlGuard
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import java.util.concurrent.CopyOnWriteArrayList
 
 /**
@@ -40,8 +41,8 @@ object SurfaceDetector {
      * (prevents redundant recompositions / callbacks on repeated events).
      */
     fun update(newSurface: ScreenSurface) {
-        if (_surface.value == newSurface) return
-        _surface.value = newSurface
+        //if (_surface.value == newSurface) return
+        _surface.update{newSurface}
         listeners.forEach { it.onChanged(newSurface) }
     }
 }

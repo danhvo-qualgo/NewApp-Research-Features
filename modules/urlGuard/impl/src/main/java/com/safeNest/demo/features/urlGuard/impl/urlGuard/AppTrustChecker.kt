@@ -123,6 +123,7 @@ class AppTrustChecker @Inject constructor(
             // Zalo
             "com.zing.zalo",
             // Telegram
+            "org.telegram.messenger.web",
             "com.telegram.messenger",
             "org.telegram.messenger",
             // Messenger

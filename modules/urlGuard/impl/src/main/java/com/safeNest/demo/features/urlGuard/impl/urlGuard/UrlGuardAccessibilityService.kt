@@ -330,7 +330,16 @@ class UrlGuardAccessibilityService : AccessibilityService() {
 
         if (pkg != lastBrowserPackage) lastCheckedUrl = null
         lastBrowserPackage = pkg
-        SurfaceDetector.update(ScreenSurface.Browser(pkg, null, DetectionStatus.UNKNOWN))
+
+        //First time open browser, show floating button
+        if(lastCheckedUrl ==null) {
+            val initialStatus = lastCheckedUrl
+                ?.let { urlCache[UrlExtractor.normalize(it)]?.status }
+                ?: DetectionStatus.SAFE   // null = first time → optimistic SAFE
+            secureView.updateButton(FloatingButtonFeature.SAFE_BROWSING, initialStatus)
+        }
+
+        SurfaceDetector.update(ScreenSurface.Browser(pkg, lastCheckedUrl, DetectionStatus.UNKNOWN))
         if(isAddressBarFocused(pkg)) return
         scheduleUrlCheck()
     }
@@ -365,13 +374,6 @@ class UrlGuardAccessibilityService : AccessibilityService() {
         val normalUrl = UrlExtractor.normalize(url)
 
         // Publish scanning state
-        SurfaceDetector.update(
-            ScreenSurface.Browser(
-                browserPkg,
-                normalUrl,
-                DetectionStatus.UNKNOWN
-            )
-        )
         val detectedStatus: DetectionStatus
 
         // Cache hit
@@ -412,6 +414,9 @@ class UrlGuardAccessibilityService : AccessibilityService() {
                 val result = withContext(Dispatchers.IO) { analyzeUseCase(input) }
                 result.onSuccess { resultKey ->
                     secureView.hideActionCard()
+                    lastBlockedUrl
+                        ?.let { url -> UrlExtractor.extractDomain(url) }
+                        ?.let { allowedDomainGuard.allow(it) }
                     secureView.hideBlockingPage()
                     val uri = ScamAnalyzerDeepLink.entryPointWithResult(resultKey)
                     routerManager.getLaunchIntent(uri)?.also { intent ->
@@ -511,7 +516,7 @@ class UrlGuardAccessibilityService : AccessibilityService() {
         is ScreenSurface.Browser -> url?.let { AnalysisInput.Url(it) }
         is ScreenSurface.Notification -> {
             val text = listOfNotNull(title, content).joinToString(" ").takeIf { it.isNotBlank() }
-            text?.let { AnalysisInput.Text(text = it) }
+            content?.let { AnalysisInput.Text(text = it) }
         }
         is ScreenSurface.ActiveCall -> phoneNumber?.let { AnalysisInput.Text(text = it) }
         else -> null
@@ -594,7 +599,7 @@ class UrlGuardAccessibilityService : AccessibilityService() {
         }
         Log.d(TAG, "Launcher foreground — hiding floating button")
         SurfaceDetector.update(ScreenSurface.Idle)
-        secureView.hideFloatingButton()
+        //secureView.hideFloatingButton()
     }
 
     /**
@@ -705,19 +710,12 @@ class UrlGuardAccessibilityService : AccessibilityService() {
         }
 
         Log.d(TAG, "Notification from [$pkg] content=$content title=$title category=$notificationCategory")
-        SurfaceDetector.update(
-            ScreenSurface.Notification(
-                pkg,
-                title,
-                content,
-                DetectionStatus.UNKNOWN
-            )
-        )
 
-        scheduleNotificationCheck(content, notificationCategory)
+
+        scheduleNotificationCheck(pkg, title,content, notificationCategory)
     }
 
-    private fun scheduleNotificationCheck(notificationContent: String, notificationCategory: NotificationCategory) {
+    private fun scheduleNotificationCheck(pkg: String, title: String, notificationContent: String, notificationCategory: NotificationCategory) {
         pendingCallCheck?.let { mainHandler.removeCallbacks(it) }
         pendingCallCheck = Runnable {
             pendingCallCheck = null
@@ -728,6 +726,7 @@ class UrlGuardAccessibilityService : AccessibilityService() {
                     notificationDetection.detectNotificationContent(notificationContent) to "The message you just received can be scam, be careful. Tap for more detail."
                 }
 
+                SurfaceDetector.update(ScreenSurface.Notification(pkg, title, notificationContent, result))
                 secureView.updateButton(FloatingButtonFeature.SMS_CHECK, result)
                 secureView.updateActionCard(FloatingButtonFeature.SMS_CHECK, result, buildActions(FloatingButtonFeature.SMS_CHECK, result))
                 if(result == DetectionStatus.WARNING || result == DetectionStatus.DANGEROUS) {
@@ -744,12 +743,12 @@ class UrlGuardAccessibilityService : AccessibilityService() {
     // =========================================================================
 
     private fun onAppForeground(pkg: String) {
-        isEventForcedVisible = false
+
         if (appTrustChecker.isSystemApp(pkg)) {
             Log.d(TAG, "AppTrust skipped — system app [$pkg]")
             return
         }
-
+        isEventForcedVisible = false
         SurfaceDetector.update(ScreenSurface.App(pkg, DetectionStatus.UNKNOWN))
         scheduleAppTrustCheck(pkg)
     }
@@ -782,7 +781,6 @@ class UrlGuardAccessibilityService : AccessibilityService() {
      * Button is shown only when the app has dangerous-level permissions (WARNING or DANGEROUS).
      */
     private fun applyAppTrustResult(status: DetectionStatus, pkg: String) {
-//        if (status == DetectionStatus.WARNING || status == DetectionStatus.DANGEROUS) {
             secureView.showFloatingButton()
             secureView.updateButton(FloatingButtonFeature.APP_CHECK, status)
             secureView.updateActionCard(
@@ -790,9 +788,6 @@ class UrlGuardAccessibilityService : AccessibilityService() {
                 status,
                 buildActions(FloatingButtonFeature.APP_CHECK, status, pkg)
             )
-//        } else {
-//            secureView.hideFloatingButton()
-//        }
     }
 
 

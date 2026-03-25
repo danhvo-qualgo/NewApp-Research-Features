@@ -6,14 +6,14 @@
     <string name="threat_card_default_label">SECURITY ALERT</string>
 
     <!-- Blocking Page -->
-    <string name="blocking_app_name">SafeNest Security</string>
+    <string name="blocking_app_name">KinShield Security</string>
     <string name="blocking_security_alert">SECURITY ALERT</string>
     <string name="blocking_high_risk_title">High Risk: Scam Detected</string>
-    <string name="blocking_description">SafeNest has blocked this site because it may be a scam. It appears to be an unauthorized imitation designed to steal your credentials or financial information.</string>
+    <string name="blocking_description">KinShield has blocked this site because it may be a scam. It appears to be an unauthorized imitation designed to steal your credentials or financial information.</string>
     <string name="blocking_url_placeholder">https://secure-login-update.scam-…</string>
     <string name="blocking_go_back">Go back to Safety</string>
     <string name="blocking_proceed">I understand the risk, proceed anyway</string>
-    <string name="blocking_footer">Your connection is protected by SafeNest Advanced Threat Intelligence. If you believe this is an error, please report it.</string>
+    <string name="blocking_footer">Your connection is protected by KinShield Advanced Threat Intelligence. If you believe this is an error, please report it.</string>
     <string name="sms_is_suspicious">SMS IS SUSPICIOUS</string>
     <string name="check_scam_intent">Check Scam Intent</string>
     <string name="screenshot">Screenshot</string>
@@ -26,8 +26,8 @@
     <string name="action_view_notification">View notification</string>
     <string name="action_open_system_settings">Open settings</string>
     <string name="high_risk_scam_detected">High Risk: Scam Detected</string>
-    <string name="high_risk_suspicious_form_detected">High Risk: Suspicious Form Detected</string>
-    <string name="high_risk_scam_content">SafeNest has blocked this site because it may be a scam. It appears to be an unauthorized imitation designed to steal your credentials or
+    <string name="high_risk_suspicious_form_detected">High Risk: Suspicious Detected</string>
+    <string name="high_risk_scam_content">KinShield has blocked this site because it may be a scam. It appears to be an unauthorized imitation designed to steal your credentials or
 financial information.</string>
     <string name="high_risk_warning_content">This site contains a form that appears to be designed to capture sensitive login or financial information. Our system has flagged this page as unsafe.</string>
 
