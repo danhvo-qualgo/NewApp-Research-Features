@@ -330,6 +330,15 @@ class UrlGuardAccessibilityService : AccessibilityService() {
 
         if (pkg != lastBrowserPackage) lastCheckedUrl = null
         lastBrowserPackage = pkg
+
+        //First time open browser, show floating button
+        if(lastCheckedUrl ==null) {
+            val initialStatus = lastCheckedUrl
+                ?.let { urlCache[UrlExtractor.normalize(it)]?.status }
+                ?: DetectionStatus.SAFE   // null = first time → optimistic SAFE
+            secureView.updateButton(FloatingButtonFeature.SAFE_BROWSING, initialStatus)
+        }
+
         SurfaceDetector.update(ScreenSurface.Browser(pkg, lastCheckedUrl, DetectionStatus.UNKNOWN))
         if(isAddressBarFocused(pkg)) return
         scheduleUrlCheck()
@@ -590,7 +599,7 @@ class UrlGuardAccessibilityService : AccessibilityService() {
         }
         Log.d(TAG, "Launcher foreground — hiding floating button")
         SurfaceDetector.update(ScreenSurface.Idle)
-        secureView.hideFloatingButton()
+        //secureView.hideFloatingButton()
     }
 
     /**

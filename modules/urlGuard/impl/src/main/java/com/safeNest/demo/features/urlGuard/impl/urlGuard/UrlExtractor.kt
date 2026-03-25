@@ -59,7 +59,7 @@ object UrlExtractor {
     fun extract(root: AccessibilityNodeInfo?, browserPkg: String? = null): String? {
         if (root == null) return null
         return try {
-            extractByViewId(root, browserPkg) ?: extractByTraversing(root)
+            extractByViewId(root, browserPkg) //?: extractByTraversing(root)
         } finally {
             root.recycle()
         }
