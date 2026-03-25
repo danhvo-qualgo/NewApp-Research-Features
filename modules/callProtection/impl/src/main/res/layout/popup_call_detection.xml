@@ -68,7 +68,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="2dp"
-                    android:text="Detected by SafeNest"
+                    android:text="Detected by KinShield"
                     android:textColor="#84899A"
                     android:textSize="14sp"/>
 

@@ -133,7 +133,7 @@ fun MakeCallConfirmScreen(
                     Spacer(modifier = Modifier.width(DSSpacing.s3))
 
                     Text(
-                        text = "SafeNest automatically detects unusual patterns in real-time during your calls.",
+                        text = "KinShield automatically detects unusual patterns in real-time during your calls.",
                         style = DSTypography.caption1.medium,
                         color = DSColors.textBody
                     )

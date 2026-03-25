@@ -43,12 +43,6 @@ import com.safeNest.demo.features.designSystem.theme.DSSpacing
 import com.safeNest.demo.features.designSystem.theme.DSTypography
 import com.safeNest.demo.features.designSystem.theme.color.DSColors
 
-// Reusing our custom colors
-val PrimaryPurple = Color(0xFF5A4FCF)
-val BackgroundLight = Color(0xFFEBEBFA)
-val TextDark = Color(0xFF1E1E24)
-val LightTextGray = Color(0xFFA0A0B0)
-
 @Composable
 fun AddWhitelistScreen(
     viewModel: WhitelistViewModel = hiltViewModel(),

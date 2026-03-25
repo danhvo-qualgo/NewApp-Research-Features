@@ -170,10 +170,10 @@ class CallDetectionHandlerImpl @Inject constructor(
                 .setSmallIcon(R.drawable.ic_alert_spam)
                 .setLargeIcon(largeIcon)
                 .setContentTitle("Spam caller blocked")
-                .setContentText("SafeNest identified & blocked ${it.phoneNumber} as spam but you might want to check because they call you twice today")
+                .setContentText("KinShield identified & blocked ${it.phoneNumber} as spam but you might want to check because they call you twice today")
                 .setStyle(
                     NotificationCompat.BigTextStyle()
-                        .bigText("SafeNest identified & blocked ${it.phoneNumber} as spam but you might want to check because they call you twice today")
+                        .bigText("KinShield identified & blocked ${it.phoneNumber} as spam but you might want to check because they call you twice today")
                 )
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
                 .setDefaults(NotificationCompat.DEFAULT_ALL)
