@@ -180,8 +180,10 @@ private fun AnalysisResultContent(
 
             AnalysisResultsSection(result)
 
-            result.keyFindings.takeIf { it.isNotEmpty() }?.let { items ->
-                AnalysisItemsSection(items)
+            if (result.status != AnalysisStatus.Safe) {
+                result.keyFindings.takeIf { it.isNotEmpty() }?.let { items ->
+                    AnalysisItemsSection(items)
+                }
             }
         }
     }
