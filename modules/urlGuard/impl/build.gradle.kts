@@ -26,6 +26,8 @@ dependencies {
     implementation(project(":modules:commonKotlin"))
     implementation(libs.core.router)
 
+    implementation(libs.androidx.datastore.preferences)
+
     // Ktor HTTP client
     val ktorVersion = "2.3.7"
     implementation("io.ktor:ktor-client-android:$ktorVersion")

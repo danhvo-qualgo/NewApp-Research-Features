@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.safeNest.demo.features.scamAnalyzer.api.models.AnalyzeMode
 import com.safeNest.demo.features.scamAnalyzer.api.useCase.ManageAnalyzeModeUseCase
 import com.safeNest.demo.features.scamAnalyzer.api.useCase.ManageCustomPromptUseCase
+import com.safeNest.demo.features.urlGuard.api.useCase.ManageFormCheckUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -15,13 +16,15 @@ import javax.inject.Inject
 data class SettingsUiState(
     val isRemoteMode: Boolean = false,
     val isLoading: Boolean = true,
-    val customPrompt: String = ""
+    val customPrompt: String = "",
+    val isFormCheckEnabled: Boolean = false,
 )
 
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     private val manageAnalyzeModeUseCase: ManageAnalyzeModeUseCase,
-    private val manageCustomPromptUseCase: ManageCustomPromptUseCase
+    private val manageCustomPromptUseCase: ManageCustomPromptUseCase,
+    private val managerFormCheckUseCase: ManageFormCheckUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SettingsUiState())
@@ -30,6 +33,7 @@ class SettingsViewModel @Inject constructor(
     init {
         loadCurrentMode()
         loadCustomPrompt()
+        loadFormCheckEnabled()
     }
 
     private fun loadCurrentMode() {
@@ -53,6 +57,29 @@ class SettingsViewModel @Inject constructor(
                 _uiState.value = _uiState.value.copy(customPrompt = prompt)
             } catch (e: Exception) {
                 // Use default
+            }
+        }
+    }
+
+    private fun loadFormCheckEnabled() {
+        viewModelScope.launch {
+            try {
+                val formCheckEnabled = managerFormCheckUseCase.isEnabled()
+                _uiState.value = _uiState.value.copy(isFormCheckEnabled = formCheckEnabled)
+            } catch (e: Exception) {
+                // Use default
+            }
+        }
+    }
+
+    fun toggleFormCheck(isEnabled: Boolean) {
+        viewModelScope.launch {
+            try {
+                managerFormCheckUseCase.setEnabled(isEnabled)
+                _uiState.value = _uiState.value.copy(isFormCheckEnabled = isEnabled)
+            } catch (e: Exception) {
+                // Revert on error
+                loadFormCheckEnabled()
             }
         }
     }

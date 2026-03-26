@@ -17,6 +17,7 @@ dependencies {
     implementation(project(":modules:designSystem"))
     implementation(project(":modules:callProtection:impl"))
     implementation(project(":modules:home:api"))
+    implementation(project(":modules:urlGuard:api"))
     implementation(libs.core.router)
     implementation(project(":modules:urlGuard:api"))
     implementation(project(":modules:scamAnalyzer:api"))

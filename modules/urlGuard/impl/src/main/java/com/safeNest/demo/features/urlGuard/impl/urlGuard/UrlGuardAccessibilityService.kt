@@ -26,6 +26,7 @@ import com.safeNest.demo.features.notificationInterceptor.api.model.Notification
 import com.safeNest.demo.features.scamAnalyzer.api.models.AnalysisInput
 import com.safeNest.demo.features.scamAnalyzer.api.router.ScamAnalyzerDeepLink
 import com.safeNest.demo.features.scamAnalyzer.api.useCase.AnalyzeUseCase
+import com.safeNest.demo.features.urlGuard.api.useCase.ManageFormCheckUseCase
 import com.safeNest.demo.features.urlGuard.impl.R
 import com.safeNest.demo.features.urlGuard.impl.detection.NotificationDetection
 import com.safeNest.demo.features.urlGuard.impl.detection.PhoneDetection
@@ -70,6 +71,9 @@ class UrlGuardAccessibilityService : AccessibilityService() {
     // ── Helpers ───────────────────────────────────────────────────────────────
     private lateinit var screenshotHelper: ScreenshotHelper
     private lateinit var formInspector: FormInspectorWebView
+
+    @Inject
+    lateinit var managerFormCheckUseCase: ManageFormCheckUseCase
 
 
     @Inject
@@ -403,7 +407,14 @@ class UrlGuardAccessibilityService : AccessibilityService() {
         // Cache miss — API call
         Log.d(TAG, "URL cache miss [$normalUrl]")
 
-        val isHasSensitiveForm = triggerFormInspection(normalUrl).first()
+        val isEnableFormCheck = managerFormCheckUseCase.isEnabled()
+
+        val isHasSensitiveForm = if(isEnableFormCheck) {
+            triggerFormInspection(normalUrl).first()
+        } else {
+            false
+        }
+
         if (isHasSensitiveForm) {
             detectedStatus = DetectionStatus.WARNING
         } else {
