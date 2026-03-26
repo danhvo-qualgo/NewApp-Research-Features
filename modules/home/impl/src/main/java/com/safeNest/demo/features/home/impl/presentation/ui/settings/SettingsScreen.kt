@@ -9,15 +9,20 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -29,6 +34,7 @@ import com.safeNest.demo.features.designSystem.component.DsToggleSize
 import com.safeNest.demo.features.designSystem.theme.DSSpacing
 import com.safeNest.demo.features.designSystem.theme.DSTypography
 import com.safeNest.demo.features.designSystem.theme.color.DSColors
+import com.safeNest.demo.features.urlGuard.api.TelegramLink
 
 @Composable
 fun SettingsScreen(
@@ -42,6 +48,7 @@ fun SettingsScreen(
         modifier = Modifier
             .fillMaxSize()
             .padding(innerPadding)
+            .verticalScroll(rememberScrollState())
             .padding(start = DSSpacing.s6, end = DSSpacing.s6, top = DSSpacing.s9),
         verticalArrangement = Arrangement.spacedBy(DSSpacing.s2)
     ) {
@@ -93,6 +100,14 @@ fun SettingsScreen(
                 isEnabled = uiState.isFormCheckEnabled,
                 onEnableChange = { enabled ->
                     settingsViewModel.toggleFormCheck(enabled)
+                }
+            )
+
+            Spacer(modifier = Modifier.height(DSSpacing.s4))
+            SetTelegramLinkCard(
+                link = TelegramLink.telegramLink,
+                onLinkChange = {
+                    TelegramLink.telegramLink = it
                 }
             )
 
@@ -202,6 +217,48 @@ private fun FormCheckEnableCard(
                 style = DSTypography.caption1.regular,
                 color = DSColors.textBody,
                 lineHeight = 20.sp
+            )
+        }
+    }
+}
+
+@Composable
+private fun SetTelegramLinkCard(
+    link: String,
+    onLinkChange: (String) -> Unit
+) {
+    Card(
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = DSColors.surface1),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(DSSpacing.s3)
+        ) {
+            Text(
+                text = "Set telegram bot link",
+                style = DSTypography.caption1.regular,
+                color = DSColors.textBody.copy(alpha = 0.7f)
+            )
+
+            TextField(
+                value = link,
+                onValueChange = onLinkChange,
+                modifier = Modifier
+                    .fillMaxWidth(),
+                textStyle = DSTypography.caption2.regular.copy(
+                    fontFamily = FontFamily.Monospace
+                ),
+                colors = TextFieldDefaults.colors(
+                    focusedContainerColor = DSColors.surface1,
+                    unfocusedContainerColor = DSColors.surface1,
+                    focusedIndicatorColor = DSColors.borderAction,
+                    unfocusedIndicatorColor = DSColors.borderPrimary,
+                    focusedTextColor = DSColors.textBody,
+                    unfocusedTextColor = DSColors.textBody
+                ),
             )
         }
     }

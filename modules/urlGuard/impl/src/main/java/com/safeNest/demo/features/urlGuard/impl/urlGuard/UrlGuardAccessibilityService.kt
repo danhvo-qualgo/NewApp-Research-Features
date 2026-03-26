@@ -17,6 +17,7 @@ import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import android.widget.Toast
 import androidx.core.app.NotificationCompat
+import androidx.core.net.toUri
 import com.safeNest.demo.features.callProtection.impl.presentation.router.CallDetectionDeeplink
 import com.safeNest.demo.features.commonAndroid.openAppSettings
 import com.safeNest.demo.features.commonKotlin.IncomingCallType
@@ -26,7 +27,9 @@ import com.safeNest.demo.features.notificationInterceptor.api.model.Notification
 import com.safeNest.demo.features.scamAnalyzer.api.models.AnalysisInput
 import com.safeNest.demo.features.scamAnalyzer.api.router.ScamAnalyzerDeepLink
 import com.safeNest.demo.features.scamAnalyzer.api.useCase.AnalyzeUseCase
+import com.safeNest.demo.features.urlGuard.api.TelegramLink
 import com.safeNest.demo.features.urlGuard.api.useCase.ManageFormCheckUseCase
+import com.safeNest.demo.features.urlGuard.api.useCase.ManageTelegramTooltipUseCase
 import com.safeNest.demo.features.urlGuard.impl.R
 import com.safeNest.demo.features.urlGuard.impl.detection.NotificationDetection
 import com.safeNest.demo.features.urlGuard.impl.detection.PhoneDetection
@@ -75,6 +78,8 @@ class UrlGuardAccessibilityService : AccessibilityService() {
     @Inject
     lateinit var managerFormCheckUseCase: ManageFormCheckUseCase
 
+    @Inject
+    lateinit var manageTelegramTooltipUseCase: ManageTelegramTooltipUseCase
 
     @Inject
     lateinit var notificationObserver: NotificationObserver
@@ -156,9 +161,9 @@ class UrlGuardAccessibilityService : AccessibilityService() {
             .also { Log.d(TAG, "Launcher packages: $it") }
     }
 
-    // ── Custome ────────────────────────────────────────────────────────────
-    // TODO: replace with logic firstTimeOpenApp with Persistence store
-    private var firstTimeOpenApp: Boolean = false
+    // ── Custom ────────────────────────────────────────────────────────────
+    //
+    private var countTimeOpenTelegram: Int = 0
 
     // =========================================================================
     // Lifecycle
@@ -218,6 +223,10 @@ class UrlGuardAccessibilityService : AccessibilityService() {
                 handleCallEvent(eventCall.phoneNumber, eventCall.message, eventCall.incomingCallType)
 
             }
+        }
+
+        serviceScope.launch {
+            countTimeOpenTelegram = manageTelegramTooltipUseCase.getCount()
         }
 
         createNotificationChannel()
@@ -489,7 +498,12 @@ class UrlGuardAccessibilityService : AccessibilityService() {
 
                     in AppTrustChecker.OTT_PACKAGES,
                     in AppTrustChecker.SOCIAL_NETWORK_PACKAGES -> {
-
+                        val pkg = surface.packageName
+                        if(pkg in listOf( "org.telegram.messenger.web", "com.telegram.messenger", "org.telegram.messenger")) {
+                            val intent = Intent(Intent.ACTION_VIEW, TelegramLink.telegramLink.trim().toUri())
+                            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                            startActivity(intent)
+                        }
                     }
                     else -> {
                         Log.d(TAG, "Floating button tapped — other app foreground, open setting")
@@ -708,6 +722,22 @@ class UrlGuardAccessibilityService : AccessibilityService() {
         Log.d(TAG, "Social/OTT foreground: $pkg")
         SurfaceDetector.update(ScreenSurface.App(pkg, DetectionStatus.UNKNOWN))
         secureView.showFloatingButton()
+        if(pkg in listOf( "org.telegram.messenger.web", "com.telegram.messenger", "org.telegram.messenger",)) {
+            pendingUrlCheck?.let { mainHandler.removeCallbacks(it) }
+            pendingUrlCheck = Runnable {
+                pendingUrlCheck = null
+                serviceScope.launch {
+                    if(countTimeOpenTelegram == 0) {
+                        secureView.showToastTooltip(
+                            getString(R.string.floating_button_telegram_tooltip)
+                        )
+                        manageTelegramTooltipUseCase.increaseCount()
+                        countTimeOpenTelegram++
+                    }
+                }
+            }.also { mainHandler.postDelayed(it, URL_DEBOUNCE_MS) }
+        }
+
         secureView.updateButton(FloatingButtonFeature.APP_CHECK, DetectionStatus.UNKNOWN)
     }
 
