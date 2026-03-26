@@ -11,6 +11,8 @@ import com.safeNest.demo.features.scamAnalyzer.impl.data.extractor.MlKitOcrExtra
 import com.safeNest.demo.features.scamAnalyzer.impl.data.utils.TextRedactor
 import com.safeNest.demo.features.scamAnalyzer.impl.domain.extractor.EntityExtractor
 import com.safeNest.demo.features.scamAnalyzer.impl.domain.repository.AnalyzerRepository
+import com.safeNest.demo.features.scamAnalyzer.impl.utils.asr.WhisperModelManager
+import com.safeNest.demo.features.scamAnalyzer.impl.utils.asr.WhisperTranscriber
 import com.safenest.urlanalyzer.ModelManager
 import com.uney.core.network.api.models.ApiResult
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -24,6 +26,7 @@ class OnDeviceAnalyzerRepositoryImpl @Inject constructor(
     private val context: Context,
     private val entityExtractor: EntityExtractor,
     private val modelManager: ModelManager,
+    private val whisperModelManager: WhisperModelManager,
 ) : AnalyzerRepository {
     companion object {
         private const val TAG = "OnDeviceAnalyzer"
@@ -80,22 +83,46 @@ class OnDeviceAnalyzerRepositoryImpl @Inject constructor(
     }
 
     override suspend fun analyzeAudio(uri: Uri): ApiResult<AnalysisResult> {
-        modelManager.initialize()
-        val audioAnalyzer = modelManager.audioAnalyzer!!
+        whisperModelManager.ensureReady()
 
-        val result = audioAnalyzer.analyze(uri, context)
+        val text = WhisperTranscriber.transcribe(
+            uri,
+            context,
+            whisperModelManager.interpreter,
+            whisperModelManager.modelDir
+        )
+
+        val (_, result) = analyzeText(text)
         return ApiResult.Success(
             AnalysisResult(
                 data = AnalysisResultType.Audio(uri.toString()),
-                status = result.verdict.toStatus(),
-                keyFindings = result.keyFindings.map {
+                status = result.category,
+                keyFindings = result.reasons.map {
                     AnalysisItem(
-                        title = it.category,
+                        title = it.title,
                         description = it.description
                     )
                 }
             )
         )
+
+
+//        modelManager.initialize()
+//        val audioAnalyzer = modelManager.audioAnalyzer!!
+//
+//        val result = audioAnalyzer.analyze(uri, context)
+//        return ApiResult.Success(
+//            AnalysisResult(
+//                data = AnalysisResultType.Audio(uri.toString()),
+//                status = result.verdict.toStatus(),
+//                keyFindings = result.keyFindings.map {
+//                    AnalysisItem(
+//                        title = it.category,
+//                        description = it.description
+//                    )
+//                }
+//            )
+//        )
     }
 
     override suspend fun analyzeUrl(url: String): ApiResult<AnalysisResult> {
