@@ -8,25 +8,12 @@ import com.safeNest.demo.features.scamAnalyzer.api.models.AnalysisResult
 import com.safeNest.demo.features.scamAnalyzer.api.models.AnalysisResultType
 import com.safeNest.demo.features.scamAnalyzer.api.models.AnalysisStatus
 import com.safeNest.demo.features.scamAnalyzer.impl.data.extractor.MlKitOcrExtractor
-import com.safeNest.demo.features.scamAnalyzer.impl.data.store.AnalyzeStore
 import com.safeNest.demo.features.scamAnalyzer.impl.data.utils.TextRedactor
 import com.safeNest.demo.features.scamAnalyzer.impl.domain.extractor.EntityExtractor
 import com.safeNest.demo.features.scamAnalyzer.impl.domain.repository.AnalyzerRepository
-import com.safeNest.demo.features.scamAnalyzer.impl.utils.ModelManager
-import com.safeNest.demo.features.scamAnalyzer.impl.utils.asr.WhisperModelManager
-import com.safeNest.demo.features.scamAnalyzer.impl.utils.asr.WhisperTranscriber
-import com.safeNest.demo.features.scamAnalyzer.impl.utils.gate2.Gate2Classifier
-import com.safeNest.demo.features.scamAnalyzer.impl.utils.gate2.LMClient
-import com.safeNest.demo.features.scamAnalyzer.impl.utils.gate2.PromptBuilder
-import com.safeNest.demo.features.scamAnalyzer.impl.utils.gate2.SignalExtractor
-import com.safeNest.demo.features.scamAnalyzer.impl.utils.gate2.TextAnalyzerClassifier
-import com.safeNest.demo.features.scamAnalyzer.impl.utils.gate2.URLAnalyzerOrchestrator
-import com.safenest.urlanalyzer.gate1.Gate1Classifier
-import com.safenest.urlanalyzer.local_analyzer.LocalURLAnalyzer
+import com.safenest.urlanalyzer.ModelManager
 import com.uney.core.network.api.models.ApiResult
 import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.async
 import kotlinx.serialization.Serializable
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -37,9 +24,6 @@ class OnDeviceAnalyzerRepositoryImpl @Inject constructor(
     private val context: Context,
     private val entityExtractor: EntityExtractor,
     private val modelManager: ModelManager,
-    private val whisperModelManager: WhisperModelManager,
-    private val analyzeStore: AnalyzeStore,
-    private val gate1Classifier: Gate1Classifier,
 ) : AnalyzerRepository {
     companion object {
         private const val TAG = "OnDeviceAnalyzer"
@@ -68,16 +52,9 @@ class OnDeviceAnalyzerRepositoryImpl @Inject constructor(
         val redactedText = TextRedactor.redact(text, extractedEntities)
         Log.d(TAG, "Redacted text: $redactedText")
 
-        // Deep research
-//        val deepResearchResult = DeepResearchService.research(extractedEntities)
-//        Log.d(TAG, "Deep research result: $deepResearchResult")
-//
-//        // Summarize
-//        val summary = DeepResearchSummarizer.summarize(text, deepResearchResult)
-//        Log.d(TAG, "Summary: $summary")
-
-        modelManager.ensureReady()
-        val data = textClassifier.await().analyze(text)
+        modelManager.initialize()
+        val smsClassifier = modelManager.smsClassifier!!
+        val data = smsClassifier.analyze(text)
 
         return Pair(
             redactedText, ModelResult(
@@ -96,24 +73,24 @@ class OnDeviceAnalyzerRepositoryImpl @Inject constructor(
         )
     }
 
+    private fun String.toStatus() = when (this) {
+        "scam" -> AnalysisStatus.Scam
+        "safe" -> AnalysisStatus.Safe
+        else -> AnalysisStatus.Unverified
+    }
+
     override suspend fun analyzeAudio(uri: Uri): ApiResult<AnalysisResult> {
-        whisperModelManager.ensureReady()
+        modelManager.initialize()
+        val audioAnalyzer = modelManager.audioAnalyzer!!
 
-        val text = WhisperTranscriber.transcribe(
-            uri,
-            context,
-            whisperModelManager.interpreter,
-            whisperModelManager.modelDir
-        )
-
-        val (_, result) = analyzeText(text)
+        val result = audioAnalyzer.analyze(uri, context)
         return ApiResult.Success(
             AnalysisResult(
                 data = AnalysisResultType.Audio(uri.toString()),
-                status = result.category,
-                keyFindings = result.reasons.map {
+                status = result.verdict.toStatus(),
+                keyFindings = result.keyFindings.map {
                     AnalysisItem(
-                        title = it.title,
+                        title = it.category,
                         description = it.description
                     )
                 }
@@ -121,47 +98,16 @@ class OnDeviceAnalyzerRepositoryImpl @Inject constructor(
         )
     }
 
-    private val urlClassifier = GlobalScope.async { createUrlClassifier() }
-
-    private val textClassifier = GlobalScope.async {
-        val lmClient =
-            LMClient(modelManager.analyzer.getModelFolder()?.absolutePath.orEmpty(), modelManager)
-
-        TextAnalyzerClassifier(lmClient, context)
-    }
-
-    private suspend fun createUrlClassifier(): URLAnalyzerOrchestrator {
-        modelManager.ensureReady()
-        val signalExtractor = SignalExtractor(context)
-        val promptBuilder = PromptBuilder(context)
-        val lmClient =
-            LMClient(modelManager.analyzer.getModelFolder()?.absolutePath.orEmpty(), modelManager)
-        lmClient.load(promptBuilder.buildSystemPrompt())
-
-        val gate2Classifier = Gate2Classifier(signalExtractor, promptBuilder, lmClient)
-
-        val localAnalyzer =
-            LocalURLAnalyzer(gate1Classifier.brandNames, gate1Classifier.brandDomains)
-
-        return URLAnalyzerOrchestrator(
-            gate1 = gate1Classifier,
-            gate2 = gate2Classifier,
-            lmClient = lmClient,
-            localAnalyzer = localAnalyzer
-        )
-    }
-
     override suspend fun analyzeUrl(url: String): ApiResult<AnalysisResult> {
-        val result = urlClassifier.await().analyze(url)
+        modelManager.initialize()
+        val gate2 = modelManager.gate2!!
+
+        val result = gate2.analyze(url)
 
         return ApiResult.Success(
             AnalysisResult(
                 data = AnalysisResultType.Url(url),
-                status = when (result.verdict.lowercase()) {
-                    "scam" -> AnalysisStatus.Scam
-                    "safe" -> AnalysisStatus.Safe
-                    else -> AnalysisStatus.Unverified
-                },
+                status = result.verdict.toStatus(),
                 keyFindings = result.keyFindings.map {
                     AnalysisItem(
                         title = it.category,

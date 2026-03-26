@@ -10,21 +10,6 @@ androidModule {
 
 android {
     namespace = "com.safeNest.demo.features.scamAnalyzer.impl"
-
-    ndkVersion = "27.2.12479018"
-
-    defaultConfig {
-        ndk {
-            abiFilters += "arm64-v8a"
-        }
-    }
-
-    externalNativeBuild {
-        cmake {
-            path = file("src/main/cpp/CMakeLists.txt")
-            version = "3.22.1"
-        }
-    }
 }
 
 dependencies {

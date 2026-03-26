@@ -2,7 +2,7 @@ package com.safeNest.demo.features.urlGuard.impl.detection
 
 import android.util.Log
 import com.safeNest.demo.features.urlGuard.impl.detection.model.ModelDetectStatus
-import com.safenest.urlanalyzer.gate1.Gate1Classifier
+import com.safenest.urlanalyzer.url.gate1.Gate1Classifier
 import jakarta.inject.Inject
 
 class UrlDetectionImpl @Inject constructor(
@@ -21,7 +21,7 @@ class UrlDetectionImpl @Inject constructor(
     }
 
     override fun onDestroy() {
-        classier1.close()
+        classier1.release()
     }
 
     companion object {

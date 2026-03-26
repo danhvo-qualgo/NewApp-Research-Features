@@ -15,35 +15,49 @@ androidModule {
 
 android {
     namespace = "com.safenest.gate1"
-    ndkVersion = "26.1.10909125"
+
+    ndkVersion = "27.2.12479018"
 
     defaultConfig {
+        ndk {
+            abiFilters += listOf("arm64-v8a")
+        }
 
         externalNativeBuild {
             cmake {
-                cppFlags("-std=c++17")
-                arguments("-DANDROID_STL=c++_shared")
+                arguments += listOf(
+                    "-DANDROID_STL=c++_shared",
+                    "-DLLAMA_NATIVE=OFF",
+                    "-DLLAMA_BUILD_TESTS=OFF",
+                    "-DLLAMA_BUILD_EXAMPLES=OFF",
+                    "-DLLAMA_BUILD_SERVER=OFF",
+                    "-DCMAKE_BUILD_TYPE=Release",
+                    "-DCMAKE_C_FLAGS_RELEASE=-O3 -DNDEBUG",
+                    "-DCMAKE_CXX_FLAGS_RELEASE=-O3 -DNDEBUG"
+                )
+                cppFlags += listOf("-std=c++17", "-O3")
             }
-        }
-
-        ndk {
-            abiFilters += listOf("armeabi-v7a", "arm64-v8a", "x86_64")
         }
     }
 
     externalNativeBuild {
         cmake {
-            path = file("CMakeLists.txt")
+            path = file("src/main/cpp/CMakeLists.txt")
             version = "3.22.1"
         }
     }
 }
 
 dependencies {
-    // Gate 1: ONNX Runtime for LightGBM inference
-    implementation("com.microsoft.onnxruntime:onnxruntime-android:1.22.0")
-    
-    // Coroutines for LocalURLAnalyzer (parallel sub-analyses)
+    // ML Kit for OCR
+    implementation("com.google.mlkit:text-recognition:16.0.0")
+    // Vietnamese text recognition
+    implementation("com.google.mlkit:text-recognition-chinese:16.0.0")
+
+    // ONNX Runtime for Gate 1
+    implementation("com.microsoft.onnxruntime:onnxruntime-android:1.17.0")
+
+    // Coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
 }
 
