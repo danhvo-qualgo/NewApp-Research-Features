@@ -54,6 +54,7 @@ class HomeActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        Log.d("Home", "onCreate")
 
         enableEdgeToEdge(
             statusBarStyle = SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT),
@@ -256,9 +257,20 @@ class HomeActivity : ComponentActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
+        Log.d("Home", "onNewIntent")
         setIntent(intent)
 
         sharedDataFlow.value = shareIntentHandler.extractShareData(intent)
+    }
+
+    override fun onStop() {
+        Log.d("Home", "onStop")
+        super.onStop()
+    }
+
+    override fun onDestroy() {
+        Log.d("Home", "onDestroy")
+        super.onDestroy()
     }
 
     private suspend fun handleShareData(shareData: ShareData, navController: NavHostController) {
@@ -269,9 +281,13 @@ class HomeActivity : ComponentActivity() {
                 val encodedText = Uri.encode(shareData.text)
                 val route = "home/tools?sharedText=$encodedText"
                 Log.d("HomeActivity", "Navigating to: $route")
-                Log.d("HomeActivity", "Original text: ${shareData.text}")
-                Log.d("HomeActivity", "Encoded text: $encodedText")
-                navController.navigate(route)
+
+                navController.navigate(route) {
+                    popUpTo(navController.graph.startDestinationId) {
+                        inclusive = true
+                    }
+                    launchSingleTop = true
+                }
             }
 
             is ShareData.Audio -> {
