@@ -225,10 +225,6 @@ class UrlGuardAccessibilityService : AccessibilityService() {
             }
         }
 
-        serviceScope.launch {
-            countTimeOpenTelegram = manageTelegramTooltipUseCase.getCount()
-        }
-
         createNotificationChannel()
         startForeground(NOTIFICATION_ID, buildNotification())
 
