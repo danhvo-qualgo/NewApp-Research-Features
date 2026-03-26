@@ -22,7 +22,7 @@
     <string name="permission_call_redirection_desc">Redirects suspicious calls\nthrough our security check.</string>
     <!--  Private DNS  -->
     <string name="permission_private_dns_title">Private DNS</string>
-    <string name="permission_private_dns_desc">Subscription required</string>
+    <string name="permission_private_dns_desc">Settings -> Security -> Install certificate -> CA certificate -> Select file -> Install</string>
     <!--  DNS Proxy  -->
     <string name="permission_dns_proxy_title">DNS Proxy</string>
     <string name="permission_dns_proxy_desc">Subscription required</string>

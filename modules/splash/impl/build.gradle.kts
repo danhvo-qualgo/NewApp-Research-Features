@@ -22,6 +22,8 @@ dependencies {
     implementation(libs.core.resources)
     implementation(libs.core.router)
     implementation(libs.core.logger)
+    implementation(libs.core.network.api)
+    implementation(libs.androidx.datastore.preferences)
     implementation(libs.splashscreen)
     implementation(project(":modules:baseApp"))
     implementation(project(":modules:designSystem"))

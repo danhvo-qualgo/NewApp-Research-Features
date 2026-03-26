@@ -10,7 +10,10 @@ import com.safeNest.demo.features.splash.impl.domain.model.PermissionType
  */
 data class PermissionUiState(
     val permissionStates: Map<PermissionType, Boolean> = emptyMap(),
+    val dnsPermissionState: Boolean = false,
+    val loading: Boolean = false,
+    val showDownloadDialog: Boolean = false
 ) {
     val allPermissionsGranted: Boolean
-        get() = permissionStates.all { it.value }
+        get() = permissionStates.all { it.value } && dnsPermissionState
 }
