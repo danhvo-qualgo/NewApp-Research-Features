@@ -33,4 +33,8 @@ financial information.</string>
 
     <!-- Floating button idle tooltip (shown when KinShield itself is in foreground) -->
     <string name="floating_button_idle_tooltip">This button will automatically appear when you need protection.</string>
+
+    <!-- Screenshot long-press feedback -->
+    <string name="screenshot_saved_toast">Screenshot saved to gallery.</string>
+    <string name="screenshot_failed_toast">Screenshot failed. Please try again.</string>
 </resources>

@@ -94,13 +94,16 @@ class SecureView(
      * current [ScreenSurface]; [SecureView] no longer auto-toggles the action card.
      */
     var onFloatingButtonClick: (() -> Unit)? = null
+    var onFloatingButtonLongClick: (() -> Unit)? = null
+
+    //
 
     // ── Initialisation ────────────────────────────────────────────────────────
 
     init {
         // Tap FloatingView → delegate to host via callback
         floatingView.setOnClickListener { onFloatingButtonClick?.invoke() }
-
+        floatingView.setOnLongPressListener { onFloatingButtonLongClick?.invoke() }
         // Wire blocking-page buttons through to our public callbacks
         blockingPage.onGoBackClick        = { onGoBackClick?.invoke() }
         blockingPage.onProceedAnywayClick = { onProceedAnywayClick?.invoke() }

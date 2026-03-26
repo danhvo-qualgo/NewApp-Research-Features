@@ -6,13 +6,16 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Intent
+import android.net.Uri
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
 import android.util.Log
+import android.view.Display
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
+import android.widget.Toast
 import androidx.core.app.NotificationCompat
 import com.safeNest.demo.features.callProtection.impl.presentation.router.CallDetectionDeeplink
 import com.safeNest.demo.features.commonAndroid.openAppSettings
@@ -27,6 +30,7 @@ import com.safeNest.demo.features.urlGuard.impl.R
 import com.safeNest.demo.features.urlGuard.impl.detection.NotificationDetection
 import com.safeNest.demo.features.urlGuard.impl.detection.PhoneDetection
 import com.safeNest.demo.features.urlGuard.impl.detection.UrlDetection
+import com.safeNest.demo.features.urlGuard.impl.presentation.ScreenCapturePermissionActivity
 import com.safeNest.demo.features.urlGuard.impl.urlGuard.mapper.toModelDetectionStatus
 import com.safeNest.demo.features.urlGuard.impl.urlGuard.util.UserAllowedDomainGuard
 import com.safeNest.demo.features.urlGuard.impl.urlGuard.view.QuickActionCardView
@@ -158,7 +162,9 @@ class UrlGuardAccessibilityService : AccessibilityService() {
         Log.i(TAG, "UrlGuard accessibility service connected")
 
         // Initialise helpers
-        screenshotHelper = ScreenshotHelper(this, serviceScope, mainHandler)
+        screenshotHelper = ScreenshotHelper(this, serviceScope, mainHandler).also { helper ->
+            helper.onScreenshotSaved = { uri -> onScreenshotSaved(uri) }
+        }
         formInspector = FormInspectorWebView(
             this, getSystemService(WINDOW_SERVICE)
                     as android.view.WindowManager
@@ -185,6 +191,7 @@ class UrlGuardAccessibilityService : AccessibilityService() {
                 hideBlockingPage()
             }
             onFloatingButtonClick = { onFloatingButtonTapped() }
+            onFloatingButtonLongClick = { triggerScreenshot() }
         }
         tryAttachOverlay()
 
@@ -513,6 +520,100 @@ class UrlGuardAccessibilityService : AccessibilityService() {
             }
             else -> Unit
         }
+    }
+
+    // =========================================================================
+    // Screenshot on long-press
+    // =========================================================================
+
+    /**
+     * Initiates a device screenshot.
+     *
+     * • API 30+ — uses [AccessibilityService.takeScreenshot]; no extra permission dialog.
+     * • API 24–29 — launches [ScreenCapturePermissionActivity] which shows the system
+     *   "Start recording?" dialog.  On approval the MediaProjection token is stored in
+     *   [ScreenshotHelper] and the capture starts immediately.  On denial a failure toast
+     *   is shown.
+     */
+    private fun triggerScreenshot() {
+        Log.d(TAG, "triggerScreenshot — API ${Build.VERSION.SDK_INT}")
+        secureView.showButtonLoading()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            takeScreenshot(
+                Display.DEFAULT_DISPLAY,
+                mainExecutor,
+                object : TakeScreenshotCallback {
+                    override fun onSuccess(result: ScreenshotResult) {
+                        screenshotHelper.onA11yScreenshotSuccess(result)
+                    }
+                    override fun onFailure(errorCode: Int) {
+                        screenshotHelper.onA11yScreenshotFailure(errorCode)
+                    }
+                }
+            )
+        } else {
+            // Set the result callback before the activity is started so it is
+            // guaranteed to be in place when the system dialog completes.
+            ScreenCapturePermissionActivity.onResult = { resultCode, data ->
+                if (resultCode == android.app.Activity.RESULT_OK && data != null) {
+                    Log.d(TAG, "MediaProjection permission granted — starting capture")
+                    screenshotHelper.setProjectionData(resultCode, data)
+                    screenshotHelper.takeViaMediaProjection()
+                } else {
+                    Log.w(TAG, "MediaProjection permission denied (resultCode=$resultCode)")
+                    secureView.hideButtonLoading()
+                    secureView.showToastTooltip(getString(R.string.screenshot_failed_toast))
+                }
+            }
+            startActivity(ScreenCapturePermissionActivity.createIntent(this))
+        }
+    }
+
+    /**
+     * Called on the main thread after a screenshot has been saved to the gallery.
+     *
+     * On success the image is immediately shared to [HomeActivity] via [ACTION_SEND]
+     * so the user lands on the MediaPreview screen for further analysis.
+     *
+     * @param uri The gallery [Uri] of the saved image, or null if saving failed.
+     */
+    private fun onScreenshotSaved(uri: Uri?) {
+        secureView.hideButtonLoading()
+        if (uri != null) {
+            Log.i(TAG, "Screenshot saved to gallery: $uri")
+            Toast.makeText(this, "screenshot take", Toast.LENGTH_SHORT).show()
+            shareScreenshotToHome(uri)
+        } else {
+            Log.w(TAG, "Screenshot save failed")
+            secureView.showToastTooltip(getString(R.string.screenshot_failed_toast))
+        }
+    }
+
+    /**
+     * Fires an [Intent.ACTION_SEND] image intent directly at [HomeActivity].
+     *
+     * Because [HomeActivity] is declared with `launchMode="singleTask"`:
+     *  - If the activity is already in the back-stack, [HomeActivity.onNewIntent] is
+     *    called and the existing instance handles the share.
+     *  - Otherwise a fresh instance is created via [HomeActivity.onCreate].
+     *
+     * The [Intent.FLAG_GRANT_READ_URI_PERMISSION] flag ensures [HomeActivity] can
+     * open the content:// URI even on API 29+ without needing storage permission.
+     */
+    private fun shareScreenshotToHome(uri: Uri) {
+        val intent = Intent(Intent.ACTION_SEND).apply {
+            type = "image/png"
+            putExtra(Intent.EXTRA_STREAM, uri)
+            // Target HomeActivity directly — skip the system share-chooser sheet.
+            setClassName(
+                packageName,
+                HOME_ACTIVITY_CLASS
+            )
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        Log.d(TAG, "shareScreenshotToHome: sending ACTION_SEND to HomeActivity uri=$uri")
+        startActivity(intent)
     }
 
     private fun ScreenSurface.toAnalysisInput(): AnalysisInput? = when (this) {
@@ -877,6 +978,10 @@ class UrlGuardAccessibilityService : AccessibilityService() {
         // ── Intent actions for startService() control ────────────────────────
         const val ACTION_SHOW_FLOATING = "com.safeNest.ACTION_SHOW_FLOATING"
         const val ACTION_HIDE_FLOATING = "com.safeNest.ACTION_HIDE_FLOATING"
+
+        // ── Screenshot share target ───────────────────────────────────────────
+        private const val HOME_ACTIVITY_CLASS =
+            "com.safeNest.demo.features.home.impl.presentation.HomeActivity"
 
         // Address-bar view IDs are now owned by UrlExtractor.ADDRESS_BAR_VIEW_IDS
     }
