@@ -110,10 +110,14 @@ class HomeActivity : ComponentActivity() {
                                     navController.navigate("recording")
                                 },
                                 onUploadAudioClick = { audioUri ->
-                                    navController.navigate("mediaPreview/audio/${Uri.encode(audioUri.toString())}")
+                                    navController.navigate("mediaPreview/audio/${Uri.encode(audioUri.toString())}") {
+                                        launchSingleTop = true
+                                    }
                                 },
                                 onUploadImageClick = { imageUri ->
-                                    navController.navigate("mediaPreview/image/${Uri.encode(imageUri.toString())}")
+                                    navController.navigate("mediaPreview/image/${Uri.encode(imageUri.toString())}") {
+                                        launchSingleTop = true
+                                    }
                                 },
                                 onConfigurePromptClick = {
                                     navController.navigate("customPrompt")
@@ -166,10 +170,14 @@ class HomeActivity : ComponentActivity() {
                                     navController.navigate("recording")
                                 },
                                 onUploadAudioClick = { audioUri ->
-                                    navController.navigate("mediaPreview/audio/${Uri.encode(audioUri.toString())}")
+                                    navController.navigate("mediaPreview/audio/${Uri.encode(audioUri.toString())}") {
+                                        launchSingleTop = true
+                                    }
                                 },
                                 onUploadImageClick = { imageUri ->
-                                    navController.navigate("mediaPreview/image/${Uri.encode(imageUri.toString())}")
+                                    navController.navigate("mediaPreview/image/${Uri.encode(imageUri.toString())}") {
+                                        launchSingleTop = true
+                                    }
                                 },
                                 onConfigurePromptClick = {
                                     navController.navigate("customPrompt")
@@ -184,7 +192,9 @@ class HomeActivity : ComponentActivity() {
                                 onStopRecording = {
                                 },
                                 onAnalysisSuccess = { audioUri ->
-                                    navController.navigate("mediaPreview/audio/${Uri.encode(audioUri.toString())}")
+                                    navController.navigate("mediaPreview/audio/${Uri.encode(audioUri.toString())}") {
+                                        launchSingleTop = true
+                                    }
                                 }
                             )
                         }
@@ -269,7 +279,9 @@ class HomeActivity : ComponentActivity() {
                     shareData.uri,
                     ShareType.AUDIO
                 )?.let {
-                    navController.navigate("mediaPreview/audio/${Uri.encode(it.toString())}?autoAnalyze=true")
+                    navController.navigate("mediaPreview/audio/${Uri.encode(it.toString())}?autoAnalyze=true") {
+                        launchSingleTop = true
+                    }
                 }
             }
 
@@ -278,7 +290,9 @@ class HomeActivity : ComponentActivity() {
                     shareData.uri,
                     ShareType.IMAGE
                 )?.let {
-                    navController.navigate("mediaPreview/image/${Uri.encode(it.toString())}?autoAnalyze=true")
+                    navController.navigate("mediaPreview/image/${Uri.encode(it.toString())}?autoAnalyze=true") {
+                        launchSingleTop = true
+                    }
                 }
             }
         }
