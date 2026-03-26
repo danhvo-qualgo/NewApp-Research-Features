@@ -107,6 +107,10 @@ class SecureView(
         // Wire blocking-page buttons through to our public callbacks
         blockingPage.onGoBackClick        = { onGoBackClick?.invoke() }
         blockingPage.onProceedAnywayClick = { onProceedAnywayClick?.invoke() }
+
+        toastTooltip.setOnClickListener {
+            hideToastTooltip()
+        }
     }
 
     // ── Public API: lifecycle ─────────────────────────────────────────────────
@@ -413,6 +417,6 @@ class SecureView(
         private const val TAG = "SecureView"
 
         /** How long the toast tooltip stays on screen before auto-dismissing. */
-        private const val TOAST_TOOLTIP_DURATION_MS = 3_000L
+        private const val TOAST_TOOLTIP_DURATION_MS = 10_000L
     }
 }

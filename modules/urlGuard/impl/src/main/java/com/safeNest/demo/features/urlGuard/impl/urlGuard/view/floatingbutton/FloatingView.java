@@ -443,7 +443,7 @@ public class FloatingView extends FrameLayout implements ViewTreeObserver.OnPreD
         } else {
             updatePositionBounds();
             windowParams.x = positionLimitRect.right;
-            windowParams.y = (displayMetrics.heightPixels / 2) - (getMeasuredHeight() / 2);
+            windowParams.y = (int)(displayMetrics.heightPixels * 0.16f) - (getMeasuredHeight() / 2);
         }
 
         isReady = true;
