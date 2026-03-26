@@ -14,6 +14,7 @@ import android.graphics.drawable.GradientDrawable;
 import android.os.Handler;
 import android.os.Message;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
@@ -29,8 +30,8 @@ import androidx.annotation.MainThread;
 import androidx.core.content.ContextCompat;
 
 import com.safeNest.demo.features.urlGuard.impl.R;
-import com.safeNest.demo.features.urlGuard.impl.urlGuard.DetectionStatus;
-import com.safeNest.demo.features.urlGuard.impl.urlGuard.FloatingButtonFeature;
+import com.safeNest.demo.features.urlGuard.impl.urlGuard.view.model.DetectionStatus;
+import com.safeNest.demo.features.urlGuard.impl.urlGuard.view.model.FloatingButtonFeature;
 
 import java.lang.ref.WeakReference;
 
@@ -57,6 +58,7 @@ import java.lang.ref.WeakReference;
  */
 public class FloatingView extends FrameLayout implements ViewTreeObserver.OnPreDrawListener {
 
+    private static final String TAG = "FloatingView";
     // ── Timing constants ──────────────────────────────────────────────────────
 
     private static final int   LONG_PRESS_TIMEOUT_MS = (int) (ViewConfiguration.getLongPressTimeout() * 1.5f);
@@ -333,6 +335,7 @@ public class FloatingView extends FrameLayout implements ViewTreeObserver.OnPreD
         cancelIdleFade();
         setAlpha(1.0f);
         draggingEnabled = false;
+        Log.d(TAG, "showLoading");
     }
 
     /**
@@ -345,11 +348,12 @@ public class FloatingView extends FrameLayout implements ViewTreeObserver.OnPreD
         if (!isLoading) return;
         isLoading = false;
 
+        Log.d(TAG, "hide loading view");
         // Restore appearance.
         if (loadingView != null) loadingView.setVisibility(GONE);
         iconView.setVisibility(VISIBLE);
-        if (savedStatus  != null) applyStatus(savedStatus);
-        if (savedFeature != null) applyFeature(savedFeature);
+//        if (savedStatus  != null) applyStatus(savedStatus);
+//        if (savedFeature != null) applyFeature(savedFeature);
 
         // Re-enable dragging and schedule the normal idle fade.
         draggingEnabled = true;
@@ -443,7 +447,7 @@ public class FloatingView extends FrameLayout implements ViewTreeObserver.OnPreD
         } else {
             updatePositionBounds();
             windowParams.x = positionLimitRect.right;
-            windowParams.y = (displayMetrics.heightPixels / 2) - (getMeasuredHeight() / 2);
+            windowParams.y = (int)(displayMetrics.heightPixels * 0.16f) - (getMeasuredHeight() / 2);
         }
 
         isReady = true;

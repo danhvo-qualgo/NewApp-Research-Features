@@ -18,6 +18,18 @@
         <activity
             android:name="com.safeNest.demo.features.urlGuard.impl.presentation.AudioRecordTest"
             android:exported="false" />
+
+        <!--
+            Transparent trampoline that shows the system "Start recording?" dialog
+            for MediaProjection on API 24-29.  The activity carries no UI of its own;
+            the translucent theme prevents a white flash behind the system dialog.
+        -->
+        <activity
+            android:name="com.safeNest.demo.features.urlGuard.impl.presentation.ScreenCapturePermissionActivity"
+            android:exported="false"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar"
+            android:excludeFromRecents="true"
+            android:taskAffinity="" />
         <service
             android:name="com.safeNest.demo.features.urlGuard.impl.urlGuard.UrlGuardAccessibilityService"
             android:exported="false"

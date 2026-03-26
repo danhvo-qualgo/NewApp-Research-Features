@@ -3,12 +3,16 @@ package com.safeNest.demo.features.urlGuard.impl.presentation.di
 import android.content.Context
 import com.safeNest.demo.features.permissionManager.api.domain.GetAppPermissionInfoUseCase
 import com.safeNest.demo.features.urlGuard.api.UrlGuardProvider
+import com.safeNest.demo.features.urlGuard.api.useCase.ManageFormCheckUseCase
+import com.safeNest.demo.features.urlGuard.api.useCase.ManageTelegramTooltipUseCase
 import com.safeNest.demo.features.urlGuard.impl.detection.NotificationDetection
 import com.safeNest.demo.features.urlGuard.impl.detection.NotificationDetectionImpl
 import com.safeNest.demo.features.urlGuard.impl.detection.PhoneDetection
 import com.safeNest.demo.features.urlGuard.impl.detection.PhoneDetectionImpl
 import com.safeNest.demo.features.urlGuard.impl.detection.UrlDetection
 import com.safeNest.demo.features.urlGuard.impl.detection.UrlDetectionImpl
+import com.safeNest.demo.features.urlGuard.impl.domain.useCase.ManageFormCheckUseCaseImpl
+import com.safeNest.demo.features.urlGuard.impl.domain.useCase.ManageTelegramTooltipUseCaseImpl
 import com.safeNest.demo.features.urlGuard.impl.presentation.UrlGuardProviderImpl
 import com.safeNest.demo.features.urlGuard.impl.presentation.router.UrlGuardRouter
 import com.safeNest.demo.features.urlGuard.impl.urlGuard.AppTrustChecker
@@ -56,4 +60,10 @@ internal abstract class AppModuleBind {
 
     @Binds
     abstract fun bindNotificationDetection(impl: NotificationDetectionImpl): NotificationDetection
+
+    @Binds
+    abstract fun bindManageFormCheckUseCase(impl: ManageFormCheckUseCaseImpl): ManageFormCheckUseCase
+
+    @Binds
+    abstract fun bindManageTelegramTooltipUseCase(impl: ManageTelegramTooltipUseCaseImpl): ManageTelegramTooltipUseCase
 }

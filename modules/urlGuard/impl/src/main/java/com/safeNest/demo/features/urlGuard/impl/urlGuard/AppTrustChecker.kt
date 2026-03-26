@@ -6,10 +6,11 @@ import android.os.Build
 import android.util.Log
 import com.safeNest.demo.features.permissionManager.api.domain.GetAppPermissionInfoUseCase
 import com.safeNest.demo.features.permissionManager.api.domain.model.PermissionProtectionLevel
+import com.safeNest.demo.features.urlGuard.impl.urlGuard.view.model.DetectionStatus
 import javax.inject.Inject
 
 /**
- * Evaluates the trustworthiness of an installed app and maps the result to a [DetectionStatus].
+ * Evaluates the trustworthiness of an installed app and maps the result to a [com.safeNest.demo.features.urlGuard.impl.urlGuard.view.model.DetectionStatus].
  *
  * Base on there permission have been granted
  * Results are stored in [cache] so the caller can skip re-evaluation on subsequent visits.
@@ -18,7 +19,7 @@ class AppTrustChecker @Inject constructor(
     private val context: Context,
     private val getAppPermissionInfoUseCase: GetAppPermissionInfoUseCase) {
 
-    /** Session-scoped cache: package name → last evaluated [DetectionStatus]. */
+    /** Session-scoped cache: package name → last evaluated [com.safeNest.demo.features.urlGuard.impl.urlGuard.view.model.DetectionStatus]. */
     val cache = mutableMapOf<String, DetectionStatus>()
 
     /**
@@ -87,35 +88,12 @@ class AppTrustChecker @Inject constructor(
             "com.opera.browser.beta",
             "com.opera.mini.native",
             "com.opera.mini.native.beta",
-            // Microsoft Edge
-            "com.microsoft.emmx",
-            // Cốc Cốc
-            "com.coccoc.trinhduyet",
-            // UC Browser
-            "com.UCMobile.intl",
-            "com.uc.browser.en"
         )
 
         /** Social network apps — floating button is shown when these are in the foreground. */
         val SOCIAL_NETWORK_PACKAGES: Set<String> = setOf(
             // Facebook
             "com.facebook.katana",
-            // Instagram
-            "com.instagram.android",
-            // Twitter / X
-            "com.twitter.android",
-            "com.x.android",
-            // TikTok
-            "com.zhiliaoapp.musically",
-            "com.ss.android.ugc.trill",
-            // LinkedIn
-            "com.linkedin.android",
-            // Pinterest
-            "com.pinterest",
-            // Snapchat
-            "com.snapchat.android",
-            // YouTube
-            "com.google.android.youtube"
         )
 
         /** OTT / messaging apps — floating button is shown when these are in the foreground. */
@@ -130,17 +108,7 @@ class AppTrustChecker @Inject constructor(
             "com.facebook.orca",
             // WhatsApp
             "com.whatsapp",
-            "com.whatsapp.w4b",
-            // Viber
-            "com.viber.voip",
-            // Line
-            "jp.naver.line.android",
-            // Signal
-            "org.thoughtcrime.securesms",
-            // Skype
-            "com.skype.raider",
-            // Microsoft Teams
-            "com.microsoft.teams"
+            "com.whatsapp.w4b"
         )
 
         /** SMS / MMS apps — notifications from these are scanned for scam content. */

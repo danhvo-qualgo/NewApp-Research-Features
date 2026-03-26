@@ -12,11 +12,11 @@ import android.view.WindowManager
 import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
 import com.safeNest.demo.features.urlGuard.impl.R
-import com.safeNest.demo.features.urlGuard.impl.urlGuard.DetectionStatus
-import com.safeNest.demo.features.urlGuard.impl.urlGuard.FloatingButtonFeature
 import com.safeNest.demo.features.urlGuard.impl.urlGuard.util.CardPositionCalculator
 import com.safeNest.demo.features.urlGuard.impl.urlGuard.view.SecureView.Companion.TOAST_TOOLTIP_DURATION_MS
 import com.safeNest.demo.features.urlGuard.impl.urlGuard.view.floatingbutton.FloatingView
+import com.safeNest.demo.features.urlGuard.impl.urlGuard.view.model.DetectionStatus
+import com.safeNest.demo.features.urlGuard.impl.urlGuard.view.model.FloatingButtonFeature
 import com.safeNest.demo.features.urlGuard.impl.urlGuard.view.model.toActionCarViewIconBgColorRes
 import com.safeNest.demo.features.urlGuard.impl.urlGuard.view.model.toActionCardViewIcon
 import com.safeNest.demo.features.urlGuard.impl.urlGuard.view.model.toActionCardViewLabel
@@ -94,16 +94,23 @@ class SecureView(
      * current [ScreenSurface]; [SecureView] no longer auto-toggles the action card.
      */
     var onFloatingButtonClick: (() -> Unit)? = null
+    var onFloatingButtonLongClick: (() -> Unit)? = null
+
+    //
 
     // ── Initialisation ────────────────────────────────────────────────────────
 
     init {
         // Tap FloatingView → delegate to host via callback
         floatingView.setOnClickListener { onFloatingButtonClick?.invoke() }
-
+        floatingView.setOnLongPressListener { onFloatingButtonLongClick?.invoke() }
         // Wire blocking-page buttons through to our public callbacks
         blockingPage.onGoBackClick        = { onGoBackClick?.invoke() }
         blockingPage.onProceedAnywayClick = { onProceedAnywayClick?.invoke() }
+
+        toastTooltip.setOnClickListener {
+            hideToastTooltip()
+        }
     }
 
     // ── Public API: lifecycle ─────────────────────────────────────────────────
@@ -410,6 +417,6 @@ class SecureView(
         private const val TAG = "SecureView"
 
         /** How long the toast tooltip stays on screen before auto-dismissing. */
-        private const val TOAST_TOOLTIP_DURATION_MS = 3_000L
+        private const val TOAST_TOOLTIP_DURATION_MS = 10_000L
     }
 }
