@@ -27,11 +27,10 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -60,17 +59,10 @@ fun HomeScreen(
     onWhitelistClick: () -> Unit,
     onScamAnalyzerClick: (String) -> Unit,
     onConfigurePromptClick: () -> Unit = {},
-    initialSharedText: String? = null,
-    shouldStartOnToolsTab: Boolean = false
+    onConsumeSharedText: () -> Unit = {},
+    currentTab: MutableState<BottomTab>,
+    sharedText: String? = null,
 ) {
-    var currentTab by rememberSaveable {
-        mutableStateOf(if (shouldStartOnToolsTab) BottomTab.Tools else BottomTab.Home)
-    }
-
-    LaunchedEffect(initialSharedText, shouldStartOnToolsTab) {
-        android.util.Log.d("HomeScreen", "Params - initialSharedText: $initialSharedText, shouldStartOnToolsTab: $shouldStartOnToolsTab, currentTab: $currentTab")
-    }
-
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -80,19 +72,18 @@ fun HomeScreen(
             containerColor = Color.Transparent,
             bottomBar = {
                 SafeNestBottomNavigation(
-                    onHomeClick = { currentTab = BottomTab.Home },
-                    onToolsClick = { currentTab = BottomTab.Tools },
-                    onSettingsClick = { currentTab = BottomTab.Settings },
-                    currentTab
+                    onHomeClick = { currentTab.value = BottomTab.Home },
+                    onToolsClick = { currentTab.value = BottomTab.Tools },
+                    onSettingsClick = { currentTab.value = BottomTab.Settings },
+                    currentTab.value
                 )
             }
         ) { innerPadding ->
-
             Box(
                 modifier = Modifier
                     .fillMaxSize()
             ) {
-                when (currentTab) {
+                when (currentTab.value) {
                     BottomTab.Home -> {
                         SafeNestHomeScreen(
                             innerPadding,
@@ -108,8 +99,8 @@ fun HomeScreen(
                             onRecordAudioClick = onRecordAudioClick,
                             onUploadAudioClick = onUploadAudioClick,
                             onUploadImageClick = onUploadImageClick,
-                            sharedText = initialSharedText,
-                            onSharedTextConsumed = {}
+                            sharedText = sharedText,
+                            onSharedTextConsumed = onConsumeSharedText
                         )
                     }
 

@@ -11,6 +11,8 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.mutableStateOf
 import androidx.core.net.toUri
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -23,6 +25,7 @@ import com.safeNest.demo.features.designSystem.theme.DSTheme
 import com.safeNest.demo.features.home.impl.presentation.share.ShareData
 import com.safeNest.demo.features.home.impl.presentation.share.ShareIntentHandler
 import com.safeNest.demo.features.home.impl.presentation.share.ShareType
+import com.safeNest.demo.features.home.impl.presentation.ui.home.BottomTab
 import com.safeNest.demo.features.home.impl.presentation.ui.home.HomeScreen
 import com.safeNest.demo.features.home.impl.presentation.ui.mediaPreview.MediaPreviewScreen
 import com.safeNest.demo.features.home.impl.presentation.ui.mediaPreview.MediaType
@@ -51,6 +54,8 @@ class HomeActivity : ComponentActivity() {
 
     private var sharedDataFlow: MutableStateFlow<ShareData?> = MutableStateFlow(null)
 
+    private val tabId = mutableStateOf(BottomTab.Home)
+    private val sharedText = MutableStateFlow<String?>(null)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -81,67 +86,7 @@ class HomeActivity : ComponentActivity() {
                         navController = navController,
                         startDestination = "home"
                     ) {
-                        composable("home") {
-                            HomeScreen(
-                                onBlocklistClick = {
-                                    routerManager.navigate(
-                                        this@HomeActivity,
-                                        CallDetectionDeeplink.entryPointBlocklist()
-                                    )
-                                },
-                                onWhitelistClick = {
-                                    routerManager.navigate(
-                                        this@HomeActivity,
-                                        CallDetectionDeeplink.entryPointWhitelist()
-                                    )
-                                },
-                                onManageProtectionClick = {
-                                    routerManager.navigate(
-                                        this@HomeActivity,
-                                        CallDetectionDeeplink.entryPoint()
-                                    )
-                                },
-                                onScamAnalyzerClick = { resultKey ->
-                                    routerManager.navigate(
-                                        this@HomeActivity,
-                                        ScamAnalyzerDeepLink.entryPointWithResult(resultKey)
-                                    )
-                                },
-                                onRecordAudioClick = {
-                                    navController.navigate("recording")
-                                },
-                                onUploadAudioClick = { audioUri ->
-                                    navController.navigate("mediaPreview/audio/${Uri.encode(audioUri.toString())}") {
-                                        launchSingleTop = true
-                                    }
-                                },
-                                onUploadImageClick = { imageUri ->
-                                    navController.navigate("mediaPreview/image/${Uri.encode(imageUri.toString())}") {
-                                        launchSingleTop = true
-                                    }
-                                },
-                                onConfigurePromptClick = {
-                                    navController.navigate("customPrompt")
-                                }
-                            )
-                        }
-
-                        composable(
-                            route = "home/tools?sharedText={sharedText}",
-                            arguments = listOf(
-                                navArgument("sharedText") {
-                                    type = NavType.StringType
-                                    nullable = true
-                                    defaultValue = null
-                                }
-                            )
-                        ) { backStackEntry ->
-                            val rawSharedText = backStackEntry.arguments?.getString("sharedText")
-                            val sharedText = rawSharedText?.let { Uri.decode(it) }
-                            Log.d(
-                                "HomeActivity",
-                                "Route extracted - raw: $rawSharedText, decoded: $sharedText"
-                            )
+                        composable(route = "home") {
                             HomeScreen(
                                 onBlocklistClick = {
                                     routerManager.navigate(
@@ -183,8 +128,9 @@ class HomeActivity : ComponentActivity() {
                                 onConfigurePromptClick = {
                                     navController.navigate("customPrompt")
                                 },
-                                initialSharedText = sharedText,
-                                shouldStartOnToolsTab = sharedText != null
+                                currentTab = tabId,
+                                sharedText = sharedText.collectAsState().value,
+                                onConsumeSharedText = { sharedText.value = null }
                             )
                         }
 
@@ -278,16 +224,8 @@ class HomeActivity : ComponentActivity() {
 
         when (shareData) {
             is ShareData.Text -> {
-                val encodedText = Uri.encode(shareData.text)
-                val route = "home/tools?sharedText=$encodedText"
-                Log.d("HomeActivity", "Navigating to: $route")
-
-                navController.navigate(route) {
-                    popUpTo(navController.graph.startDestinationId) {
-                        inclusive = true
-                    }
-                    launchSingleTop = true
-                }
+                tabId.value = BottomTab.Tools
+                sharedText.value = shareData.text
             }
 
             is ShareData.Audio -> {
