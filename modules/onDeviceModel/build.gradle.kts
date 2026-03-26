@@ -49,6 +49,7 @@ android {
 }
 
 dependencies {
+    implementation(libs.core.network.api)
     // ML Kit for OCR
     implementation("com.google.mlkit:text-recognition:16.0.0")
     // Vietnamese text recognition

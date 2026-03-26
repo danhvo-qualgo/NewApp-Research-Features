@@ -1,6 +1,7 @@
 package com.safenest.urlanalyzer
 
 import android.content.Context
+import android.util.Log
 import com.safenest.urlanalyzer.audio.AudioAnalyzer
 import com.safenest.urlanalyzer.image.ImageAnalyzer
 import com.safenest.urlanalyzer.shared.LMClient
@@ -9,20 +10,28 @@ import com.safenest.urlanalyzer.text.SMSAnalyzerOrchestrator
 import com.safenest.urlanalyzer.text.TextAnalyzerClassifier
 import com.safenest.urlanalyzer.url.URLAnalyzerOrchestrator
 import com.safenest.urlanalyzer.url.gate1.Gate1Classifier
+import com.uney.core.network.api.DownloadClient
+import com.uney.core.network.api.models.ApiResult
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import java.io.File
+import java.io.FileOutputStream
+import java.io.InputStream
+import java.io.OutputStream
 import java.util.concurrent.atomic.AtomicBoolean
 import javax.inject.Inject
 
 class ModelManager @Inject constructor(
     @param:ApplicationContext
-    private val ctx: Context
+    private val ctx: Context,
+    private val downloadClient: DownloadClient,
 ) {
     companion object {
         private const val MODEL_NAME = "Qwen3.5-0.8B-Q5_K_M.gguf"
+        private const val LINK =
+            "https://huggingface.co/bartowski/Qwen_Qwen3.5-0.8B-GGUF/resolve/main/Qwen_Qwen3.5-0.8B-Q5_K_M.gguf"
     }
 
     @Volatile
@@ -78,29 +87,49 @@ class ModelManager @Inject constructor(
     private suspend fun getModelFile(): File {
         return withContext(Dispatchers.IO) {
             val modelFile = File(ctx.filesDir, MODEL_NAME)
-            if (!modelFile.exists()) {
-                // Try /data/local/tmp/ (adb push location)
-                val adbFile = File("/data/local/tmp/$MODEL_NAME")
 
-                if (adbFile.exists()) {
-                    adbFile.inputStream().use { input ->
-                        modelFile.outputStream().use { output ->
-                            input.copyTo(output)
-                        }
-                    }
-                } else {
-                    // Try Download folder
-                    val dlFile = File("/sdcard/Download/$MODEL_NAME")
-                    if (dlFile.exists()) {
-                        dlFile.inputStream().use { input ->
-                            modelFile.outputStream().use { output ->
-                                input.copyTo(output)
-                            }
+            if (!modelFile.exists()) {
+                Log.d("ModelManager", "Downloading model")
+                val result = downloadClient.getStream(LINK)
+
+                if (result is ApiResult.Success) {
+                    val input = result.data
+                    val output = FileOutputStream(modelFile)
+                    input.copyToWithProgress(
+                        output,
+                        597 * 1024 * 1024 // TODO: Hardcode first
+                    ) {
+                        if (it % 10 == 0) {
+                            Log.d("ModelManager", "Download progress $it")
                         }
                     }
                 }
+
+                Log.d("ModelManager", "Download result $result")
             }
             modelFile
+        }
+    }
+
+    private fun InputStream.copyToWithProgress(
+        output: OutputStream,
+        totalSize: Long,
+        onProgress: (Int) -> Unit
+    ) {
+        val buffer = ByteArray(8192)
+        var bytes = read(buffer)
+        var copied = 0L
+
+        while (bytes >= 0) {
+            output.write(buffer, 0, bytes)
+            copied += bytes
+
+            if (totalSize > 0) {
+                val progress = (copied * 100 / totalSize).toInt()
+                onProgress(progress)
+            }
+
+            bytes = read(buffer)
         }
     }
 }
