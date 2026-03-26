@@ -29,8 +29,8 @@ import androidx.annotation.MainThread;
 import androidx.core.content.ContextCompat;
 
 import com.safeNest.demo.features.urlGuard.impl.R;
-import com.safeNest.demo.features.urlGuard.impl.urlGuard.DetectionStatus;
-import com.safeNest.demo.features.urlGuard.impl.urlGuard.FloatingButtonFeature;
+import com.safeNest.demo.features.urlGuard.impl.urlGuard.view.model.DetectionStatus;
+import com.safeNest.demo.features.urlGuard.impl.urlGuard.view.model.FloatingButtonFeature;
 
 import java.lang.ref.WeakReference;
 

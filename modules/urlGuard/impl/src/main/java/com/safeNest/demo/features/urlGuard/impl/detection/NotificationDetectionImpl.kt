@@ -4,7 +4,7 @@ import android.util.Log
 import com.safeNest.demo.features.scamAnalyzer.api.models.AnalysisInput
 import com.safeNest.demo.features.scamAnalyzer.api.useCase.AnalyzeAndGetResultUseCase
 import com.safeNest.demo.features.urlGuard.impl.detection.mapper.toDetectionStatus
-import com.safeNest.demo.features.urlGuard.impl.urlGuard.DetectionStatus
+import com.safeNest.demo.features.urlGuard.impl.urlGuard.view.model.DetectionStatus
 import javax.inject.Inject
 
 class NotificationDetectionImpl @Inject constructor(

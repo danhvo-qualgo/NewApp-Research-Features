@@ -35,6 +35,8 @@ import com.safeNest.demo.features.urlGuard.impl.urlGuard.mapper.toModelDetection
 import com.safeNest.demo.features.urlGuard.impl.urlGuard.util.UserAllowedDomainGuard
 import com.safeNest.demo.features.urlGuard.impl.urlGuard.view.QuickActionCardView
 import com.safeNest.demo.features.urlGuard.impl.urlGuard.view.SecureView
+import com.safeNest.demo.features.urlGuard.impl.urlGuard.view.model.DetectionStatus
+import com.safeNest.demo.features.urlGuard.impl.urlGuard.view.model.FloatingButtonFeature
 import com.safeNest.demo.features.urlGuard.impl.urlGuard.view.model.toActionCardViewListAction
 import com.uney.core.router.RouterManager
 import dagger.hilt.android.AndroidEntryPoint
@@ -644,7 +646,9 @@ class UrlGuardAccessibilityService : AccessibilityService() {
 
         SurfaceDetector.update(ScreenSurface.Browser(browserPkg, normalUrl, status))
         secureView.updateButton(FloatingButtonFeature.SAFE_BROWSING, status)
-        secureView.updateActionCard(FloatingButtonFeature.SAFE_BROWSING, status, buildActions(FloatingButtonFeature.SAFE_BROWSING, status))
+        secureView.updateActionCard(
+            FloatingButtonFeature.SAFE_BROWSING, status, buildActions(
+                FloatingButtonFeature.SAFE_BROWSING, status))
         secureView.showFloatingButton()
         when (status) {
             DetectionStatus.DANGEROUS,
@@ -751,7 +755,9 @@ class UrlGuardAccessibilityService : AccessibilityService() {
         val detectionStatus = phoneDetection.detectPhone(phoneNumber)
 
         secureView.updateButton(FloatingButtonFeature.CALL_PROTECTION, detectionStatus)
-        secureView.updateActionCard(FloatingButtonFeature.CALL_PROTECTION, detectionStatus, buildActions(FloatingButtonFeature.CALL_PROTECTION, detectionStatus))
+        secureView.updateActionCard(
+            FloatingButtonFeature.CALL_PROTECTION, detectionStatus, buildActions(
+                FloatingButtonFeature.CALL_PROTECTION, detectionStatus))
         SurfaceDetector.update(ScreenSurface.ActiveCall(phoneNumber, detectionStatus))
     }
 
@@ -832,7 +838,9 @@ class UrlGuardAccessibilityService : AccessibilityService() {
 
                 SurfaceDetector.update(ScreenSurface.Notification(pkg, title, notificationContent, result))
                 secureView.updateButton(FloatingButtonFeature.SMS_CHECK, result)
-                secureView.updateActionCard(FloatingButtonFeature.SMS_CHECK, result, buildActions(FloatingButtonFeature.SMS_CHECK, result))
+                secureView.updateActionCard(
+                    FloatingButtonFeature.SMS_CHECK, result, buildActions(
+                        FloatingButtonFeature.SMS_CHECK, result))
                 if(result == DetectionStatus.WARNING || result == DetectionStatus.DANGEROUS) {
                     secureView.showToastTooltip(message)
                 }

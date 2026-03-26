@@ -1,7 +1,7 @@
 package com.safeNest.demo.features.urlGuard.impl.detection
 
 import com.safeNest.demo.features.callProtection.api.domain.model.CallerIdInfo
-import com.safeNest.demo.features.urlGuard.impl.urlGuard.DetectionStatus
+import com.safeNest.demo.features.urlGuard.impl.urlGuard.view.model.DetectionStatus
 
 interface PhoneDetection {
     suspend fun detectPhone(phone: String): DetectionStatus

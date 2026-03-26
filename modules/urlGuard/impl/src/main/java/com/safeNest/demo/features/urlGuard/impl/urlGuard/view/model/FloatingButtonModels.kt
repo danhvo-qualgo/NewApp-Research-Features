@@ -1,4 +1,4 @@
-package com.safeNest.demo.features.urlGuard.impl.urlGuard
+package com.safeNest.demo.features.urlGuard.impl.urlGuard.view.model
 
 import androidx.annotation.ColorRes
 import androidx.annotation.DrawableRes
@@ -9,8 +9,8 @@ enum class FloatingButtonFeature(
     @DrawableRes val iconRes: Int,
     val hasQuickActions: Boolean
 ) {
-    DEFAULT(R.drawable.icon_default, hasQuickActions = false),
-    APP_CHECK(R.drawable.icon_default, hasQuickActions = true),
+    DEFAULT(R.drawable.icon_3_dot, hasQuickActions = false),
+    APP_CHECK(R.drawable.icon_3_dot, hasQuickActions = true),
     SMS_CHECK(R.drawable.icon_message, hasQuickActions = true),
     CALL_PROTECTION(R.drawable.icon_callprotection, hasQuickActions = true),
     SAFE_BROWSING(R.drawable.icon_safebrowsing, hasQuickActions = true)

@@ -6,10 +6,11 @@ import android.os.Build
 import android.util.Log
 import com.safeNest.demo.features.permissionManager.api.domain.GetAppPermissionInfoUseCase
 import com.safeNest.demo.features.permissionManager.api.domain.model.PermissionProtectionLevel
+import com.safeNest.demo.features.urlGuard.impl.urlGuard.view.model.DetectionStatus
 import javax.inject.Inject
 
 /**
- * Evaluates the trustworthiness of an installed app and maps the result to a [DetectionStatus].
+ * Evaluates the trustworthiness of an installed app and maps the result to a [com.safeNest.demo.features.urlGuard.impl.urlGuard.view.model.DetectionStatus].
  *
  * Base on there permission have been granted
  * Results are stored in [cache] so the caller can skip re-evaluation on subsequent visits.
@@ -18,7 +19,7 @@ class AppTrustChecker @Inject constructor(
     private val context: Context,
     private val getAppPermissionInfoUseCase: GetAppPermissionInfoUseCase) {
 
-    /** Session-scoped cache: package name → last evaluated [DetectionStatus]. */
+    /** Session-scoped cache: package name → last evaluated [com.safeNest.demo.features.urlGuard.impl.urlGuard.view.model.DetectionStatus]. */
     val cache = mutableMapOf<String, DetectionStatus>()
 
     /**

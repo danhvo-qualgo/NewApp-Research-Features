@@ -12,11 +12,11 @@ import android.view.WindowManager
 import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
 import com.safeNest.demo.features.urlGuard.impl.R
-import com.safeNest.demo.features.urlGuard.impl.urlGuard.DetectionStatus
-import com.safeNest.demo.features.urlGuard.impl.urlGuard.FloatingButtonFeature
 import com.safeNest.demo.features.urlGuard.impl.urlGuard.util.CardPositionCalculator
 import com.safeNest.demo.features.urlGuard.impl.urlGuard.view.SecureView.Companion.TOAST_TOOLTIP_DURATION_MS
 import com.safeNest.demo.features.urlGuard.impl.urlGuard.view.floatingbutton.FloatingView
+import com.safeNest.demo.features.urlGuard.impl.urlGuard.view.model.DetectionStatus
+import com.safeNest.demo.features.urlGuard.impl.urlGuard.view.model.FloatingButtonFeature
 import com.safeNest.demo.features.urlGuard.impl.urlGuard.view.model.toActionCarViewIconBgColorRes
 import com.safeNest.demo.features.urlGuard.impl.urlGuard.view.model.toActionCardViewIcon
 import com.safeNest.demo.features.urlGuard.impl.urlGuard.view.model.toActionCardViewLabel

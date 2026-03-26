@@ -7,8 +7,6 @@ import androidx.core.content.ContextCompat
 import com.safeNest.demo.features.commonAndroid.openApp
 import com.safeNest.demo.features.commonAndroid.openAppSettings
 import com.safeNest.demo.features.urlGuard.impl.R
-import com.safeNest.demo.features.urlGuard.impl.urlGuard.DetectionStatus
-import com.safeNest.demo.features.urlGuard.impl.urlGuard.FloatingButtonFeature
 import com.safeNest.demo.features.urlGuard.impl.urlGuard.view.QuickActionCardView.Action
 
 

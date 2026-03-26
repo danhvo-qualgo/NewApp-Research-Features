@@ -1,7 +1,7 @@
 package com.safeNest.demo.features.urlGuard.impl.detection.mapper
 
 import com.safeNest.demo.features.scamAnalyzer.api.models.AnalysisStatus
-import com.safeNest.demo.features.urlGuard.impl.urlGuard.DetectionStatus
+import com.safeNest.demo.features.urlGuard.impl.urlGuard.view.model.DetectionStatus
 
 fun AnalysisStatus?.toDetectionStatus(): DetectionStatus {
     return when(this) {

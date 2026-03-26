@@ -4,7 +4,7 @@ import android.util.Log
 import com.safeNest.demo.features.callProtection.api.domain.model.CallerIdInfo
 import com.safeNest.demo.features.callProtection.api.domain.model.CallerIdInfoType
 import com.safeNest.demo.features.callProtection.api.domain.model.GetCallerIdInfoUseCase
-import com.safeNest.demo.features.urlGuard.impl.urlGuard.DetectionStatus
+import com.safeNest.demo.features.urlGuard.impl.urlGuard.view.model.DetectionStatus
 import jakarta.inject.Inject
 
 val listDatabasePhone = listOf(

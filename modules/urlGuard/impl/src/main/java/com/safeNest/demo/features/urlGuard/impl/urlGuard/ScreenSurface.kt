@@ -1,6 +1,7 @@
 package com.safeNest.demo.features.urlGuard.impl.urlGuard
 
 import com.safeNest.demo.features.commonKotlin.IncomingCallType
+import com.safeNest.demo.features.urlGuard.impl.urlGuard.view.model.DetectionStatus
 
 /**
  * Represents what is currently visible on the user's screen,
