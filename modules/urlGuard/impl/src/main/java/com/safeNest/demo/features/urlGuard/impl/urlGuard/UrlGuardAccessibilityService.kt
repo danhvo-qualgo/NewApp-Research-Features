@@ -498,6 +498,7 @@ class UrlGuardAccessibilityService : AccessibilityService() {
                         if(pkg in listOf( "org.telegram.messenger.web", "com.telegram.messenger", "org.telegram.messenger")) {
                             val intent = Intent(Intent.ACTION_VIEW, TelegramLink.telegramLink.trim().toUri())
                             intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                            intent.setPackage(pkg)
                             startActivity(intent)
                         }
                     }
