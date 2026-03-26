@@ -374,8 +374,13 @@ class UrlGuardAccessibilityService : AccessibilityService() {
                 val url = UrlExtractor.extract(rootInActiveWindow, lastBrowserPackage)
                 Log.d(TAG, "extract url: $url")
                 if (!url.isNullOrBlank() && url != lastCheckedUrl) {
+                    secureView.showButtonLoading()
                     lastCheckedUrl = url
-                    checkAndBlockIfNeeded(url)
+                    try {
+                        checkAndBlockIfNeeded(url)
+                    } finally {
+                        secureView.hideButtonLoading()
+                    }
                 }
             }
         }.also { mainHandler.postDelayed(it, URL_DEBOUNCE_MS) }
@@ -830,6 +835,7 @@ class UrlGuardAccessibilityService : AccessibilityService() {
         pendingCallCheck = Runnable {
             pendingCallCheck = null
             serviceScope.launch {
+                secureView.showButtonLoading()
                 val (result, message) = if(notificationCategory == NotificationCategory.CALL) {
                     DetectionStatus.WARNING to "Be cautious with unexpected video calls"
                 } else {
@@ -844,6 +850,7 @@ class UrlGuardAccessibilityService : AccessibilityService() {
                 if(result == DetectionStatus.WARNING || result == DetectionStatus.DANGEROUS) {
                     secureView.showToastTooltip(message)
                 }
+                secureView.hideButtonLoading()
                 showFloatingButtonFromEvent()
             }
         }.also { mainHandler.postDelayed(it, CALL_DEBOUNCE_MS) }

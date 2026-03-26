@@ -88,35 +88,12 @@ class AppTrustChecker @Inject constructor(
             "com.opera.browser.beta",
             "com.opera.mini.native",
             "com.opera.mini.native.beta",
-            // Microsoft Edge
-            "com.microsoft.emmx",
-            // Cốc Cốc
-            "com.coccoc.trinhduyet",
-            // UC Browser
-            "com.UCMobile.intl",
-            "com.uc.browser.en"
         )
 
         /** Social network apps — floating button is shown when these are in the foreground. */
         val SOCIAL_NETWORK_PACKAGES: Set<String> = setOf(
             // Facebook
             "com.facebook.katana",
-            // Instagram
-            "com.instagram.android",
-            // Twitter / X
-            "com.twitter.android",
-            "com.x.android",
-            // TikTok
-            "com.zhiliaoapp.musically",
-            "com.ss.android.ugc.trill",
-            // LinkedIn
-            "com.linkedin.android",
-            // Pinterest
-            "com.pinterest",
-            // Snapchat
-            "com.snapchat.android",
-            // YouTube
-            "com.google.android.youtube"
         )
 
         /** OTT / messaging apps — floating button is shown when these are in the foreground. */
@@ -131,17 +108,7 @@ class AppTrustChecker @Inject constructor(
             "com.facebook.orca",
             // WhatsApp
             "com.whatsapp",
-            "com.whatsapp.w4b",
-            // Viber
-            "com.viber.voip",
-            // Line
-            "jp.naver.line.android",
-            // Signal
-            "org.thoughtcrime.securesms",
-            // Skype
-            "com.skype.raider",
-            // Microsoft Teams
-            "com.microsoft.teams"
+            "com.whatsapp.w4b"
         )
 
         /** SMS / MMS apps — notifications from these are scanned for scam content. */

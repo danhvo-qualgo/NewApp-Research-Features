@@ -7,10 +7,10 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class AnalyzeKeyFinding(
-    val category: String,
-    val description: String,
-    val evidence: String,
-    val severity: String,
+    val category: String="",
+    val description: String="",
+    val evidence: String="",
+    val severity: String="",
 )
 
 @Serializable
