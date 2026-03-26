@@ -1,3 +1,7 @@
 package com.safeNest.demo.features.splash.impl.domain.repository
 
-interface SplashRepository
+import java.io.InputStream
+
+interface SplashRepository {
+    suspend fun downloadCaCert(): Result<InputStream>
+}

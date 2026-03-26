@@ -63,6 +63,7 @@ enum class PermissionType(
 //        descriptionRes = R.string.permission_private_dns_desc,
 //        requestType = PermissionRequestType.Settings
 //    ),
+//
 //    DNS_PROXY(
 //        nameRes = R.string.permission_dns_proxy_title,
 //        iconRes = R.drawable.ic_server_02,
