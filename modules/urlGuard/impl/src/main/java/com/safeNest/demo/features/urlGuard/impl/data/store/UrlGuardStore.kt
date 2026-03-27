@@ -34,7 +34,7 @@ class UrlGuardStore @Inject constructor(
             .data
             .map { it[enableFormCheckKey] }
             .firstOrNull()
-            ?: true
+            ?: false
     }
 
     fun observeFormCheckEnabled(): Flow<Boolean> {
