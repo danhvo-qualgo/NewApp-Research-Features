@@ -133,6 +133,10 @@ class UrlGuardAccessibilityService : AccessibilityService() {
     @Volatile
     private var lastCheckedUrl: String? = null
 
+    @Volatile
+    private var lastCheckedUrlTimestamp: Long = 0L
+    
+
     // ── Misc state ────────────────────────────────────────────────────────────
     @Volatile
     private var lastBrowserPackage: String? = null
@@ -188,9 +192,6 @@ class UrlGuardAccessibilityService : AccessibilityService() {
         // app sends ACTION_SHOW_FLOATING (which it does on every onResume).
         secureView = SecureView(this).apply {
             onGoBackClick = {
-                lastBlockedUrl
-                    ?.let { url -> UrlExtractor.extractDomain(url) }
-                    ?.let { domain -> allowedDomainGuard.allow(domain) }
                 hideBlockingPage()
             }
             onProceedAnywayClick = {
@@ -349,7 +350,10 @@ class UrlGuardAccessibilityService : AccessibilityService() {
         // (button colour, scan result) is not overwritten by a re-scan of the same URL.
         if (secureView.isBlockingPageVisible) return
 
-        if (pkg != lastBrowserPackage) lastCheckedUrl = null
+        if (pkg != lastBrowserPackage) {
+            lastCheckedUrl = null
+            lastCheckedUrlTimestamp = 0L
+        }
         lastBrowserPackage = pkg
 
         //First time open browser, show floating button
@@ -382,12 +386,18 @@ class UrlGuardAccessibilityService : AccessibilityService() {
             serviceScope.launch {
                 val url = UrlExtractor.extract(rootInActiveWindow, lastBrowserPackage)
                 Log.d(TAG, "extract url: $url")
-                if (!url.isNullOrBlank() && url != lastCheckedUrl) {
+                
+                val currentTime = System.currentTimeMillis()
+                val isExpired = (currentTime - lastCheckedUrlTimestamp) > 15_000L
+                
+                if (!url.isNullOrBlank() && (url != lastCheckedUrl || isExpired)) {
                     secureView.showButtonLoading()
                     lastCheckedUrl = url
+
                     try {
                         checkAndBlockIfNeeded(url)
                     } finally {
+                        lastCheckedUrlTimestamp = currentTime
                         secureView.hideButtonLoading()
                     }
                 }
