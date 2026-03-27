@@ -1,4 +1,4 @@
-package com.safeNest.demo.features.splash.impl.data.datastore
+package com.safeNest.demo.features.home.impl.data.datastore
 
 import android.content.Context
 import androidx.datastore.preferences.core.booleanPreferencesKey
@@ -13,13 +13,12 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class SplashDataStore @Inject constructor(
+class HomeDataStore @Inject constructor(
     @ApplicationContext private val context: Context
 ) {
-    private val Context.dataStore by preferencesDataStore("url_guard_store")
+    private val Context.dataStore by preferencesDataStore("home_store")
 
     private val dnsPermissionKey = booleanPreferencesKey("granted_private_dns_permission")
-
 
     suspend fun setDnsPermission(isGranted: Boolean) {
         context.dataStore.edit { preferences ->
@@ -28,13 +27,11 @@ class SplashDataStore @Inject constructor(
     }
 
     suspend fun isDnsPermissionGranted(): Boolean {
-        val preferences = context.dataStore.data.first()
+        context.dataStore.data.first()
         return context.dataStore.data.map { it[dnsPermissionKey] }.firstOrNull() ?: false
-
     }
 
-    fun getDsnPermissionFlow(): Flow<Boolean> {
+    fun getDnsPermissionFlow(): Flow<Boolean> {
         return context.dataStore.data.map { it[dnsPermissionKey] ?: false }
     }
-
 }

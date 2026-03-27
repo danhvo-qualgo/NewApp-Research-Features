@@ -1,8 +1,17 @@
 package com.safeNest.demo.features.home.impl.presentation.ui.home
 
+import android.content.ClipData
+import android.content.ContentValues
+import android.content.Context
+import android.content.Intent
 import android.net.Uri
+import android.os.Build
+import android.os.Environment
+import android.provider.MediaStore
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,25 +28,37 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.ClipEntry
+import androidx.compose.ui.platform.LocalClipboard
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.safeNest.demo.features.designSystem.component.DSButton
 import com.safeNest.demo.features.designSystem.component.DsToggle
 import com.safeNest.demo.features.designSystem.component.gradientBackground
@@ -47,6 +68,9 @@ import com.safeNest.demo.features.designSystem.theme.color.DSColors
 import com.safeNest.demo.features.home.impl.R
 import com.safeNest.demo.features.home.impl.presentation.ui.settings.SettingsScreen
 import com.safeNest.demo.features.home.impl.presentation.ui.tool.ScamAnalyzerScreen
+import com.safeNest.demo.features.urlGuard.api.TelegramLink
+import kotlinx.coroutines.launch
+import java.io.IOException
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -61,7 +85,26 @@ fun HomeScreen(
     onConsumeSharedText: () -> Unit = {},
     currentTab: MutableState<BottomTab>,
     sharedText: String? = null,
+    viewModel: HomeViewModel = hiltViewModel(),
 ) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+    val clipboardManager = LocalClipboard.current
+    val coroutineScope = rememberCoroutineScope()
+
+    LaunchedEffect(Unit) {
+        viewModel.downloadEvent.collect { inputStream ->
+            saveToDownloads(
+                context,
+                inputStream,
+                "KinShield_ca.pem",
+                "application/x-pem-file"
+            )
+            Toast.makeText(context, "Cert download complete", Toast.LENGTH_SHORT).show()
+            viewModel.onSavedComplete()
+        }
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -85,10 +128,14 @@ fun HomeScreen(
                 when (currentTab.value) {
                     BottomTab.Home -> {
                         SafeNestHomeScreen(
-                            innerPadding,
+                            uiState = uiState,
+                            innerPadding = innerPadding,
                             onBlocklistClick = onBlocklistClick,
                             onWhitelistClick = onWhitelistClick,
-                            onManageProtectionClick = onManageProtectionClick
+                            onManageProtectionClick = onManageProtectionClick,
+                            onDnsToggle = {
+                                viewModel.toggleDnsPermission()
+                            }
                         )
                     }
 
@@ -109,18 +156,123 @@ fun HomeScreen(
                 }
             }
         }
+
+        if (uiState.showDownloadDialog) {
+            DownloadCertDialog(
+                onDownloadClick = { viewModel.downloadCaCert() },
+                onCopyClick = {
+                    coroutineScope.launch {
+                        clipboardManager.setClipEntry(ClipEntry(ClipData.newPlainText("dsn_link", "demo-kinshield-dns.qualgo.dev")))
+                        Toast.makeText(context, "Copy success", Toast.LENGTH_SHORT).show()
+                    }
+                },
+                onDismiss = { viewModel.closeDownloadDialog() }
+            )
+        }
+
+        FullScreenLoading(uiState.isLoading)
+    }
+}
+
+@Composable
+fun DownloadCertDialog(
+    onDownloadClick: () -> Unit,
+    onCopyClick: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(text = "Download cert")
+        },
+        text = {
+            Text(text = "After install cert copy DNS provider then using in PrivateDNS setting")
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    onDownloadClick()
+                    onDismiss()
+                }
+            ) {
+                Text("Download")
+            }
+        },
+        dismissButton = {
+            TextButton(
+                onClick = {
+                    onCopyClick()
+                }
+            ) {
+                Text("Copy")
+            }
+        },
+        titleContentColor = DSColors.textAction,
+    )
+}
+
+@Composable
+fun FullScreenLoading(
+    isLoading: Boolean
+) {
+    if (isLoading) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.4f))
+                .clickable(
+                    indication = null,
+                    interactionSource = remember { MutableInteractionSource() }
+                ) {}
+        ) {
+            CircularProgressIndicator(
+                modifier = Modifier.align(Alignment.Center)
+            )
+        }
+    }
+}
+
+private fun saveToDownloads(
+    context: Context,
+    inputStream: java.io.InputStream,
+    fileName: String,
+    mimeType: String
+) {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+        val resolver = context.contentResolver
+        val contentValues = ContentValues().apply {
+            put(MediaStore.MediaColumns.DISPLAY_NAME, fileName)
+            put(MediaStore.MediaColumns.MIME_TYPE, mimeType)
+            put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS)
+            put(MediaStore.MediaColumns.IS_PENDING, 1)
+        }
+
+        val uri = resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, contentValues)
+            ?: throw IOException("Failed to create MediaStore record")
+
+        resolver.openOutputStream(uri)?.use { outputStream ->
+            inputStream.use { input ->
+                input.copyTo(outputStream)
+            }
+        }
+
+        contentValues.clear()
+        contentValues.put(MediaStore.MediaColumns.IS_PENDING, 0)
+        resolver.update(uri, contentValues, null, null)
     }
 }
 
 
 @Composable
 fun SafeNestHomeScreen(
+    uiState: HomeUiState,
     innerPadding: PaddingValues,
     onBlocklistClick: () -> Unit,
     onWhitelistClick: () -> Unit,
     onManageProtectionClick: () -> Unit,
-
+    onDnsToggle: () -> Unit
     ) {
+    val context = LocalContext.current
     LazyColumn(
         modifier = Modifier
             .fillMaxSize().padding(innerPadding)
@@ -184,12 +336,39 @@ fun SafeNestHomeScreen(
         }
 
         item {
+            FeatureCard(
+                icon = ImageVector.vectorResource(id = R.drawable.ic_server),
+                title = stringResource(R.string.permission_private_dns_title),
+                description = stringResource(R.string.permission_private_dns_desc),
+                isToggled = uiState.dnsPermissionState
+            ) {
+                onDnsToggle()
+            }
+        }
+
+        item {
             ActionFeatureCard(
                 icon = ImageVector.vectorResource(id = R.drawable.ic_telegram_bot), // Hoặc R.drawable.ic_chat_smile nếu bạn có file SVG riêng
                 title = "SafeNest\nTelegram Bot", // Ký tự \n giúp ngắt thành 2 dòng như thiết kế
                 actionText = "Open Telegram",
                 description = "Anti-scam assistant: protects chats, links, images and audios.",
                 onClick = {
+                    val pm = context.packageManager
+                    val listTelegramPackage = listOf( "org.telegram.messenger.web", "com.telegram.messenger", "org.telegram.messenger")
+
+                    val intent = Intent(Intent.ACTION_VIEW, TelegramLink.telegramLink.trim().toUri())
+                    intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                    val foundPackage = listTelegramPackage.firstOrNull { pkg ->
+                        intent.setPackage(pkg)
+                        intent.resolveActivity(pm) != null
+                    }
+
+                    if(foundPackage != null) {
+                        intent.setPackage(foundPackage)
+                    } else {
+                        intent.setPackage(null)
+                    }
+                    context.startActivity(intent)
                 }
             )
         }
