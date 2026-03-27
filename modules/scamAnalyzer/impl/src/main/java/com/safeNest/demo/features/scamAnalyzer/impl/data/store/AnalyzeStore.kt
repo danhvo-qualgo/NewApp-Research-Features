@@ -32,7 +32,7 @@ class AnalyzeStore @Inject constructor(
             .data.map { it[modeKey] }
             .firstOrNull()
             ?.toMode()
-            ?: AnalyzeMode.Local
+            ?: AnalyzeMode.Remote
     }
 
     private fun AnalyzeMode.toInt(): Int = when (this) {
