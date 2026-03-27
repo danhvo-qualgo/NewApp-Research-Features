@@ -1,1 +1,4 @@
-<resources></resources>
+<resources>
+    <string name="permission_private_dns_title">Private DNS</string>
+    <string name="permission_private_dns_desc">Settings -> Security -> Install certificate -> CA certificate -> Select file -> Install</string>
+</resources>
