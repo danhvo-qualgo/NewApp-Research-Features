@@ -21,6 +21,7 @@ dependencies {
     implementation(libs.core.router)
     implementation(project(":modules:urlGuard:api"))
     implementation(project(":modules:scamAnalyzer:api"))
+    implementation(project(":modules:onDeviceModel"))
     implementation(project(":modules:notificationInterceptor:api"))
     implementation("androidx.compose.material:material-icons-extended:1.6.3")
     implementation("androidx.navigation:navigation-compose:2.7.7")

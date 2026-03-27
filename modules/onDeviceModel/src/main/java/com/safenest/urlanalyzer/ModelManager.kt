@@ -10,126 +10,135 @@ import com.safenest.urlanalyzer.text.SMSAnalyzerOrchestrator
 import com.safenest.urlanalyzer.text.TextAnalyzerClassifier
 import com.safenest.urlanalyzer.url.URLAnalyzerOrchestrator
 import com.safenest.urlanalyzer.url.gate1.Gate1Classifier
-import com.uney.core.network.api.DownloadClient
-import com.uney.core.network.api.models.ApiResult
 import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import org.json.JSONObject
-import java.io.File
-import java.io.FileOutputStream
-import java.io.InputStream
-import java.io.OutputStream
-import java.util.concurrent.atomic.AtomicBoolean
 import javax.inject.Inject
+import javax.inject.Singleton
 
+@Singleton
 class ModelManager @Inject constructor(
-    @param:ApplicationContext
-    private val ctx: Context,
-    private val downloadClient: DownloadClient,
+    @param:ApplicationContext private val ctx: Context,
+    private val downloader: ModelDownloader,
+    private val config: ModelConfig,
 ) {
-    companion object {
-        private const val MODEL_NAME = "Qwen3.5-0.8B-Q5_K_M.gguf"
-        private const val LINK =
-            "https://huggingface.co/bartowski/Qwen_Qwen3.5-0.8B-GGUF/resolve/main/Qwen_Qwen3.5-0.8B-Q5_K_M.gguf"
-    }
+    private val mutex = Mutex()
 
-    @Volatile
-    private var lmClient: LMClient? = null
+    private val _state = MutableStateFlow<ModelState>(ModelState.Uninitialized)
 
-    @Volatile
-    var gate1: Gate1Classifier? = null
+    /** Observe this to react to download progress and readiness. */
+    val state: StateFlow<ModelState> = _state.asStateFlow()
 
-    @Volatile
-    var gate2: URLAnalyzerOrchestrator? = null
+    /** Convenience accessor; null unless state is [ModelState.Ready]. */
+    val components: ModelComponents?
+        get() = (_state.value as? ModelState.Ready)?.components
 
-    @Volatile
-    var smsClassifier: SMSAnalyzerOrchestrator? = null
+    // ── public API ───────────────────────────────────────────────────────────
 
-    @Volatile
-    var imageAnalyzer: ImageAnalyzer? = null
+    fun isModelDownloaded(): Boolean = downloader.isDownloaded()
 
-    @Volatile
-    var audioAnalyzer: AudioAnalyzer? = null
-
-    private val isInitialized = AtomicBoolean(false)
-
+    /**
+     * Downloads (if needed) and initialises the model and all analysis components.
+     * Safe to call concurrently — subsequent callers wait on the [Mutex] and return
+     * immediately once the first caller's work is complete.
+     */
     suspend fun initialize() {
-        if (isInitialized.getAndSet(true)) return
+        mutex.withLock {
+            if (_state.value is ModelState.Ready) return@withLock
 
-        val engine = LlamaEngine(
-            modelPath = getModelFile().absolutePath,
-            nCtx = 4096,
-            nGpuLayers = 99,
-            maxTokens = 512
-        )
-
-        if (!engine.ensureInit()) throw RuntimeException("Failed to load model")
-
-        lmClient = LMClient(engine, maxTokens = 512)
-
-        gate1 = Gate1Classifier(ctx)
-
-        val gate2Json = ctx.assets.open("config/gate2_prompts.json")
-            .bufferedReader().use { it.readText() }
-        val gate2Prompt = JSONObject(gate2Json).getString("system_prompt")
-        gate2 = URLAnalyzerOrchestrator(gate1!!, lmClient!!, gate2Prompt)
-
-
-        val textClassifier = TextAnalyzerClassifier(lmClient!!, ctx)
-        smsClassifier = SMSAnalyzerOrchestrator(textClassifier, gate1)
-
-        imageAnalyzer = ImageAnalyzer(lmClient!!, ctx)
-
-        audioAnalyzer = AudioAnalyzer(lmClient!!, ctx)
-    }
-
-    private suspend fun getModelFile(): File {
-        return withContext(Dispatchers.IO) {
-            val modelFile = File(ctx.filesDir, MODEL_NAME)
-
-            if (!modelFile.exists()) {
-                Log.d("ModelManager", "Downloading model")
-                val result = downloadClient.getStream(LINK)
-
-                if (result is ApiResult.Success) {
-                    val input = result.data
-                    val output = FileOutputStream(modelFile)
-                    input.copyToWithProgress(
-                        output,
-                        597 * 1024 * 1024 // TODO: Hardcode first
-                    ) {
-                        if (it % 10 == 0) {
-                            Log.d("ModelManager", "Download progress $it")
-                        }
-                    }
+            try {
+                val modelFile = downloader.ensureDownloaded { progress ->
+                    _state.value = ModelState.Loading(progress)
                 }
 
-                Log.d("ModelManager", "Download result $result")
+                _state.value = ModelState.Loading(100)
+
+                val components = buildComponents(modelFile.absolutePath)
+                _state.value = ModelState.Ready(components)
+
+                Log.d(TAG, "Initialization complete")
+            } catch (e: Exception) {
+                Log.e(TAG, "Initialization failed", e)
+                _state.value = ModelState.Error(e)
+                throw e
             }
-            modelFile
         }
     }
 
-    private fun InputStream.copyToWithProgress(
-        output: OutputStream,
-        totalSize: Long,
-        onProgress: (Int) -> Unit
-    ) {
-        val buffer = ByteArray(8192)
-        var bytes = read(buffer)
-        var copied = 0L
-
-        while (bytes >= 0) {
-            output.write(buffer, 0, bytes)
-            copied += bytes
-
-            if (totalSize > 0) {
-                val progress = (copied * 100 / totalSize).toInt()
-                onProgress(progress)
+    /**
+     * Releases native engine state, tears down all components, deletes the model
+     * file, and resets [state] to [ModelState.Uninitialized].
+     * Safe to call concurrently with [initialize] — the [Mutex] prevents interleaving.
+     */
+    suspend fun delete() {
+        mutex.withLock {
+            val current = _state.value
+            if (current is ModelState.Ready) {
+                releaseComponents(current.components)
             }
 
-            bytes = read(buffer)
+            downloader.deleteFile()
+            _state.value = ModelState.Uninitialized
+
+            Log.d(TAG, "Model deleted and state reset")
         }
+    }
+
+    // ── private helpers ──────────────────────────────────────────────────────
+
+    private suspend fun buildComponents(modelPath: String): ModelComponents {
+        val engine = LlamaEngine(
+            modelPath = modelPath,
+            nCtx = config.nCtx,
+            nGpuLayers = config.nGpuLayers,
+            maxTokens = config.maxTokens,
+        )
+
+        if (!engine.ensureInit()) {
+            throw RuntimeException("Failed to load model at $modelPath")
+        }
+
+        val lmClient = LMClient(engine, maxTokens = config.maxTokens)
+
+        val gate1 = Gate1Classifier(ctx)
+
+        val gate2Prompt = ctx.assets.open("config/gate2_prompts.json")
+            .bufferedReader()
+            .use { it.readText() }
+            .let { JSONObject(it).getString("system_prompt") }
+
+        val gate2 = URLAnalyzerOrchestrator(gate1, lmClient, gate2Prompt)
+
+        val textClassifier = TextAnalyzerClassifier(lmClient, ctx)
+        val smsClassifier = SMSAnalyzerOrchestrator(textClassifier, gate1)
+
+        val imageAnalyzer = ImageAnalyzer(lmClient, ctx)
+        val audioAnalyzer = AudioAnalyzer(lmClient, ctx)
+
+        return ModelComponents(
+            engine = engine,
+            lmClient = lmClient,
+            gate1 = gate1,
+            gate2 = gate2,
+            smsClassifier = smsClassifier,
+            imageAnalyzer = imageAnalyzer,
+            audioAnalyzer = audioAnalyzer,
+        )
+    }
+
+    private suspend fun releaseComponents(components: ModelComponents) {
+        try {
+            components.engine.release()
+        } catch (e: Exception) {
+            Log.e(TAG, "Engine release failed", e)
+        }
+    }
+
+    private companion object {
+        const val TAG = "ModelManager"
     }
 }

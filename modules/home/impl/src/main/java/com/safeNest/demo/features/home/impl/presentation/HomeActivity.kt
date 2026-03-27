@@ -30,7 +30,6 @@ import com.safeNest.demo.features.home.impl.presentation.ui.home.HomeScreen
 import com.safeNest.demo.features.home.impl.presentation.ui.mediaPreview.MediaPreviewScreen
 import com.safeNest.demo.features.home.impl.presentation.ui.mediaPreview.MediaType
 import com.safeNest.demo.features.home.impl.presentation.ui.recording.RecordingScreen
-import com.safeNest.demo.features.home.impl.presentation.ui.settings.CustomPromptScreen
 import com.safeNest.demo.features.scamAnalyzer.api.router.ScamAnalyzerDeepLink
 import com.safeNest.demo.features.urlGuard.api.UrlGuardProvider
 import com.uney.core.router.RouterManager
@@ -125,9 +124,6 @@ class HomeActivity : ComponentActivity() {
                                         launchSingleTop = true
                                     }
                                 },
-                                onConfigurePromptClick = {
-                                    navController.navigate("customPrompt")
-                                },
                                 currentTab = tabId,
                                 sharedText = sharedText.collectAsState().value,
                                 onConsumeSharedText = { sharedText.value = null }
@@ -142,14 +138,6 @@ class HomeActivity : ComponentActivity() {
                                     navController.navigate("mediaPreview/audio/${Uri.encode(audioUri.toString())}") {
                                         launchSingleTop = true
                                     }
-                                }
-                            )
-                        }
-
-                        composable("customPrompt") {
-                            CustomPromptScreen(
-                                onBackClick = {
-                                    navController.popBackStack()
                                 }
                             )
                         }
