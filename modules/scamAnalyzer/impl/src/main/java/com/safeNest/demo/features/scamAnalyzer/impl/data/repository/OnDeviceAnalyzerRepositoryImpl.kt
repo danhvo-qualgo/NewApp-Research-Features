@@ -56,7 +56,7 @@ class OnDeviceAnalyzerRepositoryImpl @Inject constructor(
         Log.d(TAG, "Redacted text: $redactedText")
 
         modelManager.initialize()
-        val smsClassifier = modelManager.smsClassifier!!
+        val smsClassifier = modelManager.components!!.smsClassifier
         val data = smsClassifier.analyze(text)
 
         return Pair(
@@ -127,7 +127,7 @@ class OnDeviceAnalyzerRepositoryImpl @Inject constructor(
 
     override suspend fun analyzeUrl(url: String): ApiResult<AnalysisResult> {
         modelManager.initialize()
-        val gate2 = modelManager.gate2!!
+        val gate2 = modelManager.components!!.gate2
 
         val result = gate2.analyze(url)
 

@@ -1,5 +1,6 @@
 package com.safeNest.demo.features.home.impl.presentation.ui.settings
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -9,12 +10,17 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
@@ -39,7 +45,6 @@ import com.safeNest.demo.features.urlGuard.api.TelegramLink
 @Composable
 fun SettingsScreen(
     innerPadding: PaddingValues,
-    onConfigurePromptClick: () -> Unit,
     settingsViewModel: SettingsViewModel = hiltViewModel()
 ) {
     val uiState by settingsViewModel.uiState.collectAsStateWithLifecycle()
@@ -113,8 +118,14 @@ fun SettingsScreen(
 
             Spacer(modifier = Modifier.height(DSSpacing.s4))
 
-            CustomPromptCard(
-                onConfigureClick = onConfigurePromptClick
+            DownloadModelCard(
+                isDownloading = uiState.isDownloadingModel,
+                isDeleting = uiState.isDeletingModel,
+                downloadProgress = uiState.modelDownloadProgress,
+                modelAlreadyOnDisk = uiState.modelAlreadyOnDisk,
+                isModelDownloaded = uiState.isModelDownloaded,
+                onDownloadClick = settingsViewModel::downloadModel,
+                onDeleteClick = settingsViewModel::deleteModel
             )
         }
     }
@@ -265,8 +276,14 @@ private fun SetTelegramLinkCard(
 }
 
 @Composable
-private fun CustomPromptCard(
-    onConfigureClick: () -> Unit
+private fun DownloadModelCard(
+    isDownloading: Boolean,
+    isDeleting: Boolean,
+    downloadProgress: Int,
+    modelAlreadyOnDisk: Boolean,
+    isModelDownloaded: Boolean,
+    onDownloadClick: () -> Unit,
+    onDeleteClick: () -> Unit
 ) {
     Card(
         shape = RoundedCornerShape(16.dp),
@@ -279,24 +296,134 @@ private fun CustomPromptCard(
             verticalArrangement = Arrangement.spacedBy(DSSpacing.s3)
         ) {
             Text(
-                text = "Custom Prompt (On-Device Only)",
+                text = "On-device model",
                 style = DSTypography.caption1.semiBold,
                 color = DSColors.textBody
             )
 
             Text(
-                text = "Customize the AI prompt for on-device analysis. The prompt must return JSON format.",
+                text = "Download the AI model for on-device analysis. Required once before local analysis can run.",
                 style = DSTypography.caption2.regular,
                 color = DSColors.textBody.copy(alpha = 0.7f),
                 lineHeight = 18.sp
             )
 
-            DSButton(
-                text = "Configure Prompt",
-                onClick = onConfigureClick,
-                modifier = Modifier.fillMaxWidth(),
-                textStyle = DSTypography.body2.medium
-            )
+            if (!isDownloading && isModelDownloaded) {
+                Text(
+                    text = "Model download completed",
+                    style = DSTypography.caption2.medium,
+                    color = DSColors.textActionActive,
+                )
+            }
+
+            if (isDeleting) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        color = DSColors.textActionActive,
+                        strokeWidth = 2.dp
+                    )
+                    Spacer(modifier = Modifier.width(DSSpacing.s3))
+                    Text(
+                        text = "Deleting model…",
+                        style = DSTypography.body2.medium,
+                        color = DSColors.textBody
+                    )
+                }
+            } else if (isDownloading) {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(DSSpacing.s3),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    if (modelAlreadyOnDisk) {
+                        LinearProgressIndicator(
+                            modifier = Modifier.fillMaxWidth(),
+                            color = DSColors.textActionActive,
+                            trackColor = DSColors.borderPrimary.copy(alpha = 0.35f),
+                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(24.dp),
+                                color = DSColors.textActionActive,
+                                strokeWidth = 2.dp
+                            )
+                            Spacer(modifier = Modifier.width(DSSpacing.s3))
+                            Column {
+                                Text(
+                                    text = "Model download completed",
+                                    style = DSTypography.body2.medium,
+                                    color = DSColors.textBody
+                                )
+                                Text(
+                                    text = "Loading model…",
+                                    style = DSTypography.caption2.regular,
+                                    color = DSColors.textBody.copy(alpha = 0.7f)
+                                )
+                            }
+                        }
+                    } else {
+                        LinearProgressIndicator(
+                            progress = { downloadProgress.coerceIn(0, 100) / 100f },
+                            modifier = Modifier.fillMaxWidth(),
+                            color = DSColors.textActionActive,
+                            trackColor = DSColors.borderPrimary.copy(alpha = 0.35f),
+                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(24.dp),
+                                color = DSColors.textActionActive,
+                                strokeWidth = 2.dp
+                            )
+                            Spacer(modifier = Modifier.width(DSSpacing.s3))
+                            Text(
+                                text = "Downloading… ${downloadProgress.coerceIn(0, 100)}%",
+                                style = DSTypography.body2.medium,
+                                color = DSColors.textBody
+                            )
+                        }
+                    }
+                }
+            } else {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(DSSpacing.s3)
+                ) {
+                    DSButton(
+                        text = "Download",
+                        onClick = onDownloadClick,
+                        modifier = Modifier.weight(1f),
+                        textStyle = DSTypography.body2.medium
+                    )
+                    OutlinedButton(
+                        onClick = onDeleteClick,
+                        modifier = Modifier.weight(1f),
+                        enabled = isModelDownloaded,
+                        border = BorderStroke(1.dp, DSColors.borderError),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = DSColors.textError,
+                            disabledContentColor = DSColors.textDisabled.copy(alpha = 0.5f)
+                        )
+                    ) {
+                        Text(
+                            text = "Delete",
+                            style = DSTypography.body2.medium
+                        )
+                    }
+                }
+            }
         }
     }
 }

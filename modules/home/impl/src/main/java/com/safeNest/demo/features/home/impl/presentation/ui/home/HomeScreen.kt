@@ -58,7 +58,6 @@ fun HomeScreen(
     onBlocklistClick: () -> Unit,
     onWhitelistClick: () -> Unit,
     onScamAnalyzerClick: (String) -> Unit,
-    onConfigurePromptClick: () -> Unit = {},
     onConsumeSharedText: () -> Unit = {},
     currentTab: MutableState<BottomTab>,
     sharedText: String? = null,
@@ -105,10 +104,7 @@ fun HomeScreen(
                     }
 
                     BottomTab.Settings -> {
-                        SettingsScreen(
-                            innerPadding = innerPadding,
-                            onConfigurePromptClick = onConfigurePromptClick
-                        )
+                        SettingsScreen(innerPadding = innerPadding)
                     }
                 }
             }
