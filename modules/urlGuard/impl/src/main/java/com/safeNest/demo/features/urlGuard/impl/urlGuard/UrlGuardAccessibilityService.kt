@@ -27,6 +27,7 @@ import com.safeNest.demo.features.notificationInterceptor.api.model.Notification
 import com.safeNest.demo.features.scamAnalyzer.api.models.AnalysisInput
 import com.safeNest.demo.features.scamAnalyzer.api.router.ScamAnalyzerDeepLink
 import com.safeNest.demo.features.scamAnalyzer.api.useCase.AnalyzeUseCase
+import com.safeNest.demo.features.scamAnalyzer.api.useCase.ManageAnalyzeModeUseCase
 import com.safeNest.demo.features.urlGuard.api.TelegramLink
 import com.safeNest.demo.features.urlGuard.api.useCase.ManageFormCheckUseCase
 import com.safeNest.demo.features.urlGuard.api.useCase.ManageTelegramTooltipUseCase
@@ -93,6 +94,8 @@ class UrlGuardAccessibilityService : AccessibilityService() {
     lateinit var appTrustChecker: AppTrustChecker
     @Inject
     lateinit var analyzeUseCase: AnalyzeUseCase
+    @Inject
+    lateinit var manageAnalyzeModeUseCase: ManageAnalyzeModeUseCase
     @Inject
     lateinit var routerManager: RouterManager
     // ── UI layer ──────────────────────────────────────────────────────────────
@@ -693,8 +696,16 @@ class UrlGuardAccessibilityService : AccessibilityService() {
                 val domain = UrlExtractor.extractDomain(normalUrl)
                 if (domain == null || !allowedDomainGuard.isAllowed(domain)) {
                     lastBlockedUrl = normalUrl
-                    secureView.updateBLockingPage(FloatingButtonFeature.SAFE_BROWSING, status, normalUrl)
-                    secureView.showBlockingPage()
+                    serviceScope.launch {
+                        val mode = manageAnalyzeModeUseCase.getMode()
+                        secureView.updateBLockingPage(
+                            FloatingButtonFeature.SAFE_BROWSING,
+                            status,
+                            mode,
+                            normalUrl
+                        )
+                        secureView.showBlockingPage()
+                    }
                 } else {
                     Log.d(TAG, "Blocking page suppressed — domain user-allowed: $domain")
                 }
