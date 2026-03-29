@@ -4,11 +4,12 @@
  */
 package com.safenest.urlanalyzer.url.gate1
 
-import android.content.Context
-import android.util.Log
+import ai.onnxruntime.OnnxMap
 import ai.onnxruntime.OnnxTensor
 import ai.onnxruntime.OrtEnvironment
 import ai.onnxruntime.OrtSession
+import android.content.Context
+import android.util.Log
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -88,11 +89,12 @@ class Gate1Classifier(context: Context) {
             probs[0][1].toDouble()
         } catch (e: ClassCastException) {
             try {
-                // Try List<Map<Long, Float>> (LightGBM ZipMap output)
+                // LightGBM ZipMap output: List<OnnxMap> — unwrap OnnxMap to get Map
                 @Suppress("UNCHECKED_CAST")
-                val probList = results[1].value as List<Map<Long, Float>>
-                probList[0][1L]?.toDouble() ?: 0.5
-            } catch (e2: ClassCastException) {
+                val probList = results[1].value as List<OnnxMap>
+                val probMap = probList[0].value as Map<Long, Float>
+                probMap[1L]?.toDouble() ?: 0.5
+            } catch (e2: Exception) {
                 Log.e(TAG, "ONNX output type: ${results[1].value?.javaClass}", e2)
                 0.5
             }
