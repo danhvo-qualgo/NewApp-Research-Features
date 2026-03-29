@@ -7,8 +7,8 @@ import com.safeNest.demo.features.urlGuard.impl.urlGuard.view.model.DetectionSta
 fun ModelDetectStatus.toModelDetectionStatus(): DetectionStatus {
     return when(this) {
         ModelDetectStatus.Safe -> DetectionStatus.SAFE
-        ModelDetectStatus.Scam -> DetectionStatus.DANGEROUS
-        ModelDetectStatus.Warning -> DetectionStatus.WARNING
+        is ModelDetectStatus.Scam -> DetectionStatus.DANGEROUS
+        is ModelDetectStatus.Warning -> DetectionStatus.WARNING
         ModelDetectStatus.Unknown -> DetectionStatus.UNKNOWN
     }
 }

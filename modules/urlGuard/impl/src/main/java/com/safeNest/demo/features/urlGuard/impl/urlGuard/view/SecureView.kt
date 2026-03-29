@@ -284,6 +284,7 @@ class SecureView(
         floatingButtonFeature: FloatingButtonFeature,
         detectionStatus: DetectionStatus,
         analyzeMode: AnalyzeMode,
+        reason: String,
         url: String) {
         if(floatingButtonFeature != FloatingButtonFeature.SAFE_BROWSING) return
         blockingPage.setBlockedUrl(url)
@@ -298,7 +299,7 @@ class SecureView(
                 blockingPage.setAlertIconDrawable(drawable)
                 val title = context.getString(R.string.high_risk_suspicious_form_detected) + " (${analyzeMode.toBlockingText()})"
                 blockingPage.setTitle(title)
-                blockingPage.setDescription(R.string.high_risk_warning_content)
+                blockingPage.setDescription(reason)
             }
 
             DetectionStatus.DANGEROUS -> {
@@ -308,7 +309,7 @@ class SecureView(
                 blockingPage.setAlertIconDrawable(drawable)
                 val title = context.getString(R.string.high_risk_scam_detected) + " (${analyzeMode.toBlockingText()})"
                 blockingPage.setTitle(title)
-                blockingPage.setDescription(R.string.high_risk_scam_content)
+                blockingPage.setDescription(reason)
             }
             else -> null
         }

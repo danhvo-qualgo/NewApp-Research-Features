@@ -109,6 +109,7 @@ class UrlGuardAccessibilityService : AccessibilityService() {
     // ── URL result cache ──────────────────────────────────────────────────────
     private data class UrlCacheEntry(
         val status: DetectionStatus,
+        val reason: String,
         val cachedAt: Long = System.currentTimeMillis()
     )
 
@@ -419,7 +420,7 @@ class UrlGuardAccessibilityService : AccessibilityService() {
         val cached = urlCache[normalUrl]
         if (cached != null && System.currentTimeMillis() - cached.cachedAt < URL_CACHE_TTL_MS) {
             Log.d(TAG, "URL cache hit [$normalUrl] -> detectStatus ${cached.status}")
-            applyUrlResult(normalUrl, cached.status,  browserPkg)
+            applyUrlResult(normalUrl, cached.status, cached.reason, browserPkg)
             return
         }
         // Cache miss — API call
@@ -435,15 +436,19 @@ class UrlGuardAccessibilityService : AccessibilityService() {
 
         if (isHasSensitiveForm) {
             detectedStatus = DetectionStatus.WARNING
+            val reason = getString(R.string.high_risk_warning_content)
+            Log.d(TAG, "urlCache: $normalUrl -> $detectedStatus")
+            urlCache[normalUrl] = UrlCacheEntry(status = detectedStatus, reason = reason)
+            applyUrlResult(normalUrl, detectedStatus, reason, browserPkg)
         } else {
             //val reputation = withContext(Dispatchers.IO) { ScamApiClient.checkUrl(normalUrl) }
             val modelDetectionStatus = urlDetection.detect(normalUrl)
             detectedStatus = modelDetectionStatus.toModelDetectionStatus()
+            val reason = modelDetectionStatus.reason
+            Log.d(TAG, "urlCache: $normalUrl -> $detectedStatus")
+            urlCache[normalUrl] = UrlCacheEntry(status = detectedStatus, reason = reason)
+            applyUrlResult(normalUrl, detectedStatus, reason, browserPkg)
         }
-        Log.d(TAG, "urlCache: $normalUrl -> $detectedStatus")
-
-        urlCache[normalUrl] = UrlCacheEntry(status = detectedStatus)
-        applyUrlResult(normalUrl, detectedStatus, browserPkg)
 
     }
 
@@ -460,9 +465,6 @@ class UrlGuardAccessibilityService : AccessibilityService() {
                 val result = withContext(Dispatchers.IO) { analyzeUseCase(input) }
                 result.onSuccess { resultKey ->
                     secureView.hideActionCard()
-                    lastBlockedUrl
-                        ?.let { url -> UrlExtractor.extractDomain(url) }
-                        ?.let { allowedDomainGuard.allow(it) }
                     secureView.hideBlockingPage()
                     val uri = ScamAnalyzerDeepLink.entryPointWithResult(resultKey)
                     routerManager.getLaunchIntent(uri)?.also { intent ->
@@ -681,6 +683,7 @@ class UrlGuardAccessibilityService : AccessibilityService() {
     private fun applyUrlResult(
         normalUrl: String,
         status: DetectionStatus,
+        reason: String,
         browserPkg: String
     ) {
 
@@ -702,6 +705,7 @@ class UrlGuardAccessibilityService : AccessibilityService() {
                             FloatingButtonFeature.SAFE_BROWSING,
                             status,
                             mode,
+                            reason,
                             normalUrl
                         )
                         secureView.showBlockingPage()
