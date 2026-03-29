@@ -11,6 +11,7 @@ import android.view.View
 import android.view.WindowManager
 import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
+import com.safeNest.demo.features.scamAnalyzer.api.models.AnalyzeMode
 import com.safeNest.demo.features.urlGuard.impl.R
 import com.safeNest.demo.features.urlGuard.impl.urlGuard.util.CardPositionCalculator
 import com.safeNest.demo.features.urlGuard.impl.urlGuard.view.SecureView.Companion.TOAST_TOOLTIP_DURATION_MS
@@ -281,6 +282,8 @@ class SecureView(
     fun updateBLockingPage(
         floatingButtonFeature: FloatingButtonFeature,
         detectionStatus: DetectionStatus,
+        analyzeMode: AnalyzeMode,
+        reason: String,
         url: String) {
         if(floatingButtonFeature != FloatingButtonFeature.SAFE_BROWSING) return
         blockingPage.setBlockedUrl(url)
@@ -293,8 +296,9 @@ class SecureView(
                 val color = ContextCompat.getColor(context, R.color.blocking_primary_text)
                 drawable?.setTint(color)
                 blockingPage.setAlertIconDrawable(drawable)
-                blockingPage.setTitle(R.string.high_risk_suspicious_form_detected)
-                blockingPage.setDescription(R.string.high_risk_warning_content)
+                val title = context.getString(R.string.high_risk_suspicious_form_detected) //+ " (${analyzeMode.toBlockingText()})"
+                blockingPage.setTitle(title)
+                blockingPage.setDescription(reason)
             }
 
             DetectionStatus.DANGEROUS -> {
@@ -302,12 +306,15 @@ class SecureView(
                 val color = ContextCompat.getColor(context, R.color.blocking_primary_text)
                 drawable?.setTint(color)
                 blockingPage.setAlertIconDrawable(drawable)
-                blockingPage.setTitle(R.string.high_risk_scam_detected)
-                blockingPage.setDescription(R.string.high_risk_scam_content)
+                val title = context.getString(R.string.high_risk_scam_detected) //+ " (${analyzeMode.toBlockingText()})"
+                blockingPage.setTitle(title)
+                blockingPage.setDescription(reason)
             }
             else -> null
         }
     }
+
+
 
     /**
      * Show the fullscreen blocking page.

@@ -8,6 +8,7 @@
     <!-- Blocking Page -->
     <string name="blocking_app_name">KinShield Security</string>
     <string name="blocking_security_alert">SECURITY ALERT</string>
+    <string name="blocking_analyze_mode_prefix">Analysis mode: </string>
     <string name="blocking_high_risk_title">High Risk: Scam Detected</string>
     <string name="blocking_description">KinShield has blocked this site because it may be a scam. It appears to be an unauthorized imitation designed to steal your credentials or financial information.</string>
     <string name="blocking_url_placeholder">https://secure-login-update.scam-…</string>
